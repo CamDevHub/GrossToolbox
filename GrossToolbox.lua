@@ -94,14 +94,6 @@ function addon:SlashCommandHandler(input)
         Dawn:ToggleFrame()                         -- Toggle visibility
     elseif command == "config" then
         LibStub("AceConfigDialog-3.0"):Open(addonName)
-    elseif command == "request" then
-        if IsInGroup() then
-            local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
-            LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, "REQ_DATA", channel)
-            self:Print("Requesting data from party members...")
-        else
-            self:Print("You must be in a party to request data")
-        end
     else
         self:Print("Unknown command '" .. command .. "'. Use '/gt' to toggle display, or '/gt refresh' to update.") -- Use AceConsole Print
     end

@@ -80,6 +80,19 @@ function Dawn:CreatePlayersFrame()
 	playersScrollFrame:SetScrollChild(playersEditBox)
 	playersFrame.scrollFrame = playersScrollFrame
 	playersFrame.editBox = playersEditBox
+
+
+	local requestButton = CreateFrame("Button", "GTRequestButton", playersFrame, "UIPanelButtonTemplate")
+	requestButton:SetText("Request Party Data")
+	requestButton:SetHeight(22)
+	requestButton:ClearAllPoints()
+	requestButton:SetPoint("BOTTOMLEFT", playersFrame, "BOTTOMLEFT", 10, 10)
+	requestButton:SetPoint("BOTTOMRIGHT", playersFrame, "BOTTOMRIGHT", -10, 10)
+	requestButton:SetScript("OnClick", Dawn.RequestData)
+	playersEditBox.requestButton = requestButton
+	playersScrollFrame:SetPoint("BOTTOMLEFT", playersFrame, "BOTTOMLEFT", 10, 35)
+	playersScrollFrame:SetPoint("BOTTOMRIGHT", playersFrame, "BOTTOMRIGHT", -30, 35)
+
 	Dawn.playersFrame = playersFrame
 
 	return playersFrame
@@ -90,7 +103,7 @@ function Dawn:CreateKeystonesFrame()
 
 	local keystonesFrame = CreateFrame("Frame", "GrossToolboxKeyListFrame", UIParent, "BasicFrameTemplateWithInset")
     keystonesFrame:SetSize(350, 400) -- Adjust size as needed
-    keystonesFrame:SetPoint("LEFT", playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
+    keystonesFrame:SetPoint("LEFT", Dawn.playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
     keystonesFrame:SetMovable(true)
     keystonesFrame:EnableMouse(true)
     keystonesFrame:RegisterForDrag("LeftButton")
@@ -328,6 +341,16 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		print(addonName, ": Received data from", localPlayerEntry.name)
 		self:PopulateDisplayFrame()
+	end
+end
+
+function Dawn:RequestData()
+	if IsInGroup() then
+		local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+		LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
+		print(addonName, ": Requesting data from party members...")
+	else
+		print(addonName, ": You must be in a party to request data.")
 	end
 end
 
