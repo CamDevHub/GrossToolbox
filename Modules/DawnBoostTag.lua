@@ -36,12 +36,12 @@ function Dawn:CreatePlayersFrame()
 	playersFrame:RegisterForDrag("LeftButton")
 	playersFrame:SetScript("OnDragStart", playersFrame.StartMoving)
 	playersFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        if Dawn.keyListFrame then
+		self:StopMovingOrSizing()
+		if Dawn.keyListFrame then
 			Dawn.keyListFrame:ClearAllPoints()
 			Dawn.keyListFrame:SetPoint("LEFT", self, "RIGHT", 10, 0)
-        end
-    end)
+		end
+	end)
 	playersFrame:SetClampedToScreen(true)
 	playersFrame:SetFrameStrata("MEDIUM")
 	playersFrame:Hide()
@@ -103,43 +103,47 @@ function Dawn:CreateKeystonesFrame()
 	if not Dawn.playersFrame then return end
 
 	local keystonesFrame = CreateFrame("Frame", "GrossToolboxKeyListFrame", UIParent, "BasicFrameTemplateWithInset")
-    keystonesFrame:SetSize(350, 400) -- Adjust size as needed
-    keystonesFrame:SetPoint("LEFT", Dawn.playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
-    keystonesFrame:SetMovable(true)
-    keystonesFrame:EnableMouse(true)
-    keystonesFrame:RegisterForDrag("LeftButton")
-    keystonesFrame:SetScript("OnDragStart", keystonesFrame.StartMoving)
-    keystonesFrame:SetScript("OnDragStop", keystonesFrame.StopMovingOrSizing)
-    keystonesFrame:SetClampedToScreen(true)
-    keystonesFrame:SetFrameStrata("MEDIUM")
-    keystonesFrame:Hide()
+	keystonesFrame:SetSize(350, 400)                                -- Adjust size as needed
+	keystonesFrame:SetPoint("LEFT", Dawn.playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
+	keystonesFrame:SetMovable(true)
+	keystonesFrame:EnableMouse(true)
+	keystonesFrame:RegisterForDrag("LeftButton")
+	keystonesFrame:SetScript("OnDragStart", keystonesFrame.StartMoving)
+	keystonesFrame:SetScript("OnDragStop", keystonesFrame.StopMovingOrSizing)
+	keystonesFrame:SetClampedToScreen(true)
+	keystonesFrame:SetFrameStrata("MEDIUM")
+	keystonesFrame:Hide()
 
-    local keystonesTitle = keystonesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    keystonesTitle:SetPoint("TOP", 0, -5)
-    keystonesTitle:SetText("Keystone List")
+	local keystonesTitle = keystonesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	keystonesTitle:SetPoint("TOP", 0, -5)
+	keystonesTitle:SetText("Keystone List")
 
-    local keystonesScrollFrame = CreateFrame("ScrollFrame", "GTKeyScrollFrame", keystonesFrame, "UIPanelScrollFrameTemplate")
-    keystonesScrollFrame:SetPoint("TOPLEFT", 10, -35)
-    keystonesScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
+	local keystonesScrollFrame = CreateFrame("ScrollFrame", "GTKeyScrollFrame", keystonesFrame,
+		"UIPanelScrollFrameTemplate")
+	keystonesScrollFrame:SetPoint("TOPLEFT", 10, -35)
+	keystonesScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
 
-    local keystonesEditBox = CreateFrame("EditBox", "GTKeyEditBox", keystonesScrollFrame)
-    keystonesEditBox:SetMultiLine(true)
-    keystonesEditBox:SetMaxLetters(999999)
-    keystonesEditBox:EnableMouse(true)
-    keystonesEditBox:SetAutoFocus(false)
-    keystonesEditBox:SetFontObject(ChatFontNormal)
-    keystonesEditBox:SetWidth(300) -- Adjust width
-    keystonesEditBox:SetHeight(1000)
-    keystonesEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end) -- Close both frames
-    keystonesEditBox:SetScript("OnTextSet", function(self) self:HighlightText(0,0) self:ClearFocus() end)
+	local keystonesEditBox = CreateFrame("EditBox", "GTKeyEditBox", keystonesScrollFrame)
+	keystonesEditBox:SetMultiLine(true)
+	keystonesEditBox:SetMaxLetters(999999)
+	keystonesEditBox:EnableMouse(true)
+	keystonesEditBox:SetAutoFocus(false)
+	keystonesEditBox:SetFontObject(ChatFontNormal)
+	keystonesEditBox:SetWidth(300)                                                -- Adjust width
+	keystonesEditBox:SetHeight(1000)
+	keystonesEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end) -- Close both frames
+	keystonesEditBox:SetScript("OnTextSet", function(self)
+		self:HighlightText(0, 0)
+		self:ClearFocus()
+	end)
 	keystonesEditBox:SetScript("OnEditFocusGained", function(self)
 		self:ClearFocus()
 	end)
 
-    keystonesScrollFrame:SetScrollChild(keystonesEditBox)
-    keystonesFrame.scrollFrame = keystonesScrollFrame
-    keystonesFrame.editBox = keystonesEditBox
-    Dawn.keyListFrame = keystonesFrame
+	keystonesScrollFrame:SetScrollChild(keystonesEditBox)
+	keystonesFrame.scrollFrame = keystonesScrollFrame
+	keystonesFrame.editBox = keystonesEditBox
+	Dawn.keyListFrame = keystonesFrame
 
 	return keystonesFrame
 end
@@ -155,37 +159,38 @@ function Dawn:GetOrCreateDisplayFrames()
 		end
 	end
 
-    return playersFrame, keystonesFrame
+	return playersFrame, keystonesFrame
 end
 
 function Dawn:PopulateKeyListFrame()
-    local _, frame = self:GetOrCreateDisplayFrames()
-    if not frame or not frame.editBox then
-        if frame and frame.editBox then frame.editBox:SetText("Error: Database not fully initialized.") end
-        return
-    end
+	local _, frame = self:GetOrCreateDisplayFrames()
+	if not frame or not frame.editBox then
+		if frame and frame.editBox then frame.editBox:SetText("Error: Database not fully initialized.") end
+		return
+	end
 
-    local keyDataList = {}
-    for guid, player in pairs(db.global.player) do
-        if player.char then
-            for charFullName, charData in pairs(player.char) do
-                if charData and charData.keystone and charData.keystone.hasKey then
-                    table.insert(keyDataList, {
-                        charName = charFullName,
+	local keyDataList = {}
+	for guid, player in pairs(db.global.player) do
+		if player.char then
+			for charFullName, charData in pairs(player.char) do
+				if charData and charData.keystone and charData.keystone.hasKey then
+					table.insert(keyDataList, {
+						charName = charFullName,
 						classId = charData.classId,
-                        level = charData.keystone.level or 0,
-                        mapID = charData.keystone.mapID,
-                        mapName = charData.keystone.mapID and GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[charData.keystone.mapID] or "Unknown Map"
-                    })
-                end
-            end
-        end
-    end
+						level = charData.keystone.level or 0,
+						mapID = charData.keystone.mapID,
+						mapName = charData.keystone.mapID and
+							GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[charData.keystone.mapID] or "Unknown Map"
+					})
+				end
+			end
+		end
+	end
 
-    table.sort(keyDataList, function(a, b)
+	table.sort(keyDataList, function(a, b)
 		local mapNameA = a.mapName or ""
 		local mapNameB = b.mapName or ""
-	
+
 		if mapNameA ~= mapNameB then
 			return mapNameA < mapNameB
 		else
@@ -193,32 +198,32 @@ function Dawn:PopulateKeyListFrame()
 		end
 	end)
 
-    -- Format the output string
-    local outputString = ""
-    for _, keyInfo in ipairs(keyDataList) do
+	-- Format the output string
+	local outputString = ""
+	for _, keyInfo in ipairs(keyDataList) do
 		if not keyInfo.classId then keyInfo.classId = 5 end
 		local _, classToken = GetClassInfo(keyInfo.classId)
 		local classColorHex = "cffeda55f"
 		if classToken and RAID_CLASS_COLORS[classToken] then
-			classColorHex = "cff"..string.sub(RAID_CLASS_COLORS[classToken].colorStr,3,8)
+			classColorHex = "cff" .. string.sub(RAID_CLASS_COLORS[classToken].colorStr, 3, 8)
 		end
 
-        outputString = outputString .. string.format("|%s%s|r: +%d %s\n",
+		outputString = outputString .. string.format("|%s%s|r: +%d %s\n",
 			classColorHex,
-            keyInfo.charName,
-            keyInfo.level,
-            keyInfo.mapName
-        )
-    end
+			keyInfo.charName,
+			keyInfo.level,
+			keyInfo.mapName
+		)
+	end
 
-    if outputString == "" then
-        outputString = "No keystones found in database."
-    end
+	if outputString == "" then
+		outputString = "No keystones found in database."
+	end
 
-    -- Set the text in the key list frame
-    frame.editBox:SetText(outputString)
-    frame.editBox:SetCursorPosition(0)
-    frame.editBox:ClearFocus()
+	-- Set the text in the key list frame
+	frame.editBox:SetText(outputString)
+	frame.editBox:SetCursorPosition(0)
+	frame.editBox:ClearFocus()
 end
 
 function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
@@ -243,21 +248,26 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 				DAMAGER = ":Damager:"
 			})[data.role] or ":UnknownRole:"
 
-			local specClassStr = string.format("%s %s", data.specName or "No Spec",
-				data.className or "No Class")
+			local specClassStr = string.format("%s %s", data.specName or "No Spec", data.className or "No Class")
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
 			if data.keystone.hasKey then
 				keyStr = keyStr ..
-				string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+					string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
 			else
 				keyStr = keyStr .. "No Key"
 			end
 			local ilvlStr = string.format(":Armor: %d iLvl", data.iLvl or 0)
-
-			local line = string.format("%s %s / %s / %s / %s /:gift: Can trade all", roleIndicatorStr,
-				specClassStr, scoreStr, keyStr, ilvlStr)
-			fullOutputString = fullOutputString .. line .. "\n"
+			local tradeStr = ":gift: Can trade all"
+			local playerOutput = string.format("%s %s / %s / %s / %s / %s",
+				roleIndicatorStr,
+				specClassStr,
+				scoreStr,
+				keyStr,
+				ilvlStr,
+				tradeStr
+			)
+			fullOutputString = fullOutputString .. playerOutput .. "\n"
 		end
 	end
 
@@ -274,7 +284,8 @@ function Dawn:PopulateDisplayFrame()
 		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
 
-		fullOutputString = fullOutputString .. self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false)
+		fullOutputString = fullOutputString ..
+			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false)
 
 		for bnet, player in pairs(players) do
 			local includePlayer = false;
@@ -371,29 +382,29 @@ end
 
 function Dawn:ToggleFrame(forceShow)
 	local playersFrame, keystonesFrame = self:GetOrCreateDisplayFrames() -- Get both frames
-    if not playersFrame or not keystonesFrame then
-        print(addonName, "Error: Could not get display frames.")
-        return
-    end
+	if not playersFrame or not keystonesFrame then
+		print(addonName, "Error: Could not get display frames.")
+		return
+	end
 
-    local shouldShow
-    if forceShow ~= nil then
-        shouldShow = forceShow
-    else
-        shouldShow = not playersFrame:IsShown() -- Toggle based on the first frame's visibility
-    end
+	local shouldShow
+	if forceShow ~= nil then
+		shouldShow = forceShow
+	else
+		shouldShow = not playersFrame:IsShown() -- Toggle based on the first frame's visibility
+	end
 
-    if shouldShow then
-        print(addonName, "Populating frames...")
-        self:PopulateDisplayFrame()  -- Populate the main frame
-        self:PopulateKeyListFrame()  -- Populate the new key frame
-        playersFrame:Show()
+	if shouldShow then
+		print(addonName, "Populating frames...")
+		self:PopulateDisplayFrame() -- Populate the main frame
+		self:PopulateKeyListFrame() -- Populate the new key frame
+		playersFrame:Show()
 		playersFrame.editBox:SetFocus()
 		playersFrame.editBox:SetCursorPosition(0)
 		playersFrame.editBox:HighlightText()
-        keystonesFrame:Show()
-    else
-        playersFrame:Hide()
-        keystonesFrame:Hide()
-    end
+		keystonesFrame:Show()
+	else
+		playersFrame:Hide()
+		keystonesFrame:Hide()
+	end
 end

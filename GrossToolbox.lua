@@ -98,7 +98,7 @@ function addon:OnEnable()
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
                 end
             end,
-        }, self.db.global.minimap) 
+        }, self.db.global.minimap)
     end
 end
 
