@@ -18,7 +18,10 @@ Libs\AceComm-3.0\AceComm-3.0.xml
 Libs\AceSerializer-3.0\AceSerializer-3.0.xml
 
 init.lua
+Modules\Data.lua
+Modules\Utils.lua
 Modules\DawnBoostTag.lua
 Modules\Player.lua
 Modules\Character.lua
+Config.lua
 GrossToolbox.lua

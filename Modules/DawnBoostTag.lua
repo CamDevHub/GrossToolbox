@@ -79,44 +79,15 @@ function Dawn:GetOrCreateDisplayFrame()
 	return frame
 end
 
-function Dawn:fetchPartyMembersFullName()
-	local partyMemberFullNames = {}
-    if IsInGroup() then
-        for i = 1, GetNumGroupMembers() do
-            local unit = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo()) and ("raid"..i) or ("party"..i) -- Determine unit token based on group type
-            if UnitExists(unit) then
-                local name, realm = UnitName(unit)
-                if name then
-                    if realm and realm ~= "" then
-                       partyMemberFullNames[realm .. "-" .. name] = true
-                    else
-                       local localRealm = GetRealmName()
-                       partyMemberFullNames[realm .. "-" .. name] = true
-                    end
-                end
-            end
-        end
-    end
-	
-	local localName, localRealm = UnitName("player")
-    if localName and localRealm and localRealm ~= "" then
-         partyMemberFullNames[localRealm.."-"..localName] = true
-    elseif localName then
-         partyMemberFullNames[GetRealmName().."-"..localName] = true
-    end
-	
-	return partyMemberFullNames
-end
-
--- Populate frame using AceDB structure (db.global.char)
 function Dawn:PopulateDisplayFrame()
     local frame = self:GetOrCreateDisplayFrame()
-    if not frame or not frame.editBox or not db or not db.global or not db.global.player or not db.global.config.discordTag or db.global.config.discordTag == "" then
+    if not frame or not frame.editBox then return end
+	if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.editBox:SetText("Discord handle not set bro !")
 	else
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
-		local partyMembers = self:fetchPartyMembersFullName()
+		local partyMembers = GT.Modules.Utils:fetchPartyMembersFullName()
 		for bnet, player in pairs(players) do
 		
 			local includePlayer = false;
