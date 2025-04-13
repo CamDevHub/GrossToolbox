@@ -52,6 +52,20 @@ function Dawn:CreatePlayersFrame()
 	playersFrame:SetFrameStrata("MEDIUM")
 	playersFrame:Hide()
 
+	playersFrame:SetScript("OnKeyDown", function(self, key)
+		if key == "ESCAPE" then
+			Dawn:ToggleFrame()
+			self:SetPropagateKeyboardInput(false)
+		else
+			self:SetPropagateKeyboardInput(true)
+		end
+	end)
+	playersFrame:SetScript("OnKeyUp", function(self, key)
+		if key ~= "ESCAPE" then
+			self:SetPropagateKeyboardInput(true)
+		end
+	end)
+
 	local playersTitle = playersFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	playersTitle:SetPoint("TOP", 0, -5)
 	playersTitle:SetText("GrossToolbox Dawn Tag Info")
