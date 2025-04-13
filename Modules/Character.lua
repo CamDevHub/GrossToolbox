@@ -33,6 +33,7 @@ function Character:FetchCurrentCharacterStats()
     end
     local className, _, classId = UnitClass("player")
     charData.className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
+    charData.classId = classId
 
     -- Update Rating
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")

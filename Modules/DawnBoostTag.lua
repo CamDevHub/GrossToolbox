@@ -5,18 +5,13 @@ GT.Modules.Dawn = Dawn
 
 local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 
--- Local reference to the AceDB database object (set by Init)
 local db
-
-
--- Initialize the module, receive the DB object from Core
 function Dawn:Init(database)
-	db = database -- Store the passed AceDB object reference
+	db = database
 	if not db then
 		print(addonName, "Error: Dawn received nil database!"); return
 	end
 	print(addonName, "- Dawn Module Initialized with DB.")
-	-- Create the frame when the module initializes
 	self:GetOrCreateDisplayFrames()
 end
 
@@ -42,7 +37,6 @@ function Dawn:CreatePlayersFrame()
 	playersFrame:SetScript("OnDragStart", playersFrame.StartMoving)
 	playersFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        -- Optional: Update position of keyListFrame relative to this frame if needed
         if Dawn.keyListFrame then
 			Dawn.keyListFrame:ClearAllPoints()
 			Dawn.keyListFrame:SetPoint("LEFT", self, "RIGHT", 10, 0)
@@ -83,14 +77,7 @@ function Dawn:CreatePlayersFrame()
 	playersEditBox:SetWidth(700)
 	playersEditBox:SetHeight(1000)
 	playersEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end)
-	playersEditBox:SetScript("OnTextSet", function(self)
-		self:HighlightText(0, 0)
-		self:ClearFocus()
-	end)
-	playersEditBox:SetScript("OnEditFocusGained", function(self)
-		self:ClearFocus()
-	end)
-
+	playersEditBox:HighlightText()
 	playersScrollFrame:SetScrollChild(playersEditBox)
 	playersFrame.scrollFrame = playersScrollFrame
 	playersFrame.editBox = playersEditBox
@@ -185,6 +172,7 @@ function Dawn:PopulateKeyListFrame()
                 if charData and charData.keystone and charData.keystone.hasKey then
                     table.insert(keyDataList, {
                         charName = charFullName,
+						classId = charData.classId,
                         level = charData.keystone.level or 0,
                         mapID = charData.keystone.mapID,
                         mapName = charData.keystone.mapID and GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[charData.keystone.mapID] or "Unknown Map"
@@ -208,7 +196,14 @@ function Dawn:PopulateKeyListFrame()
     -- Format the output string
     local outputString = ""
     for _, keyInfo in ipairs(keyDataList) do
-        outputString = outputString .. string.format("|cffeda55f%s|r: +%d %s\n",
+		local _, classToken = GetClassInfo(keyInfo.classId)
+		local classColorHex = "cffeda55f"
+		if classToken and RAID_CLASS_COLORS[classToken] then
+			classColorHex = "cff"..string.sub(RAID_CLASS_COLORS[classToken].colorStr,3,8)
+		end
+
+        outputString = outputString .. string.format("|%s%s|r: +%d %s\n",
+			classColorHex,
             keyInfo.charName,
             keyInfo.level,
             keyInfo.mapName
@@ -225,6 +220,49 @@ function Dawn:PopulateKeyListFrame()
     frame.editBox:ClearFocus()
 end
 
+function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
+	local fullOutputString = ""
+	if addDiscordTag and player.discordTag and player.discordTag ~= "" then
+		fullOutputString = fullOutputString .. string.format("|cffffcc00%s|r\n", player.discordTag)
+	end
+
+	local chars = player.char or {}
+	local sortedChars = {}
+	for charName, _ in pairs(chars) do
+		table.insert(sortedChars, charName)
+	end
+	table.sort(sortedChars)
+
+	for _, charName in ipairs(sortedChars) do
+		local data = chars[charName]
+		if data and data.keystone and data.keystone.hasKey then
+			local roleIndicatorStr = ({
+				HEALER = ":healer:",
+				TANK = ":Tank:",
+				DAMAGER = ":Damager:"
+			})[data.role] or ":UnknownRole:"
+
+			local specClassStr = string.format("%s %s", data.specName or "No Spec",
+				data.className or "No Class")
+			local scoreStr = " :Raiderio: " .. (data.rating or 0)
+			local keyStr = " :Keystone: "
+			if data.keystone.hasKey then
+				keyStr = keyStr ..
+				string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+			else
+				keyStr = keyStr .. "No Key"
+			end
+			local ilvlStr = string.format(":Armor: %d iLvl", data.iLvl or 0)
+
+			local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr,
+				specClassStr, scoreStr, keyStr, ilvlStr)
+			fullOutputString = fullOutputString .. line .. "\n"
+		end
+	end
+
+	return fullOutputString
+end
+
 function Dawn:PopulateDisplayFrame()
 	local frame = self:GetOrCreateDisplayFrames()
 	if not frame or not frame.editBox then return end
@@ -234,63 +272,24 @@ function Dawn:PopulateDisplayFrame()
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:fetchPartyMembersFullName()
+
+		fullOutputString = fullOutputString .. self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false)
+
 		for bnet, player in pairs(players) do
 			local includePlayer = false;
 			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
 				if player.char then
 					for charFullName, _ in pairs(player.char) do
-						print(charFullName)
 						if partyMembers[charFullName] then
-							print(charFullName)
 							includePlayer = true
 							break
 						end
 					end
 				end
-			elseif bnet == GT.Modules.Player:GetBNetTag() then
-				includePlayer = true
 			end
-
-			local chars = player.char or {}
-			local sortedChars = {}
-			for charName, _ in pairs(chars) do
-				table.insert(sortedChars, charName)
-			end
-			table.sort(sortedChars)
 
 			if includePlayer then
-				if bnet ~= GT.Modules.Player:GetBNetTag() then
-					fullOutputString = fullOutputString .. string.format("\n|cffffcc00== %s ==|r\n", player.discordTag)
-				else
-					fullOutputString = fullOutputString .. string.format("\n")
-				end
-
-				for _, charName in ipairs(sortedChars) do
-					local data = chars[charName]
-					if data and data.keystone and data.keystone.hasKey then
-						local roleIndicatorStr = ({
-							HEALER = ":healer:",
-							TANK = ":Tank:",
-							DAMAGER = ":Damager:"
-						})[data.role] or ":UnknownRole:"
-
-						local specClassStr = string.format("%s %s", data.specName or "No Spec",
-							data.className or "No Class")
-						local scoreStr = " :Raiderio: " .. (data.rating or 0)
-						local keyStr = " :Keystone: "
-						if data.keystone.hasKey then
-							keyStr = keyStr ..
-							string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
-						else
-							keyStr = keyStr .. "No Key"
-						end
-						local ilvlStr = string.format(" :Armor: %d iLvl", data.iLvl or 0)
-
-						local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr,
-							specClassStr, scoreStr, keyStr, ilvlStr)
-						fullOutputString = fullOutputString .. line .. "\n"
-					end
-				end
+				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true)
 			end
 		end
 
@@ -368,7 +367,6 @@ function Dawn:RequestData()
 	end
 end
 
--- Toggle frame visibility (no AceDB changes needed)
 function Dawn:ToggleFrame(forceShow)
 	local playersFrame, keystonesFrame = self:GetOrCreateDisplayFrames() -- Get both frames
     if not playersFrame or not keystonesFrame then
@@ -388,6 +386,9 @@ function Dawn:ToggleFrame(forceShow)
         self:PopulateDisplayFrame()  -- Populate the main frame
         self:PopulateKeyListFrame()  -- Populate the new key frame
         playersFrame:Show()
+		playersFrame.editBox:SetFocus()
+		playersFrame.editBox:SetCursorPosition(0)
+		playersFrame.editBox:HighlightText()
         keystonesFrame:Show()
     else
         playersFrame:Hide()
