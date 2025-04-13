@@ -4,8 +4,8 @@ local Data = {}
 GT.Modules.Data = Data
 
 GT.headers = {
-	player = "CHAR_DATA:",
-	request = "REQ_DATA"
+    player = "CHAR_DATA:",
+    request = "REQ_DATA"
 }
 GT.COMM_PREFIX = "GTComm"
 
@@ -84,12 +84,12 @@ Data.SPEC_ID_TO_ENGLISH_NAME = {
 }
 
 Data.DUNGEON_ID_TO_ENGLISH_NAME = {
-	[2651] = "DFC",
-	[2661] = "Brew",
-	[2773] = "Flood",
-	[2649] = "PSF",
-	[2648] = "Rook",
-	[1594] = "ML",
-	[2293] = "TOP",
-	[2097] = "WS"
+    [2651] = "DFC",
+    [2661] = "Brew",
+    [2773] = "Flood",
+    [2649] = "PSF",
+    [2648] = "Rook",
+    [1594] = "ML",
+    [2293] = "TOP",
+    [2097] = "WS"
 }

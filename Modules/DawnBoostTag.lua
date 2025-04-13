@@ -1,4 +1,3 @@
-
 local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 local Dawn = {}
@@ -12,25 +11,26 @@ local db
 
 -- Initialize the module, receive the DB object from Core
 function Dawn:Init(database)
-    db = database -- Store the passed AceDB object reference
-    if not db then print(addonName, "Error: Dawn received nil database!"); return end
-    print(addonName, "- Dawn Module Initialized with DB.")
-    -- Create the frame when the module initializes
-    self:GetOrCreateDisplayFrame()
+	db = database -- Store the passed AceDB object reference
+	if not db then
+		print(addonName, "Error: Dawn received nil database!"); return
+	end
+	print(addonName, "- Dawn Module Initialized with DB.")
+	-- Create the frame when the module initializes
+	self:GetOrCreateDisplayFrame()
 end
 
 -- Update data using AceDB structure (db.global.char)
 function Dawn:UpdateData()
-    local bnet = GT.Modules.Player:GetBNetTag()
+	local bnet = GT.Modules.Player:GetBNetTag()
 	local fullName = GT.Modules.Character:GetFullName()
-	
+
 	GT.Modules.Player:GetOrCreatePlayerData(bnet)
 	local charTable = GT.Modules.Character:FetchCurrentCharacterStats()
 	GT.Modules.Character:SetCharacterData(bnet, fullName, charTable)
-	
+
 	self:PopulateDisplayFrame()
 end
-
 
 -- Frame creation logic (no AceDB changes needed inside here)
 function Dawn:GetOrCreateDisplayFrame()
@@ -38,7 +38,7 @@ function Dawn:GetOrCreateDisplayFrame()
 	if Dawn.displayFrame then
 		return Dawn.displayFrame
 	end
-	
+
 	local frame = CreateFrame("Frame", "GrossToolboxDawnFrame", UIParent, "BasicFrameTemplateWithInset")
 	frame:SetSize(850, 400)
 	frame:SetPoint("CENTER")
@@ -68,7 +68,10 @@ function Dawn:GetOrCreateDisplayFrame()
 	editBox:SetWidth(800)
 	editBox:SetHeight(1000)
 	editBox:SetScript("OnEscapePressed", function() frame:Hide() end)
-	editBox:SetScript("OnTextSet", function(self) self:HighlightText(0,0) self:ClearFocus() end)
+	editBox:SetScript("OnTextSet", function(self)
+		self:HighlightText(0, 0)
+		self:ClearFocus()
+	end)
 
 	scrollFrame:SetScrollChild(editBox)
 	frame.scrollFrame = scrollFrame
@@ -80,8 +83,8 @@ function Dawn:GetOrCreateDisplayFrame()
 end
 
 function Dawn:PopulateDisplayFrame()
-    local frame = self:GetOrCreateDisplayFrame()
-    if not frame or not frame.editBox then return end
+	local frame = self:GetOrCreateDisplayFrame()
+	if not frame or not frame.editBox then return end
 	if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.editBox:SetText("Discord handle not set bro !")
 	else
@@ -89,7 +92,6 @@ function Dawn:PopulateDisplayFrame()
 		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:fetchPartyMembersFullName()
 		for bnet, player in pairs(players) do
-		
 			local includePlayer = false;
 			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
 				if player.char then
@@ -113,13 +115,13 @@ function Dawn:PopulateDisplayFrame()
 			end
 			table.sort(sortedChars)
 
-			if includePlayer then			
+			if includePlayer then
 				if bnet ~= GT.Modules.Player:GetBNetTag() then
 					fullOutputString = fullOutputString .. string.format("\n|cffffcc00== %s ==|r\n", player.discordTag)
-				else 
+				else
 					fullOutputString = fullOutputString .. string.format("\n\n")
 				end
-				
+
 				for _, charName in ipairs(sortedChars) do
 					local data = chars[charName]
 					if data and data.keystone and data.keystone.hasKey then
@@ -129,62 +131,64 @@ function Dawn:PopulateDisplayFrame()
 							DAMAGER = ":Damager:"
 						})[data.role] or ":UnknownRole:"
 
-						local specClassStr = string.format("%s %s", data.specName or "No Spec", data.className or "No Class")
+						local specClassStr = string.format("%s %s", data.specName or "No Spec",
+							data.className or "No Class")
 						local scoreStr = " :Raiderio: " .. (data.rating or 0)
 						local keyStr = " :Keystone: "
 						if data.keystone.hasKey then
-							keyStr = keyStr .. string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+							keyStr = keyStr ..
+							string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
 						else
 							keyStr = keyStr .. "No Key"
 						end
 						local ilvlStr = string.format(" :Armor: %d iLvl", data.iLvl or 0)
 
-						local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr, specClassStr, scoreStr, keyStr, ilvlStr)
+						local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr,
+							specClassStr, scoreStr, keyStr, ilvlStr)
 						fullOutputString = fullOutputString .. line .. "\n"
 					end
 				end
 			end
 		end
-		
+
 		frame.editBox:SetText(fullOutputString)
-    end
-    frame.editBox:SetCursorPosition(0)
-    frame.editBox:ClearFocus()
+	end
+	frame.editBox:SetCursorPosition(0)
+	frame.editBox:ClearFocus()
 end
 
 function Dawn:SendCharacterData()
-    local bnet = GT.Modules.Player:GetBNetTag()
-    local playerChars = GT.Modules.Character:GetAllCharactersForPlayer(bnet)
-    if not playerChars or not db.global.config.discordTag then return end
+	local bnet = GT.Modules.Player:GetBNetTag()
+	local playerChars = GT.Modules.Character:GetAllCharactersForPlayer(bnet)
+	if not playerChars or not db.global.config.discordTag then return end
 
-    local payload = {
-        bnet = bnet,
+	local payload = {
+		bnet = bnet,
 		discordTag = db.global.config.discordTag,
-        char = playerChars,
-    }
+		char = playerChars,
+	}
 
-    local AceSerializer = LibStub("AceSerializer-3.0")
-    local serialized = AceSerializer:Serialize(payload)
+	local AceSerializer = LibStub("AceSerializer-3.0")
+	local serialized = AceSerializer:Serialize(payload)
 	local messageToSend = GT.headers.player .. serialized
-    if IsInGroup() then
-        local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
-        LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, messageToSend, channel)
-    end
+	if IsInGroup() then
+		local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+		LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, messageToSend, channel)
+	end
 end
 
 function Dawn:OnCommReceived(_, message, _, sender)
 	if type(message) ~= "string" then return end
-	
+
 	if message == GT.headers.request then
 		if not UnitIsUnit("player", sender) then -- Don't respond to your own request if leader sends too
-           print(addonName, ": Received data request from", sender, ". Sending data.")
-           self:SendCharacterData()
-        end
+			print(addonName, ": Received data request from", sender, ". Sending data.")
+			self:SendCharacterData()
+		end
 	elseif string.sub(message, 1, 10) == GT.headers.player then
-	
 		local AceSerializer = LibStub("AceSerializer-3.0")
 		local success, data = AceSerializer:Deserialize(message)
-		
+
 		if not success or type(data) ~= "table" or not data.bnet or not data.char then
 			print(addonName, ": Invalid or malformed data from", sender)
 			return
@@ -192,11 +196,11 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		local bnet = data.bnet
 		local incomingChars = data.char
-		
+
 		print("process character from " .. bnet)
 		-- Ensure existing player entry exists
 		local localPlayerEntry = GT.Modules.Player:GetOrCreatePlayerData(bnet)
-		
+
 		localPlayerEntry.discordTag = data.discordTag
 		-- Merge character data
 		for charName, charData in pairs(incomingChars) do
@@ -218,7 +222,7 @@ function Dawn:ToggleFrame(forceShow)
 	if not frame then
 		return
 	end
-	
+
 	if forceShow then
 		if not frame:IsShown() then
 			self:PopulateDisplayFrame()

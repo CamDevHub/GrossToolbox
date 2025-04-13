@@ -1,7 +1,9 @@
 -- Core.lua
 
 local addonName, GT = ... -- GT is global from init.lua
-if not GT then print("Error: GT table not found!"); return end
+if not GT then
+    print("Error: GT table not found!"); return
+end
 
 -- Get Ace libraries using LibStub
 local AceAddon = LibStub:GetLibrary("AceAddon-3.0")
@@ -18,8 +20,8 @@ GT.addon = addon
 -- Define the default structure for your database
 local defaults = {
     global = {
-		config = {},
-		player = {}
+        config = {},
+        player = {}
     }
 }
 
@@ -31,19 +33,19 @@ function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
     -- Initialize modules AFTER the DB is ready
-	if GT.Modules and GT.Modules.Config and GT.Modules.Config.Init then
+    if GT.Modules and GT.Modules.Config and GT.Modules.Config.Init then
         GT.Modules.Config:Init(self.db)
     end
-	
+
     if GT.Modules and GT.Modules.Dawn and GT.Modules.Dawn.Init then
         GT.Modules.Dawn:Init(self.db)
     end
 
-	if GT.Modules and GT.Modules.Player and GT.Modules.Player.Init then
+    if GT.Modules and GT.Modules.Player and GT.Modules.Player.Init then
         GT.Modules.Player:Init(self.db)
     end
-	
-	if GT.Modules and GT.Modules.Character and GT.Modules.Character.Init then
+
+    if GT.Modules and GT.Modules.Character and GT.Modules.Character.Init then
         GT.Modules.Character:Init(self.db)
     end
 
@@ -52,55 +54,56 @@ function addon:OnInitialize()
 
     -- Register events using AceEvent (if using mixin)
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+    self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
 end
 
 -- Called when PLAYER_ENTERING_WORLD  fires
-function addon:PLAYER_ENTERING_WORLD (event, status)
-	local Dawn = GT.Modules and GT.Modules.Dawn
-	if Dawn then
-		-- No timer needed usually, data should be available
-		C_Timer.After(2, function()
-			Dawn:UpdateData()
-		end)
-	end
+function addon:PLAYER_ENTERING_WORLD(event, status)
+    local Dawn = GT.Modules and GT.Modules.Dawn
+    if Dawn then
+        -- No timer needed usually, data should be available
+        C_Timer.After(2, function()
+            Dawn:UpdateData()
+        end)
+    end
 end
 
 -- Called when CHALLENGE_MODE_COMPLETED  fires
-function addon:CHALLENGE_MODE_COMPLETED (event, status)
-	local Dawn = GT.Modules and GT.Modules.Dawn
-	if Dawn then
-		Dawn:UpdateData()
-	end
+function addon:CHALLENGE_MODE_COMPLETED(event, status)
+    local Dawn = GT.Modules and GT.Modules.Dawn
+    if Dawn then
+        Dawn:UpdateData()
+    end
 end
-
 
 -- Slash command handler method
 function addon:SlashCommandHandler(input)
     local command = string.lower(input or "")
     local Dawn = GT.Modules and GT.Modules.Dawn
 
-    if not Dawn then print(addonName .. ": Dawn module not loaded!"); return end
+    if not Dawn then
+        print(addonName .. ": Dawn module not loaded!"); return
+    end
 
     if command == "refresh" then
-         print(addonName..": Manually refreshing character info...")
-         Dawn:UpdateData()
-		 Dawn:SendCharacterData()
-         Dawn:ToggleFrame(true) -- Force show after refresh
+        print(addonName .. ": Manually refreshing character info...")
+        Dawn:UpdateData()
+        Dawn:SendCharacterData()
+        Dawn:ToggleFrame(true)                     -- Force show after refresh
     elseif command == "" or command == "dawn" then -- Handle empty command and "dawn"
-         Dawn:ToggleFrame() -- Toggle visibility
-	elseif command == "config" then
+        Dawn:ToggleFrame()                         -- Toggle visibility
+    elseif command == "config" then
         LibStub("AceConfigDialog-3.0"):Open(addonName)
-	elseif command == "request" then
-		if IsInGroup() then
-			local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
-			LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, "REQ_DATA", channel)
-			self:Print("Requesting data from party members...")
-		else
-			self:Print("You must be in a party to request data")
-		end
+    elseif command == "request" then
+        if IsInGroup() then
+            local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+            LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, "REQ_DATA", channel)
+            self:Print("Requesting data from party members...")
+        else
+            self:Print("You must be in a party to request data")
+        end
     else
-         self:Print("Unknown command '"..command.."'. Use '/gt' to toggle display, or '/gt refresh' to update.") -- Use AceConsole Print
+        self:Print("Unknown command '" .. command .. "'. Use '/gt' to toggle display, or '/gt refresh' to update.") -- Use AceConsole Print
     end
 end
 

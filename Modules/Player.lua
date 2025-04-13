@@ -6,9 +6,8 @@ GT.Modules.Player = Player
 
 local db
 function Player:Init(database)
-    db = database
-    if not db then return end
-	
+	db = database
+	if not db then return end
 end
 
 function Player:GetBNetTag()
@@ -27,9 +26,9 @@ end
 
 function Player:GetOrCreatePlayerData(bnet)
 	if not db.global.player[bnet] then
-		db.global.player[bnet] = {discordTag = "", char = {}}
+		db.global.player[bnet] = { discordTag = "", char = {} }
 	end
-	
+
 	return db.global.player[bnet]
 end
 

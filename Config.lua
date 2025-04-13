@@ -51,7 +51,8 @@ function Config:SetupOptions()
             resetDesc = {
                 order = 91,
                 type = "description",
-                name = "Warning: Resetting the database will clear ALL stored player and character data for GrossToolbox.",
+                name =
+                "Warning: Resetting the database will clear ALL stored player and character data for GrossToolbox.",
                 fontSize = "medium",
             },
             -- Reset Button
@@ -64,8 +65,8 @@ function Config:SetupOptions()
                     db:ResetDB(true)
                     local CharInfo = GT.Modules and GT.Modules.CharacterInfo
                     if CharInfo and CharInfo.displayFrame and CharInfo.displayFrame:IsShown() then
-                         CharInfo:PopulateDisplayFrame()
-                     end
+                        CharInfo:PopulateDisplayFrame()
+                    end
                 end,
                 confirm = true,
                 confirmText = "Are you absolutely sure you want to wipe ALL GrossToolbox data? This cannot be undone!"
