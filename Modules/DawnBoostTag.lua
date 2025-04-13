@@ -139,7 +139,7 @@ function Dawn:PopulateDisplayFrame()
 						end
 						local ilvlStr = string.format(" :Armor: %d iLvl", data.iLvl or 0)
 
-						local line = string.format("%s %s / %s / %s / %s / Can trade all :gift:", roleIndicatorStr, specClassStr, scoreStr, keyStr, ilvlStr)
+						local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr, specClassStr, scoreStr, keyStr, ilvlStr)
 						fullOutputString = fullOutputString .. line .. "\n"
 					end
 				end
