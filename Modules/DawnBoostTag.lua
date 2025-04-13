@@ -79,6 +79,35 @@ function Dawn:GetOrCreateDisplayFrame()
 	return frame
 end
 
+function Dawn:fetchPartyMembersFullName()
+	local partyMemberFullNames = {}
+    if IsInGroup() then
+        for i = 1, GetNumGroupMembers() do
+            local unit = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo()) and ("raid"..i) or ("party"..i) -- Determine unit token based on group type
+            if UnitExists(unit) then
+                local name, realm = UnitName(unit)
+                if name then
+                    if realm and realm ~= "" then
+                       partyMemberFullNames[realm .. "-" .. name] = true
+                    else
+                       local localRealm = GetRealmName()
+                       partyMemberFullNames[realm .. "-" .. name] = true
+                    end
+                end
+            end
+        end
+    end
+	
+	local localName, localRealm = UnitName("player")
+    if localName and localRealm and localRealm ~= "" then
+         partyMemberFullNames[localRealm.."-"..localName] = true
+    elseif localName then
+         partyMemberFullNames[GetRealmName().."-"..localName] = true
+    end
+	
+	return partyMemberFullNames
+end
+
 -- Populate frame using AceDB structure (db.global.char)
 function Dawn:PopulateDisplayFrame()
     local frame = self:GetOrCreateDisplayFrame()
@@ -87,39 +116,61 @@ function Dawn:PopulateDisplayFrame()
 	else
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
+		local partyMembers = self:fetchPartyMembersFullName()
 		for bnet, player in pairs(players) do
-			if bnet ~= GT.Modules.Player:GetBNetTag() then
-				fullOutputString = fullOutputString .. string.format("\n|cffffcc00== %s ==|r\n", player.discordTag)
-			else 
-				fullOutputString = fullOutputString .. string.format("\n\n")
+		
+			local includePlayer = false;
+			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
+				if player.char then
+					for charFullName, _ in pairs(player.char) do
+						print(charFullName)
+						if partyMembers[charFullName] then
+							print(charFullName)
+							includePlayer = true
+							break
+						end
+					end
+				end
+			elseif bnet == GT.Modules.Player:GetBNetTag() then
+				includePlayer = true
 			end
 
 			local chars = player.char or {}
 			local sortedChars = {}
-			for charName, _ in pairs(chars) do table.insert(sortedChars, charName) end
+			for charName, _ in pairs(chars) do
+				table.insert(sortedChars, charName)
+			end
 			table.sort(sortedChars)
 
-			for _, charName in ipairs(sortedChars) do
-				local data = chars[charName]
-				if data and data.keystone and data.keystone.hasKey then
-					local roleIndicatorStr = ({
-						HEALER = ":healer:",
-						TANK = ":Tank:",
-						DAMAGER = ":Damager:"
-					})[data.role] or ":UnknownRole:"
+			if includePlayer then			
+				if bnet ~= GT.Modules.Player:GetBNetTag() then
+					fullOutputString = fullOutputString .. string.format("\n|cffffcc00== %s ==|r\n", player.discordTag)
+				else 
+					fullOutputString = fullOutputString .. string.format("\n\n")
+				end
+				
+				for _, charName in ipairs(sortedChars) do
+					local data = chars[charName]
+					if data and data.keystone and data.keystone.hasKey then
+						local roleIndicatorStr = ({
+							HEALER = ":healer:",
+							TANK = ":Tank:",
+							DAMAGER = ":Damager:"
+						})[data.role] or ":UnknownRole:"
 
-					local specClassStr = string.format("%s %s", data.specName or "No Spec", data.className or "No Class")
-					local scoreStr = " :Raiderio: " .. (data.rating or 0)
-					local keyStr = " :Keystone: "
-					if data.keystone.hasKey then
-						keyStr = keyStr .. string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
-					else
-						keyStr = keyStr .. "No Key"
+						local specClassStr = string.format("%s %s", data.specName or "No Spec", data.className or "No Class")
+						local scoreStr = " :Raiderio: " .. (data.rating or 0)
+						local keyStr = " :Keystone: "
+						if data.keystone.hasKey then
+							keyStr = keyStr .. string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+						else
+							keyStr = keyStr .. "No Key"
+						end
+						local ilvlStr = string.format(" :Armor: %d iLvl", data.iLvl or 0)
+
+						local line = string.format("%s %s / %s / %s / %s / Can trade all :gift:", roleIndicatorStr, specClassStr, scoreStr, keyStr, ilvlStr)
+						fullOutputString = fullOutputString .. line .. "\n"
 					end
-					local ilvlStr = string.format(" :Armor: %d iLvl", data.iLvl or 0)
-
-					local line = string.format("%s %s / %s / %s / %s / Can trade all :gift:", roleIndicatorStr, specClassStr, scoreStr, keyStr, ilvlStr)
-					fullOutputString = fullOutputString .. line .. "\n"
 				end
 			end
 		end
