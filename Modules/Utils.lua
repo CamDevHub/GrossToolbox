@@ -3,7 +3,7 @@ local addonName = GT.addonName or "GrossToolbox"
 local Utils = {}
 GT.Modules.Utils = Utils
 
-function Utils:fetchPartyMembersFullName()
+function Utils:FetchPartyMembersFullName()
     local partyMemberFullNames = {}
     if IsInGroup() then
         for i = 1, GetNumGroupMembers() do

@@ -196,6 +196,7 @@ function Dawn:PopulateKeyListFrame()
     -- Format the output string
     local outputString = ""
     for _, keyInfo in ipairs(keyDataList) do
+		if not keyInfo.classId then keyInfo.classId = 5 end
 		local _, classToken = GetClassInfo(keyInfo.classId)
 		local classColorHex = "cffeda55f"
 		if classToken and RAID_CLASS_COLORS[classToken] then
@@ -244,8 +245,8 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 
 			local specClassStr = string.format("%s %s", data.specName or "No Spec",
 				data.className or "No Class")
-			local scoreStr = " :Raiderio: " .. (data.rating or 0)
-			local keyStr = " :Keystone: "
+			local scoreStr = ":Raiderio: " .. (data.rating or 0)
+			local keyStr = ":Keystone: "
 			if data.keystone.hasKey then
 				keyStr = keyStr ..
 				string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
@@ -254,7 +255,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 			end
 			local ilvlStr = string.format(":Armor: %d iLvl", data.iLvl or 0)
 
-			local line = string.format("%s %s / %s / %s / %s / :gift: Can trade all", roleIndicatorStr,
+			local line = string.format("%s %s / %s / %s / %s /:gift: Can trade all", roleIndicatorStr,
 				specClassStr, scoreStr, keyStr, ilvlStr)
 			fullOutputString = fullOutputString .. line .. "\n"
 		end
@@ -271,7 +272,7 @@ function Dawn:PopulateDisplayFrame()
 	else
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
-		local partyMembers = GT.Modules.Utils:fetchPartyMembersFullName()
+		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
 
 		fullOutputString = fullOutputString .. self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false)
 
@@ -354,6 +355,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		print(addonName, ": Received data from", localPlayerEntry.name)
 		self:PopulateDisplayFrame()
+		self:PopulateKeyListFrame()
 	end
 end
 
