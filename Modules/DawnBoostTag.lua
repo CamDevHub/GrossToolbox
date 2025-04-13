@@ -17,7 +17,7 @@ function Dawn:Init(database)
 	end
 	print(addonName, "- Dawn Module Initialized with DB.")
 	-- Create the frame when the module initializes
-	self:GetOrCreateDisplayFrame()
+	self:GetOrCreateDisplayFrames()
 end
 
 -- Update data using AceDB structure (db.global.char)
@@ -32,58 +32,174 @@ function Dawn:UpdateData()
 	self:PopulateDisplayFrame()
 end
 
--- Frame creation logic (no AceDB changes needed inside here)
-function Dawn:GetOrCreateDisplayFrame()
-	-- ... (Frame creation code remains the same as before) ...
-	if Dawn.displayFrame then
-		return Dawn.displayFrame
-	end
+function Dawn:CreatePlayersFrame()
+	local playersFrame = CreateFrame("Frame", "GrossToolboxDawnFrame", UIParent, "BasicFrameTemplateWithInset")
+	playersFrame:SetSize(750, 400)
+	playersFrame:SetPoint("CENTER")
+	playersFrame:SetMovable(true)
+	playersFrame:EnableMouse(true)
+	playersFrame:RegisterForDrag("LeftButton")
+	playersFrame:SetScript("OnDragStart", playersFrame.StartMoving)
+	playersFrame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        -- Optional: Update position of keyListFrame relative to this frame if needed
+        if Dawn.keyListFrame then
+			Dawn.keyListFrame:ClearAllPoints()
+			Dawn.keyListFrame:SetPoint("LEFT", self, "RIGHT", 10, 0)
+        end
+    end)
+	playersFrame:SetClampedToScreen(true)
+	playersFrame:SetFrameStrata("MEDIUM")
+	playersFrame:Hide()
 
-	local frame = CreateFrame("Frame", "GrossToolboxDawnFrame", UIParent, "BasicFrameTemplateWithInset")
-	frame:SetSize(750, 400)
-	frame:SetPoint("CENTER")
-	frame:SetMovable(true)
-	frame:EnableMouse(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-	frame:SetClampedToScreen(true)
-	frame:SetFrameStrata("MEDIUM")
-	frame:Hide()
+	local playersTitle = playersFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	playersTitle:SetPoint("TOP", 0, -5)
+	playersTitle:SetText("GrossToolbox Dawn Tag Info")
 
-	local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOP", 0, -5)
-	title:SetText("GrossToolbox Dawn Tag Info")
+	local playersScrollFrame = CreateFrame("ScrollFrame", nil, playersFrame, "UIPanelScrollFrameTemplate")
+	playersScrollFrame:SetPoint("TOPLEFT", 10, -35)
+	playersScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
 
-	local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-	scrollFrame:SetPoint("TOPLEFT", 10, -35)
-	scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
-
-	local editBox = CreateFrame("EditBox", nil, scrollFrame)
-	editBox:SetMultiLine(true)
-	editBox:SetMaxLetters(999999)
-	editBox:EnableMouse(true)
-	editBox:SetAutoFocus(false)
-	editBox:SetFontObject(ChatFontNormal)
-	editBox:SetWidth(700)
-	editBox:SetHeight(1000)
-	editBox:SetScript("OnEscapePressed", function() frame:Hide() end)
-	editBox:SetScript("OnTextSet", function(self)
+	local playersEditBox = CreateFrame("EditBox", nil, playersScrollFrame)
+	playersEditBox:SetMultiLine(true)
+	playersEditBox:SetMaxLetters(999999)
+	playersEditBox:EnableMouse(true)
+	playersEditBox:SetAutoFocus(false)
+	playersEditBox:SetFontObject(ChatFontNormal)
+	playersEditBox:SetWidth(700)
+	playersEditBox:SetHeight(1000)
+	playersEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end)
+	playersEditBox:SetScript("OnTextSet", function(self)
 		self:HighlightText(0, 0)
 		self:ClearFocus()
 	end)
+	playersEditBox:SetScript("OnEditFocusGained", function(self)
+		self:ClearFocus()
+	end)
 
-	scrollFrame:SetScrollChild(editBox)
-	frame.scrollFrame = scrollFrame
-	frame.editBox = editBox
-	Dawn.displayFrame = frame
+	playersScrollFrame:SetScrollChild(playersEditBox)
+	playersFrame.scrollFrame = playersScrollFrame
+	playersFrame.editBox = playersEditBox
+	Dawn.playersFrame = playersFrame
 
-	print(addonName, ": Dawn display frame created.")
-	return frame
+	return playersFrame
+end
+
+function Dawn:CreateKeystonesFrame()
+	if not Dawn.playersFrame then return end
+
+	local keystonesFrame = CreateFrame("Frame", "GrossToolboxKeyListFrame", UIParent, "BasicFrameTemplateWithInset")
+    keystonesFrame:SetSize(350, 400) -- Adjust size as needed
+    keystonesFrame:SetPoint("LEFT", playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
+    keystonesFrame:SetMovable(true)
+    keystonesFrame:EnableMouse(true)
+    keystonesFrame:RegisterForDrag("LeftButton")
+    keystonesFrame:SetScript("OnDragStart", keystonesFrame.StartMoving)
+    keystonesFrame:SetScript("OnDragStop", keystonesFrame.StopMovingOrSizing)
+    keystonesFrame:SetClampedToScreen(true)
+    keystonesFrame:SetFrameStrata("MEDIUM")
+    keystonesFrame:Hide()
+
+    local keystonesTitle = keystonesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    keystonesTitle:SetPoint("TOP", 0, -5)
+    keystonesTitle:SetText("Keystone List")
+
+    local keystonesScrollFrame = CreateFrame("ScrollFrame", "GTKeyScrollFrame", keystonesFrame, "UIPanelScrollFrameTemplate")
+    keystonesScrollFrame:SetPoint("TOPLEFT", 10, -35)
+    keystonesScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
+
+    local keystonesEditBox = CreateFrame("EditBox", "GTKeyEditBox", keystonesScrollFrame)
+    keystonesEditBox:SetMultiLine(true)
+    keystonesEditBox:SetMaxLetters(999999)
+    keystonesEditBox:EnableMouse(true)
+    keystonesEditBox:SetAutoFocus(false)
+    keystonesEditBox:SetFontObject(ChatFontNormal)
+    keystonesEditBox:SetWidth(300) -- Adjust width
+    keystonesEditBox:SetHeight(1000)
+    keystonesEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end) -- Close both frames
+    keystonesEditBox:SetScript("OnTextSet", function(self) self:HighlightText(0,0) self:ClearFocus() end)
+	keystonesEditBox:SetScript("OnEditFocusGained", function(self)
+		self:ClearFocus()
+	end)
+
+    keystonesScrollFrame:SetScrollChild(keystonesEditBox)
+    keystonesFrame.scrollFrame = keystonesScrollFrame
+    keystonesFrame.editBox = keystonesEditBox
+    Dawn.keyListFrame = keystonesFrame
+
+	return keystonesFrame
+end
+
+function Dawn:GetOrCreateDisplayFrames()
+	local playersFrame = Dawn.playersFrame
+	local keystonesFrame = Dawn.keyListFrame
+
+	if not playersFrame then
+		playersFrame = Dawn:CreatePlayersFrame()
+		if not keystonesFrame then
+			keystonesFrame = Dawn:CreateKeystonesFrame()
+		end
+	end
+
+    return playersFrame, keystonesFrame
+end
+
+function Dawn:PopulateKeyListFrame()
+    local _, frame = self:GetOrCreateDisplayFrames()
+    if not frame or not frame.editBox then
+        if frame and frame.editBox then frame.editBox:SetText("Error: Database not fully initialized.") end
+        return
+    end
+
+    local keyDataList = {}
+    for guid, player in pairs(db.global.player) do
+        if player.char then
+            for charFullName, charData in pairs(player.char) do
+                if charData and charData.keystone and charData.keystone.hasKey then
+                    table.insert(keyDataList, {
+                        charName = charFullName,
+                        level = charData.keystone.level or 0,
+                        mapID = charData.keystone.mapID,
+                        mapName = charData.keystone.mapID and GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[charData.keystone.mapID] or "Unknown Map"
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(keyDataList, function(a, b)
+		local mapNameA = a.mapName or ""
+		local mapNameB = b.mapName or ""
+	
+		if mapNameA ~= mapNameB then
+			return mapNameA < mapNameB
+		else
+			return a.level > b.level
+		end
+	end)
+
+    -- Format the output string
+    local outputString = ""
+    for _, keyInfo in ipairs(keyDataList) do
+        outputString = outputString .. string.format("|cffeda55f%s|r: +%d %s\n",
+            keyInfo.charName,
+            keyInfo.level,
+            keyInfo.mapName
+        )
+    end
+
+    if outputString == "" then
+        outputString = "No keystones found in database."
+    end
+
+    -- Set the text in the key list frame
+    frame.editBox:SetText(outputString)
+    frame.editBox:SetCursorPosition(0)
+    frame.editBox:ClearFocus()
 end
 
 function Dawn:PopulateDisplayFrame()
-	local frame = self:GetOrCreateDisplayFrame()
+	local frame = self:GetOrCreateDisplayFrames()
 	if not frame or not frame.editBox then return end
 	if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.editBox:SetText("Discord handle not set bro !")
@@ -119,7 +235,7 @@ function Dawn:PopulateDisplayFrame()
 				if bnet ~= GT.Modules.Player:GetBNetTag() then
 					fullOutputString = fullOutputString .. string.format("\n|cffffcc00== %s ==|r\n", player.discordTag)
 				else
-					fullOutputString = fullOutputString .. string.format("\n\n")
+					fullOutputString = fullOutputString .. string.format("\n")
 				end
 
 				for _, charName in ipairs(sortedChars) do
@@ -217,21 +333,27 @@ end
 
 -- Toggle frame visibility (no AceDB changes needed)
 function Dawn:ToggleFrame(forceShow)
-	-- ... (Toggle frame logic remains the same as before) ...
-	local frame = self:GetOrCreateDisplayFrame()
-	if not frame then
-		return
-	end
+	local playersFrame, keystonesFrame = self:GetOrCreateDisplayFrames() -- Get both frames
+    if not playersFrame or not keystonesFrame then
+        print(addonName, "Error: Could not get display frames.")
+        return
+    end
 
-	if forceShow then
-		if not frame:IsShown() then
-			self:PopulateDisplayFrame()
-			frame:Show()
-		end
-	elseif frame:IsShown() then
-		frame:Hide()
-	else
-		self:PopulateDisplayFrame()
-		frame:Show()
-	end
+    local shouldShow
+    if forceShow ~= nil then
+        shouldShow = forceShow
+    else
+        shouldShow = not playersFrame:IsShown() -- Toggle based on the first frame's visibility
+    end
+
+    if shouldShow then
+        print(addonName, "Populating frames...")
+        self:PopulateDisplayFrame()  -- Populate the main frame
+        self:PopulateKeyListFrame()  -- Populate the new key frame
+        playersFrame:Show()
+        keystonesFrame:Show()
+    else
+        playersFrame:Hide()
+        keystonesFrame:Hide()
+    end
 end
