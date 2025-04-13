@@ -16,7 +16,7 @@ function Utils:fetchPartyMembersFullName()
                         partyMemberFullNames[name .. "-" .. realm] = true
                     else
                         local localRealm = GetRealmName()
-                        partyMemberFullNames[name .. "-" .. realm] = true
+                        partyMemberFullNames[name .. "-" .. localRealm] = true
                     end
                 end
             end
