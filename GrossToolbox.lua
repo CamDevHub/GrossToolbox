@@ -21,6 +21,9 @@ GT.addon = addon
 local defaults = {
     global = {
         config = {},
+        minimap = {
+            hide = false,
+        },
         player = {}
     }
 }
@@ -76,6 +79,29 @@ function addon:CHALLENGE_MODE_COMPLETED(event, status)
     end
 end
 
+function addon:OnEnable()
+    self.icon = self.icon or LibStub("LibDBIcon-1.0")
+
+    if not self.icon:IsRegistered("GrossToolboxIcon") then
+        self.icon:Register("GrossToolboxIcon", {
+            type = "launcher",
+            icon = "Interface\\Icons\\INV_Misc_EngGizmos_17",
+
+            tooltip = "GrossToolbox",
+            OnClick = function(frame, button)
+                if button == "LeftButton" then
+                    local Dawn = GT.Modules and GT.Modules.Dawn
+                    if Dawn then
+                        Dawn:ToggleFrame()
+                    end
+                elseif button == "RightButton" then
+                    LibStub("AceConfigDialog-3.0"):Open(addonName)
+                end
+            end,
+        }, self.db.global.minimap) 
+    end
+end
+
 -- Slash command handler method
 function addon:SlashCommandHandler(input)
     local command = string.lower(input or "")
@@ -86,7 +112,6 @@ function addon:SlashCommandHandler(input)
     end
 
     if command == "refresh" then
-        print(addonName .. ": Manually refreshing character info...")
         Dawn:UpdateData()
         Dawn:SendCharacterData()
         Dawn:ToggleFrame(true)                     -- Force show after refresh
