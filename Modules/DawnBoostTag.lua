@@ -4,173 +4,269 @@ local Dawn = {}
 GT.Modules.Dawn = Dawn
 
 local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
+local AceGUI = LibStub("AceGUI-3.0")
 
 local db
 function Dawn:Init(database)
-	db = database
+	db = database -- Store the database reference passed from the core addon file
 	if not db then
 		print(addonName, "Error: Dawn received nil database!"); return
 	end
+	-- No longer need to call GetOrCreateDisplayFrames here,
+	-- as the frame is created on demand by ToggleFrame/GetOrCreateMainFrame.
 	print(addonName, "- Dawn Module Initialized with DB.")
-	self:GetOrCreateDisplayFrames()
 end
 
 -- Update data using AceDB structure (db.global.char)
 function Dawn:UpdateData()
+	-- Fetch character stats and update the database (using Player and Character modules)
 	local bnet = GT.Modules.Player:GetBNetTag()
 	local fullName = GT.Modules.Character:GetFullName()
 
-	GT.Modules.Player:GetOrCreatePlayerData(bnet)
+	-- Ensure player data exists before trying to set character data
+	GT.Modules.Player:GetOrCreatePlayerData(bnet) -- Creates player entry if needed
+
+	-- Fetch current stats and store them
 	local charTable = GT.Modules.Character:FetchCurrentCharacterStats()
 	GT.Modules.Character:SetCharacterData(bnet, fullName, charTable)
 
-	self:PopulateDisplayFrame()
+	print(addonName, ": Updated data for", fullName)
 end
 
-function Dawn:CreatePlayersFrame()
-	local playersFrame = CreateFrame("Frame", "GrossToolboxDawnFrame", UIParent, "BasicFrameTemplateWithInset")
-	playersFrame:SetSize(750, 400)
-	playersFrame:SetPoint("CENTER")
-	playersFrame:SetMovable(true)
-	playersFrame:EnableMouse(true)
-	playersFrame:RegisterForDrag("LeftButton")
-	playersFrame:SetScript("OnDragStart", playersFrame.StartMoving)
-	playersFrame:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
-		if Dawn.keyListFrame then
-			Dawn.keyListFrame:ClearAllPoints()
-			Dawn.keyListFrame:SetPoint("LEFT", self, "RIGHT", 10, 0)
-		end
-	end)
-	playersFrame:SetClampedToScreen(true)
-	playersFrame:SetFrameStrata("MEDIUM")
-	playersFrame:Hide()
+function Dawn:DrawDataFrame(frame, container)
+	-- === Tab 1: Data (Players) ===
+    local dataTabContainer = AceGUI:Create("SimpleGroup") -- Use SimpleGroup for Flow layout
+    dataTabContainer:SetLayout("Flow")
+    dataTabContainer:SetAutoAdjustHeight(false) -- Important for scroll within tab if needed, but Flow might suffice
+    container:AddChild(dataTabContainer) -- Add container to the tab group for the "data" tab value
 
-	playersFrame:SetScript("OnKeyDown", function(self, key)
-		if key == "ESCAPE" then
-			Dawn:ToggleFrame()
-			self:SetPropagateKeyboardInput(false)
-		else
-			self:SetPropagateKeyboardInput(true)
-		end
-	end)
-	playersFrame:SetScript("OnKeyUp", function(self, key)
-		if key ~= "ESCAPE" then
-			self:SetPropagateKeyboardInput(true)
-		end
-	end)
+    local playersEditBox = AceGUI:Create("MultiLineEditBox")
+    playersEditBox:SetLabel("Player Data")
+    playersEditBox:DisableButton(true)
+    playersEditBox:SetWidth(650) -- Adjust width within tab
+    playersEditBox:SetHeight(450) -- Adjust height
+    dataTabContainer:AddChild(playersEditBox)
+    frame.playersEditBox = playersEditBox -- Store reference
 
-	local playersTitle = playersFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	playersTitle:SetPoint("TOP", 0, -5)
-	playersTitle:SetText("GrossToolbox Dawn Tag Info")
+    local keysEditBox = AceGUI:Create("MultiLineEditBox")
+    keysEditBox:SetLabel("Keystone List")
+    keysEditBox:DisableButton(true)
+    keysEditBox:SetWidth(250)
+    keysEditBox:SetHeight(450)
+    dataTabContainer:AddChild(keysEditBox)
+    frame.keysEditBox = keysEditBox -- Store reference
 
-	local playersScrollFrame = CreateFrame("ScrollFrame", nil, playersFrame, "UIPanelScrollFrameTemplate")
-	playersScrollFrame:SetPoint("TOPLEFT", 10, -35)
-	playersScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
-
-	local playersEditBox = CreateFrame("EditBox", nil, playersScrollFrame)
-	playersEditBox:SetMultiLine(true)
-	playersEditBox:SetMaxLetters(999999)
-	playersEditBox:EnableMouse(true)
-	playersEditBox:SetAutoFocus(false)
-	playersEditBox:SetFontObject(ChatFontNormal)
-	playersEditBox:SetWidth(700)
-	playersEditBox:SetHeight(1000)
-	playersEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end)
-	playersEditBox:HighlightText()
-	playersScrollFrame:SetScrollChild(playersEditBox)
-	playersFrame.scrollFrame = playersScrollFrame
-	playersFrame.editBox = playersEditBox
-
-
-	local requestButton = CreateFrame("Button", "GTRequestButton", playersFrame, "UIPanelButtonTemplate")
-	requestButton:SetText("Request Party Data")
-	requestButton:SetHeight(22)
-	requestButton:ClearAllPoints()
-	requestButton:SetPoint("BOTTOMLEFT", playersFrame, "BOTTOMLEFT", 10, 10)
-	requestButton:SetPoint("BOTTOMRIGHT", playersFrame, "BOTTOMRIGHT", -10, 10)
-	requestButton:SetScript("OnClick", Dawn.RequestData)
-	playersEditBox.requestButton = requestButton
-	playersScrollFrame:SetPoint("BOTTOMLEFT", playersFrame, "BOTTOMLEFT", 10, 35)
-	playersScrollFrame:SetPoint("BOTTOMRIGHT", playersFrame, "BOTTOMRIGHT", -30, 35)
-
-	Dawn.playersFrame = playersFrame
-
-	return playersFrame
+    local requestButton = AceGUI:Create("Button")
+    requestButton:SetText("Request Party Data")
+    requestButton:SetWidth(200) -- Adjust width
+    requestButton:SetCallback("OnClick", Dawn.RequestData)
+    dataTabContainer:AddChild(requestButton)
+    frame.requestButton = requestButton
 end
 
-function Dawn:CreateKeystonesFrame()
-	if not Dawn.playersFrame then return end
-
-	local keystonesFrame = CreateFrame("Frame", "GrossToolboxKeyListFrame", UIParent, "BasicFrameTemplateWithInset")
-	keystonesFrame:SetSize(350, 400)                                -- Adjust size as needed
-	keystonesFrame:SetPoint("LEFT", Dawn.playersFrame, "RIGHT", 10, 0) -- Anchor to the right of frame1
-	keystonesFrame:SetMovable(true)
-	keystonesFrame:EnableMouse(true)
-	keystonesFrame:RegisterForDrag("LeftButton")
-	keystonesFrame:SetScript("OnDragStart", keystonesFrame.StartMoving)
-	keystonesFrame:SetScript("OnDragStop", keystonesFrame.StopMovingOrSizing)
-	keystonesFrame:SetClampedToScreen(true)
-	keystonesFrame:SetFrameStrata("MEDIUM")
-	keystonesFrame:Hide()
-
-	local keystonesTitle = keystonesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	keystonesTitle:SetPoint("TOP", 0, -5)
-	keystonesTitle:SetText("Keystone List")
-
-	local keystonesScrollFrame = CreateFrame("ScrollFrame", "GTKeyScrollFrame", keystonesFrame,
-		"UIPanelScrollFrameTemplate")
-	keystonesScrollFrame:SetPoint("TOPLEFT", 10, -35)
-	keystonesScrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
-
-	local keystonesEditBox = CreateFrame("EditBox", "GTKeyEditBox", keystonesScrollFrame)
-	keystonesEditBox:SetMultiLine(true)
-	keystonesEditBox:SetMaxLetters(999999)
-	keystonesEditBox:EnableMouse(true)
-	keystonesEditBox:SetAutoFocus(false)
-	keystonesEditBox:SetFontObject(ChatFontNormal)
-	keystonesEditBox:SetWidth(300)                                                -- Adjust width
-	keystonesEditBox:SetHeight(1000)
-	keystonesEditBox:SetScript("OnEscapePressed", function() Dawn:ToggleFrame() end) -- Close both frames
-	keystonesEditBox:SetScript("OnTextSet", function(self)
-		self:HighlightText(0, 0)
-		self:ClearFocus()
-	end)
-	keystonesEditBox:SetScript("OnEditFocusGained", function(self)
-		self:ClearFocus()
-	end)
-
-	keystonesScrollFrame:SetScrollChild(keystonesEditBox)
-	keystonesFrame.scrollFrame = keystonesScrollFrame
-	keystonesFrame.editBox = keystonesEditBox
-	Dawn.keyListFrame = keystonesFrame
-
-	return keystonesFrame
+function Dawn:DrawRoleEditorFrame(frame, container)
+	 -- === Tab 2: Role Editor ===
+	 local roleTabContainer = AceGUI:Create("ScrollFrame") -- Use ScrollFrame directly as the tab container
+	 roleTabContainer:SetLayout("Flow") -- Items flow downwards inside the scroll frame
+	 container:AddChild(roleTabContainer) -- Add container to the tab group for the "roles" tab value
+	 frame.roleEditorScroll = roleTabContainer -- Store reference to the scroll frame itself
 end
 
-function Dawn:GetOrCreateDisplayFrames()
-	local playersFrame = Dawn.playersFrame
-	local keystonesFrame = Dawn.keyListFrame
+function Dawn:GetOrCreateMainFrame() -- Renamed from GetOrCreateDisplayFrames
+    if Dawn.mainFrame then
+        return Dawn.mainFrame
+    end
 
-	if not playersFrame then
-		playersFrame = Dawn:CreatePlayersFrame()
-		if not keystonesFrame then
-			keystonesFrame = Dawn:CreateKeystonesFrame()
+    -- Create the main AceGUI Frame container
+    local frame = AceGUI:Create("Frame")
+    frame:SetTitle("GrossToolbox") -- More general title
+    frame:SetLayout("Fill")    -- TabGroup will fill the frame
+    frame:SetWidth(1000)        -- Adjust width as needed
+    frame:SetHeight(600)       -- Adjust height as needed
+    frame:EnableResize(false)
+    frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget); Dawn.mainFrame = nil end)
+
+    -- Create the TabGroup
+    local tabGroup = AceGUI:Create("TabGroup")
+    tabGroup:SetLayout("Fill") -- Content of selected tab fills the group
+    tabGroup:SetTabs({
+        {text = "Data", value = "data"},
+        {text = "Role Editor", value = "roles"}
+    })
+    frame:AddChild(tabGroup)
+    frame.tabGroup = tabGroup -- Store reference
+
+	tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
+		widget:ReleaseChildren()
+		if group == "data" then
+			self:DrawDataFrame(frame, widget)
+			self:PopulateDisplayFrame()
+			self:PopulateKeyListFrame()
+			frame.playersEditBox:SetFocus()
+		elseif group == "roles" then
+			self:DrawRoleEditorFrame(frame, widget)
+			self:PopulateRoleEditorFrame()
 		end
+    end)
+
+    tabGroup:SelectTab("data")
+
+    Dawn.mainFrame = frame
+    print(addonName, ": AceGUI Main Frame created.")
+    return frame
+end
+
+function Dawn:PopulateRoleEditorFrame()
+	local frame = Dawn.mainFrame
+	if not db or not frame.roleEditorScroll then
+		print(addonName, "Error: PopulateRoleEditorFrame - scroll widget or DB missing.")
+		return
+	end
+	local scroll = frame.roleEditorScroll -- Use the stored reference to the scroll frame
+	-- Use the passed-in scroll widget directly
+	scroll:ReleaseChildren() -- Clear previous content
+	scroll:SetScroll(0)      -- Reset scroll position
+
+	local sortedBnets = {}
+	for bnet, _ in pairs(db.global.player) do table.insert(sortedBnets, bnet) end
+	table.sort(sortedBnets)
+
+	local totalContentHeight = 0
+	local verticalPadding = 3
+
+	for _, bnet in ipairs(sortedBnets) do
+		local player = db.global.player[bnet]
+
+		local playerHeader = AceGUI:Create("Heading")
+		playerHeader:SetText(player.discordTag or bnet)
+		playerHeader:SetFullWidth(true)
+		scroll:AddChild(playerHeader)
+		totalContentHeight = totalContentHeight + (playerHeader.frame:GetHeight() or 18) + verticalPadding -- Use header.frame:GetHeight()
+
+		if player.char then
+			local sortedChars = {}
+			for charName, _ in pairs(player.char) do table.insert(sortedChars, charName) end
+			table.sort(sortedChars)
+
+			for _, charFullName in ipairs(sortedChars) do
+				local charData = player.char[charFullName]
+				if charData then
+					local charGroup = AceGUI:Create("SimpleGroup")
+					charGroup:SetLayout("Flow")
+					charGroup:SetFullWidth(true)
+
+					local nameLabel = AceGUI:Create("Label")
+					nameLabel:SetText(string.format("%s", charFullName))
+					-- Add class coloring if desired (requires getting class info)
+					-- local className, _, classId = UnitClass("player") -- Need correct unit for this char
+					-- if classId and RAID_CLASS_COLORS[className] then nameLabel:SetColor(unpack(RAID_CLASS_COLORS[className])) end
+					nameLabel:SetWidth(180)
+					charGroup:AddChild(nameLabel)
+
+					local roles = {"TANK", "HEALER", "DAMAGER"}
+					local checkBoxes = {} -- Keep checkboxes scoped to the character group
+					for i, role in ipairs(roles) do
+						local checkbox = AceGUI:Create("CheckBox")
+						checkbox:SetLabel(string.sub(role, 1, 1));
+						checkbox:SetType("radio"); -- Changed to radio as per original code logic
+						if charData.customRoles then
+						   checkbox:SetValue(GT.Modules.Utils:TableContains(charData.customRoles, role))
+						else
+						   checkbox:SetValue(charData.role == role) -- Fallback to single role if no customRoles
+						end
+						checkbox:SetUserData("bnet", bnet);
+						checkbox:SetUserData("charFullName", charFullName);
+						checkbox:SetUserData("role", role);
+						checkbox:SetUserData("checkBoxes", checkBoxes); -- Pass the local checkboxes table
+						checkbox:SetWidth(35);
+						checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+						   local cbBnet = widget:GetUserData("bnet")
+						   local cbCharFullName = widget:GetUserData("charFullName")
+						   local otherCheckBoxes = widget:GetUserData("checkBoxes") -- Get checkboxes for *this character*
+						   local rolesToSet = {}
+						   for roleValue, cb in pairs(otherCheckBoxes) do
+							   -- Check the current state of the checkbox in the UI
+							   if cb:GetValue() then
+								   table.insert(rolesToSet, roleValue) -- Use roleValue (TANK, HEALER, DAMAGER)
+							   end
+						   end
+						   -- Persist the changes to the database
+						   GT.Modules.Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
+						   print(addonName, "Set roles for", cbCharFullName, "to", table.concat(rolesToSet, ", "))
+					   end);
+					   charGroup:AddChild(checkbox)
+					   checkBoxes[role] = checkbox -- Store checkbox using role as key
+					end
+
+					-- Do layout for the inner group AFTER adding all children
+					charGroup:DoLayout()
+					scroll:AddChild(charGroup) -- Add the populated group to the scroll frame
+					totalContentHeight = totalContentHeight + (charGroup.frame:GetHeight() or 20) + verticalPadding -- Use charGroup.frame:GetHeight()
+				end
+			end
+		end
+		totalContentHeight = totalContentHeight + 5 -- Extra padding between players
 	end
 
-	return playersFrame, keystonesFrame
+	-- Manually Set Content Height for the ScrollFrame's content pane
+	if scroll.content then
+		scroll.content:SetHeight(totalContentHeight)
+		-- print(addonName .. ": Manually set role scroll content height to:", totalContentHeight)
+	else
+		print(addonName .. ": ERROR - Could not find scroll.content to set height!")
+	end
+
+	-- Final Layout Calls (might not be strictly necessary after setting content height, but good practice)
+	scroll:DoLayout()
+	-- print(addonName .. ": Role Editor Population finished.")
+end
+
+function Dawn:PopulateDisplayFrame()
+    local frame = Dawn.mainFrame -- Use the main frame property
+    if not frame or not frame.playersEditBox then
+        -- print(addonName, "Debug: PopulateDisplayFrame - Frame or playersEditBox missing.")
+        return
+    end
+     -- ... (Keep the existing logic to generate fullOutputString) ...
+     if not db.global.config.discordTag or db.global.config.discordTag == "" then
+		frame.playersEditBox:SetText("Discord handle not set bro !")
+	else
+		local fullOutputString = ""
+		local players = GT.Modules.Player:GetAllPlayerData()
+		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
+		fullOutputString = fullOutputString ..
+			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
+		for bnet, player in pairs(players) do
+			local includePlayer = false;
+			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
+				if player.char then
+					for charFullName, _ in pairs(player.char) do
+						if partyMembers[charFullName] then
+							includePlayer = true
+							break
+						end
+					end
+				end
+			end
+			if includePlayer then
+				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
+			end
+		end
+		frame.playersEditBox:SetText(fullOutputString)
+		frame.playersEditBox:HighlightText(0, 9999)
+	end
 end
 
 function Dawn:PopulateKeyListFrame()
-	local _, frame = self:GetOrCreateDisplayFrames()
-	if not frame or not frame.editBox then
-		if frame and frame.editBox then frame.editBox:SetText("Error: Database not fully initialized.") end
-		return
-	end
-
-	local keyDataList = {}
-	for guid, player in pairs(db.global.player) do
+    local frame = Dawn.mainFrame -- Use the main frame property
+    if not frame or not frame.keysEditBox then
+        -- Frame might exist but widget doesn't, or frame doesn't exist
+        -- print(addonName, "Debug: PopulateKeyListFrame - Frame or keysEditBox missing.")
+        return
+    end
+    -- ... (Keep the existing logic to generate and format outputString) ...
+    local keyDataList = {}
+	for bnet, player in pairs(db.global.player) do
 		if player.char then
 			for charFullName, charData in pairs(player.char) do
 				if charData and charData.keystone and charData.keystone.hasKey then
@@ -198,33 +294,19 @@ function Dawn:PopulateKeyListFrame()
 		end
 	end)
 
-	-- Format the output string
-	local outputString = ""
-	for _, keyInfo in ipairs(keyDataList) do
-		if not keyInfo.classId then keyInfo.classId = 5 end
-		local _, classToken = GetClassInfo(keyInfo.classId)
-		local classColorHex = "cffeda55f"
-		if classToken and RAID_CLASS_COLORS[classToken] then
-			classColorHex = "cff" .. string.sub(RAID_CLASS_COLORS[classToken].colorStr, 3, 8)
-		end
+    local outputString = ""
+    for _, keyInfo in ipairs(keyDataList) do
+        outputString = outputString .. string.format("%s: +%d %s\n",
+            keyInfo.charName,
+            keyInfo.level,
+            keyInfo.mapName
+        )
+    end
+	if outputString == "" then	outputString = "No keystones found in database." end
 
-		outputString = outputString .. string.format("|%s%s|r: +%d %s\n",
-			classColorHex,
-			keyInfo.charName,
-			keyInfo.level,
-			keyInfo.mapName
-		)
-	end
-
-	if outputString == "" then
-		outputString = "No keystones found in database."
-	end
-
-	-- Set the text in the key list frame
-	frame.editBox:SetText(outputString)
-	frame.editBox:SetCursorPosition(0)
-	frame.editBox:ClearFocus()
+    frame.keysEditBox:SetText(outputString)
 end
+
 
 function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	local fullOutputString = ""
@@ -242,13 +324,25 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	for _, charName in ipairs(sortedChars) do
 		local data = chars[charName]
 		if data and data.keystone and data.keystone.hasKey then
-			local roleIndicatorStr = ({
-				HEALER = ":healer:",
-				TANK = ":Tank:",
-				DAMAGER = ":Damager:"
-			})[data.role] or ":UnknownRole:"
+			local roleIndicator = {
+				HEALER = ":healer: ",
+				TANK = ":Tank: ",
+				DAMAGER = ":DPS: "
+			}
+			local roleIndicatorStr = ""
+			if data.customRoles then
+				for _, role in ipairs(data.customRoles) do
+					roleIndicatorStr = roleIndicatorStr .. (roleIndicator[role] or ":Unknown:")
+				end
+			else
+				roleIndicatorStr = roleIndicator[data.role] or ":Unknown:"
+			end
 
-			local specClassStr = string.format("%s %s", data.specName or "No Spec", data.className or "No Class")
+			local factionStr = ""
+			if data.faction and data.faction ~= "Neutral" then
+				factionStr = ":" .. string.lower(data.faction) .. ":"
+			end
+			local classStr = string.format("%s", data.className or "No Class")
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
 			if data.keystone.hasKey then
@@ -259,9 +353,10 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 			end
 			local ilvlStr = string.format(":Armor: %d iLvl", data.iLvl or 0)
 			local tradeStr = ":gift: Can trade all"
-			local playerOutput = string.format("%s %s / %s / %s / %s / %s",
+			local playerOutput = string.format("%s %s %s / %s / %s / %s / %s",
+				factionStr,
 				roleIndicatorStr,
-				specClassStr,
+				classStr,
 				scoreStr,
 				keyStr,
 				ilvlStr,
@@ -272,43 +367,6 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	end
 
 	return fullOutputString
-end
-
-function Dawn:PopulateDisplayFrame()
-	local frame = self:GetOrCreateDisplayFrames()
-	if not frame or not frame.editBox then return end
-	if not db.global.config.discordTag or db.global.config.discordTag == "" then
-		frame.editBox:SetText("Discord handle not set bro !")
-	else
-		local fullOutputString = ""
-		local players = GT.Modules.Player:GetAllPlayerData()
-		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
-
-		fullOutputString = fullOutputString ..
-			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false)
-
-		for bnet, player in pairs(players) do
-			local includePlayer = false;
-			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
-				if player.char then
-					for charFullName, _ in pairs(player.char) do
-						if partyMembers[charFullName] then
-							includePlayer = true
-							break
-						end
-					end
-				end
-			end
-
-			if includePlayer then
-				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true)
-			end
-		end
-
-		frame.editBox:SetText(fullOutputString)
-	end
-	frame.editBox:SetCursorPosition(0)
-	frame.editBox:ClearFocus()
 end
 
 function Dawn:SendCharacterData()
@@ -331,45 +389,6 @@ function Dawn:SendCharacterData()
 	end
 end
 
-function Dawn:OnCommReceived(_, message, _, sender)
-	if type(message) ~= "string" then return end
-
-	if message == GT.headers.request then
-		if not UnitIsUnit("player", sender) then -- Don't respond to your own request if leader sends too
-			print(addonName, ": Received data request from", sender, ". Sending data.")
-			self:SendCharacterData()
-		end
-	elseif string.sub(message, 1, 10) == GT.headers.player then
-		local AceSerializer = LibStub("AceSerializer-3.0")
-		local success, data = AceSerializer:Deserialize(message)
-
-		if not success or type(data) ~= "table" or not data.bnet or not data.char then
-			print(addonName, ": Invalid or malformed data from", sender)
-			return
-		end
-
-		local bnet = data.bnet
-		local incomingChars = data.char
-
-		print("process character from " .. bnet)
-		-- Ensure existing player entry exists
-		local localPlayerEntry = GT.Modules.Player:GetOrCreatePlayerData(bnet)
-
-		localPlayerEntry.discordTag = data.discordTag
-		-- Merge character data
-		for charName, charData in pairs(incomingChars) do
-			localPlayerEntry.char[charName] = charData
-		end
-
-		-- Optional: track who sent what
-		localPlayerEntry.name = data.name or localPlayerEntry.name or sender
-
-		print(addonName, ": Received data from", localPlayerEntry.name)
-		self:PopulateDisplayFrame()
-		self:PopulateKeyListFrame()
-	end
-end
-
 function Dawn:RequestData()
 	if IsInGroup() then
 		local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
@@ -380,31 +399,70 @@ function Dawn:RequestData()
 	end
 end
 
-function Dawn:ToggleFrame(forceShow)
-	local playersFrame, keystonesFrame = self:GetOrCreateDisplayFrames() -- Get both frames
-	if not playersFrame or not keystonesFrame then
-		print(addonName, "Error: Could not get display frames.")
-		return
-	end
+function Dawn:OnCommReceived(_, message, _, sender)
+	if type(message) ~= "string" then return end
 
-	local shouldShow
-	if forceShow ~= nil then
-		shouldShow = forceShow
-	else
-		shouldShow = not playersFrame:IsShown() -- Toggle based on the first frame's visibility
-	end
+	if message == GT.headers.request then
+		if not UnitIsUnit("player", sender) then -- Don't respond to your own request if leader sends too
+			print(addonName, ": Received data request from", sender, ". Sending data.")
+			self:SendCharacterData()
+		end
+	elseif string.sub(message, 1, 10) == GT.headers.player then
+		local success, data = AceSerializer:Deserialize(string.sub(message, 11)) -- Corrected deserialize
 
-	if shouldShow then
-		print(addonName, "Populating frames...")
-		self:PopulateDisplayFrame() -- Populate the main frame
-		self:PopulateKeyListFrame() -- Populate the new key frame
-		playersFrame:Show()
-		playersFrame.editBox:SetFocus()
-		playersFrame.editBox:SetCursorPosition(0)
-		playersFrame.editBox:HighlightText()
-		keystonesFrame:Show()
-	else
-		playersFrame:Hide()
-		keystonesFrame:Hide()
+		if not success or type(data) ~= "table" or not data.bnet or not data.char then
+			print(addonName, ": Invalid or malformed data from", sender)
+			return
+		end
+
+		local bnet = data.bnet
+		local incomingChars = data.char
+		local senderDiscordTag = data.discordTag or "" -- Get discord tag from payload
+
+		-- Ensure player entry exists or create it
+		local localPlayerEntry = GT.Modules.Player:GetOrCreatePlayerData(bnet)
+		localPlayerEntry.discordTag = senderDiscordTag -- Update discord tag from received data
+
+		-- Merge character data (only if incoming data is a table)
+        if type(incomingChars) == "table" then
+            localPlayerEntry.char = localPlayerEntry.char or {} -- Ensure char table exists
+            for charName, charData in pairs(incomingChars) do
+                -- Basic validation/merge - might need deep merge if charData has nested tables
+                 if type(charData) == "table" then
+                      localPlayerEntry.char[charName] = charData -- Replace/add char data
+                 end
+            end
+        end
+
+		-- Optional: track who sent what (use sender name if available)
+		localPlayerEntry.name = localPlayerEntry.name or sender
+
+		print(addonName, ": Received and processed data from", sender)
+
+        -- Repopulate the frame ONLY if it's currently visible
+        local frame = Dawn.mainFrame
+        if frame and frame:IsVisible() then
+			print(addonName, "Repopulating visible frame...")
+			self:PopulateDisplayFrame()
+			self:PopulateKeyListFrame()
+			self:PopulateRoleEditorFrame()
+        end
 	end
+end
+
+function Dawn:ToggleFrame()
+    local frame = Dawn.mainFrame -- Use the main frame property
+    if not frame then
+		frame = self:GetOrCreateMainFrame()
+		if not frame then
+			print(addonName, "Error: Could not get or create main display frame.")
+			return
+		end
+		self:PopulateDisplayFrame()
+		self:PopulateKeyListFrame()
+        frame:Show()
+    else
+        frame:Release() -- Release the frame and its children
+        Dawn.mainFrame = nil -- Ensure it's recreated next time
+    end
 end

@@ -65,7 +65,7 @@ function addon:PLAYER_ENTERING_WORLD(event, status)
     local Dawn = GT.Modules and GT.Modules.Dawn
     if Dawn then
         -- No timer needed usually, data should be available
-        C_Timer.After(2, function()
+        C_Timer.After(5, function()
             Dawn:UpdateData()
         end)
     end
