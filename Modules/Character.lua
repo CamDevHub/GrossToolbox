@@ -58,7 +58,7 @@ function Character:UpdateKeystone(charData) -- Receives charData table directly
     if keyData.hasKey then
         keyData.level = keystoneLevel
         keyData.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
-        keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[keyData.mapID] or "Unknown"
+        keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_TABLE[keyData.mapID].name or "Unknown"
     else
         keyData.level, keyData.mapID, keyData.mapName = nil, nil, nil
     end

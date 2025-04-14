@@ -83,13 +83,13 @@ Data.SPEC_ID_TO_ENGLISH_NAME = {
     ["Unknown"] = "Unknown Spec"
 }
 
-Data.DUNGEON_ID_TO_ENGLISH_NAME = {
-    [2651] = "DFC",
-    [2661] = "Brew",
-    [2773] = "Flood",
-    [2649] = "PSF",
-    [2648] = "Rook",
-    [1594] = "ML",
-    [2293] = "TOP",
-    [2097] = "WS"
+Data.DUNGEON_TABLE = {
+    [2651] = { name = "DFC", icon = "Interface\\Icons\\inv_misc_dungeon_dfc" },
+    [2661] = { name = "Brew", icon = "Interface\\Icons\\inv_misc_dungeon_brew" },
+    [2773] = { name = "Flood", icon = "Interface\\Icons\\inv_misc_dungeon_flood" },
+    [2649] = { name = "PSF", icon = "Interface\\Icons\\inv_misc_dungeon_psf" },
+    [2648] = { name = "Rook", icon = "Interface\\Icons\\inv_misc_dungeon_rook" },
+    [1594] = { name = "ML", icon = "Interface\\Icons\\inv_misc_dungeon_ml" },
+    [2293] = { name = "TOP", icon = "Interface\\Icons\\inv_misc_dungeon_top" },
+    [2097] = { name = "WS", icon = "Interface\\Icons\\inv_misc_dungeon_ws" }
 }

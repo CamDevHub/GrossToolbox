@@ -276,7 +276,7 @@ function Dawn:PopulateKeyListFrame()
 						level = charData.keystone.level or 0,
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
-							GT.Modules.Data.DUNGEON_ID_TO_ENGLISH_NAME[charData.keystone.mapID] or "Unknown Map"
+							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map"
 					})
 				end
 			end
