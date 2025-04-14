@@ -58,13 +58,13 @@ function Dawn:DrawDataFrame(frame, container)
 
 	local dungeonsContainer = AceGUI:Create("SimpleGroup")
 	dungeonsContainer:SetLayout("Flow")
-	dungeonsContainer:SetWidth(200)
+	dungeonsContainer:SetWidth(160)
 	dataTabContainer:AddChild(dungeonsContainer)
 	frame.dungeonsContainer = dungeonsContainer
 
     local requestButton = AceGUI:Create("Button")
     requestButton:SetText("Request Party Data")
-    requestButton:SetWidth(200) -- Adjust width
+    requestButton:SetWidth(200)
     requestButton:SetCallback("OnClick", Dawn.RequestData)
     dataTabContainer:AddChild(requestButton)
     frame.requestButton = requestButton
@@ -85,10 +85,10 @@ function Dawn:GetOrCreateMainFrame()
 
 
     local frame = AceGUI:Create("Frame")
-    frame:SetTitle("GrossToolbox") 
-    frame:SetLayout("Fill")   
-    frame:SetWidth(1180)       
-    frame:SetHeight(650)       
+    frame:SetTitle("GrossToolbox")
+    frame:SetLayout("Fill")
+    frame:SetWidth(1120)
+    frame:SetHeight(650)
     frame:EnableResize(false)
 	frame:SetStatusText("GrossToolbox - Dawn Module")
 
@@ -96,13 +96,7 @@ function Dawn:GetOrCreateMainFrame()
         AceGUI:Release(frame)
         Dawn.mainFrame = nil
     end
-    frame:SetCallback("OnClose", function(widget) CloseFrame() end) 
-    frame.frame:EnableKeyboard(true) 
-    frame.frame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            CloseFrame()
-        end
-    end)
+    frame:SetCallback("OnClose", function(widget) CloseFrame() end)
 
     local tabGroup = AceGUI:Create("TabGroup")
     tabGroup:SetLayout("Fill") 
@@ -146,15 +140,12 @@ function Dawn:PopulateRoleEditorFrame()
 	end
 	local scroll = frame.roleEditorScroll
 
-	scroll:ReleaseChildren() 
-	scroll:SetScroll(0)    
+	scroll:ReleaseChildren()
+	scroll:SetScroll(0)
 
 	local sortedBnets = {}
 	for bnet, _ in pairs(db.global.player) do table.insert(sortedBnets, bnet) end
 	table.sort(sortedBnets)
-
-	local totalContentHeight = 0
-	local verticalPadding = 3
 
 	for _, bnet in ipairs(sortedBnets) do
 		local player = db.global.player[bnet]
@@ -163,7 +154,6 @@ function Dawn:PopulateRoleEditorFrame()
 		playerHeader:SetText(player.discordTag or bnet)
 		playerHeader:SetFullWidth(true)
 		scroll:AddChild(playerHeader)
-		totalContentHeight = totalContentHeight + (playerHeader.frame:GetHeight() or 18) + verticalPadding 
 
 		if player.char then
 			local sortedChars = {}
@@ -229,20 +219,10 @@ function Dawn:PopulateRoleEditorFrame()
 
 					charGroup:DoLayout()
 					scroll:AddChild(charGroup)
-					totalContentHeight = totalContentHeight + (charGroup.frame:GetHeight() or 20) + verticalPadding 
 				end
 			end
 		end
-		totalContentHeight = totalContentHeight + 5
 	end
-
-
-	if scroll.content then
-		scroll.content:SetHeight(totalContentHeight)
-	else
-		print(addonName .. ": ERROR - Could not find scroll.content to set height!")
-	end
-
 
 	scroll:DoLayout()
 end
@@ -276,7 +256,7 @@ function Dawn:PopulateDisplayFrame()
 				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
 			end
 		end
-		frame.playersEditBox:SetText(fullOutputString)
+		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
 		frame.playersEditBox:HighlightText(0, 9999)
 	end
 end
@@ -334,6 +314,7 @@ function Dawn:PopulateDungeonFrame()
 		return
 	end
 
+	local iconSize = 75
 	local dungeonsContainer = frame.dungeonsContainer 
 	for key, dungeon in pairs(GT.Modules.Data.DUNGEON_TABLE) do
 		local maxKeyLevel = 0
@@ -356,12 +337,12 @@ function Dawn:PopulateDungeonFrame()
 		if maxKeyLevel > 0 then
 			local iconContainer = AceGUI:Create("SimpleGroup")
 			iconContainer:SetLayout("Fill")
-			iconContainer:SetWidth(90)
-			iconContainer:SetHeight(90)
+			iconContainer:SetWidth(iconSize + 5)
+			iconContainer:SetHeight(iconSize + 5)
 
 			local icon = AceGUI:Create("Icon")
 			icon:SetImage(dungeon.icon)
-			icon:SetImageSize(85, 85)
+			icon:SetImageSize(iconSize, iconSize)
 			icon:SetLabel(dungeon.name)
 			iconContainer:AddChild(icon)
 
@@ -377,8 +358,8 @@ function Dawn:PopulateDungeonFrame()
 			levelLabel:SetColor(0, 1, 0)
 			levelLabel:SetJustifyH("CENTER")
 			levelLabel:SetJustifyV("MIDDLE")
-			levelLabel:SetWidth(85)
-			levelLabel:SetHeight(30)
+			levelLabel:SetWidth(iconSize)
+			levelLabel:SetHeight(15)
 			levelLabel.frame:SetPoint("CENTER", icon.frame, "TOP", 0, -20)
 			iconContainer:AddChild(levelLabel)
 
