@@ -1,6 +1,6 @@
 -- Core.lua
 
-local addonName, GT = ... -- GT is global from init.lua
+local addonName, GT = ... 
 if not GT then
     print("Error: GT table not found!"); return
 end
@@ -29,10 +29,6 @@ local defaults = {
 }
 
 function addon:OnInitialize()
-    -- Create the AceDB object linked to your SavedVariables
-    -- "GrossToolboxDB" MUST match ## SavedVariables in your .toc
-    -- defaults defines the initial structure if the SavedVariables file is empty/new
-    -- "Account" makes it save account-wide data
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
     -- Initialize modules AFTER the DB is ready
@@ -52,10 +48,8 @@ function addon:OnInitialize()
         GT.Modules.Character:Init(self.db)
     end
 
-    -- Register slash command
     self:RegisterChatCommand("gt", "SlashCommandHandler")
 
-    -- Register events using AceEvent (if using mixin)
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
 end
@@ -114,13 +108,13 @@ function addon:SlashCommandHandler(input)
     if command == "refresh" then
         Dawn:UpdateData()
         Dawn:SendCharacterData()
-        Dawn:ToggleFrame(true)                     -- Force show after refresh
-    elseif command == "" or command == "dawn" then -- Handle empty command and "dawn"
-        Dawn:ToggleFrame()                         -- Toggle visibility
+        Dawn:ToggleFrame(true)
+    elseif command == "" or command == "dawn" then
+        Dawn:ToggleFrame()
     elseif command == "config" then
         LibStub("AceConfigDialog-3.0"):Open(addonName)
     else
-        self:Print("Unknown command '" .. command .. "'. Use '/gt' to toggle display, or '/gt refresh' to update.") -- Use AceConsole Print
+        self:Print("Unknown command '" .. command .. "'. Use '/gt' to toggle display, or '/gt refresh' to update.")
     end
 end
 

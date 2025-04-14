@@ -18,13 +18,13 @@ end
 
 function Character:FetchCurrentCharacterStats()
     local charData = {}
-    -- Update iLvl
+
     local avgItemLevel = GetAverageItemLevel()
     charData.iLvl = avgItemLevel and math.floor(avgItemLevel) or 0
     local factionName, factionLocalized = UnitFactionGroup("player")
     charData.faction = factionName or "Neutral"
 
-    -- Update Spec & Class
+
     local specIndex = GetSpecialization()
     if specIndex and specIndex > 0 then
         local specID, specName, _, _, role = GetSpecializationInfo(specIndex)
@@ -37,20 +37,19 @@ function Character:FetchCurrentCharacterStats()
     charData.className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
     charData.classId = classId
 
-    -- Update Rating
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-    -- Update Keystone info (pass the character's data table)
-    self:UpdateKeystone(charData) -- Pass charData directly
+
+    self:UpdateKeystone(charData)
 
     return charData
 end
 
-function Character:UpdateKeystone(charData) -- Receives charData table directly
+function Character:UpdateKeystone(charData)
     if not charData then return end
     charData.keystone = charData.keystone or {}
-    local keyData = charData.keystone -- Shortcut
+    local keyData = charData.keystone
 
     local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
     keyData.hasKey = keystoneLevel and keystoneLevel >= 2

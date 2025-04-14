@@ -8,7 +8,7 @@ function Utils:FetchPartyMembersFullName()
     if IsInGroup() then
         for i = 1, GetNumGroupMembers() do
             local unit = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo()) and ("raid" .. i) or
-                ("party" .. i) -- Determine unit token based on group type
+                ("party" .. i)
             if UnitExists(unit) then
                 local name, realm = UnitName(unit)
                 if name then
