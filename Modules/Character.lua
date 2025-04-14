@@ -21,6 +21,8 @@ function Character:FetchCurrentCharacterStats()
     -- Update iLvl
     local avgItemLevel = GetAverageItemLevel()
     charData.iLvl = avgItemLevel and math.floor(avgItemLevel) or 0
+    local factionName, factionLocalized = UnitFactionGroup("player")
+    charData.faction = factionName or "Neutral"
 
     -- Update Spec & Class
     local specIndex = GetSpecialization()
@@ -62,6 +64,14 @@ function Character:UpdateKeystone(charData) -- Receives charData table directly
     end
 end
 
+function Character:SetCharacterCustomRoles(bnet, charFullName, roles)
+    if not db.global.player[bnet] then return end
+
+    db.global.player[bnet].char = db.global.player[bnet].char or {}
+    db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
+    db.global.player[bnet].char[charFullName].customRoles = roles
+end
+
 function Character:GetCharacterData(bnet, charFullName)
     if db.global.player[bnet] and db.global.player[bnet].char and db.global.player[bnet].char[charFullName] then
         return db.global.player[bnet].char[charFullName]
@@ -76,5 +86,6 @@ function Character:SetCharacterData(bnet, charFullName, dataTable)
     if not db.global.player[bnet] then return end
 
     db.global.player[bnet].char = db.global.player[bnet].char or {}
+    dataTable.customRoles = db.global.player[bnet].char[charFullName].customRoles or {}
     db.global.player[bnet].char[charFullName] = dataTable
 end

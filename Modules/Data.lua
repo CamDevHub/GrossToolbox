@@ -10,19 +10,19 @@ GT.headers = {
 GT.COMM_PREFIX = "GTComm"
 
 Data.CLASS_ID_TO_ENGLISH_NAME = {
-    [1] = "War",
-    [2] = "Pal",
-    [3] = "Hunt",
+    [1] = "Warrior",
+    [2] = "Paladin",
+    [3] = "Hunter",
     [4] = "Rogue",
     [5] = "Priest",
-    [6] = "DK",
-    [7] = "Sham",
+    [6] = "Death Knight",
+    [7] = "Shaman",
     [8] = "Mage",
     [9] = "Warlock",
     [10] = "Monk",
     [11] = "Druid",
-    [12] = "DH",
-    [13] = "Evo",
+    [12] = "Demon Hunter",
+    [13] = "Evoker",
     ["Unknown"] = "Unknown Class"
 }
 

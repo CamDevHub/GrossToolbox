@@ -32,3 +32,13 @@ function Utils:FetchPartyMembersFullName()
 
     return partyMemberFullNames
 end
+
+function Utils:TableContains(tbl, item)
+	if type(tbl) ~= "table" then return false end
+	for _, value in ipairs(tbl) do
+		if value == item then
+			return true
+		end
+	end
+	return false
+end
