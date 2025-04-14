@@ -46,7 +46,7 @@ function Dawn:DrawDataFrame(frame, container)
     playersEditBox:SetWidth(650) -- Adjust width within tab
     playersEditBox:SetHeight(450) -- Adjust height
     dataTabContainer:AddChild(playersEditBox)
-    frame.playersEditBox = playersEditBox -- Store reference
+    frame.playersEditBox = playersEditBox
 
     local keysEditBox = AceGUI:Create("MultiLineEditBox")
     keysEditBox:SetLabel("Keystone List")
@@ -54,7 +54,28 @@ function Dawn:DrawDataFrame(frame, container)
     keysEditBox:SetWidth(250)
     keysEditBox:SetHeight(450)
     dataTabContainer:AddChild(keysEditBox)
-    frame.keysEditBox = keysEditBox -- Store reference
+    frame.keysEditBox = keysEditBox
+
+	local dungeonsContainer = AceGUI:Create("SimpleGroup")
+	dungeonsContainer:SetLayout("Flow")
+	dungeonsContainer:SetWidth(200)
+	for _, dungeon in pairs(GT.Modules.Data.DUNGEON_TABLE) do
+		local iconContainer = AceGUI:Create("SimpleGroup")
+		iconContainer:SetLayout("List")
+		iconContainer:SetWidth(90)
+		iconContainer:SetHeight(90)
+
+		local icon = AceGUI:Create("Icon")
+		icon:SetImage(dungeon.icon)
+		icon:SetImageSize(90, 90)
+		icon:SetLabel(dungeon.name)
+
+		iconContainer:AddChild(icon)
+
+		dungeonsContainer:AddChild(iconContainer)
+	end
+	dataTabContainer:AddChild(dungeonsContainer)
+	frame.dungeonsContainer = dungeonsContainer
 
     local requestButton = AceGUI:Create("Button")
     requestButton:SetText("Request Party Data")
@@ -66,10 +87,10 @@ end
 
 function Dawn:DrawRoleEditorFrame(frame, container)
 	 -- === Tab 2: Role Editor ===
-	 local roleTabContainer = AceGUI:Create("ScrollFrame") -- Use ScrollFrame directly as the tab container
-	 roleTabContainer:SetLayout("Flow") -- Items flow downwards inside the scroll frame
-	 container:AddChild(roleTabContainer) -- Add container to the tab group for the "roles" tab value
-	 frame.roleEditorScroll = roleTabContainer -- Store reference to the scroll frame itself
+	 local roleTabContainer = AceGUI:Create("ScrollFrame")
+	 roleTabContainer:SetLayout("Flow")
+	 container:AddChild(roleTabContainer)
+	 frame.roleEditorScroll = roleTabContainer
 end
 
 function Dawn:GetOrCreateMainFrame() -- Renamed from GetOrCreateDisplayFrames
@@ -81,7 +102,7 @@ function Dawn:GetOrCreateMainFrame() -- Renamed from GetOrCreateDisplayFrames
     local frame = AceGUI:Create("Frame")
     frame:SetTitle("GrossToolbox") -- More general title
     frame:SetLayout("Fill")    -- TabGroup will fill the frame
-    frame:SetWidth(1000)        -- Adjust width as needed
+    frame:SetWidth(1180)        -- Adjust width as needed
     frame:SetHeight(600)       -- Adjust height as needed
     frame:EnableResize(false)
     frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget); Dawn.mainFrame = nil end)
@@ -150,24 +171,31 @@ function Dawn:PopulateRoleEditorFrame()
 
 			for _, charFullName in ipairs(sortedChars) do
 				local charData = player.char[charFullName]
-				if charData then
+				if charData and charData.rating > 0 then
 					local charGroup = AceGUI:Create("SimpleGroup")
 					charGroup:SetLayout("Flow")
 					charGroup:SetFullWidth(true)
 
 					local nameLabel = AceGUI:Create("Label")
 					nameLabel:SetText(string.format("%s", charFullName))
-					-- Add class coloring if desired (requires getting class info)
-					-- local className, _, classId = UnitClass("player") -- Need correct unit for this char
-					-- if classId and RAID_CLASS_COLORS[className] then nameLabel:SetColor(unpack(RAID_CLASS_COLORS[className])) end
 					nameLabel:SetWidth(180)
 					charGroup:AddChild(nameLabel)
+
+					local ratingLabel = AceGUI:Create("Label")
+					ratingLabel:SetText(string.format("Rating: %d", charData.rating or 0))
+					ratingLabel:SetWidth(180)
+					charGroup:AddChild(ratingLabel)
+
+					local classLabel = AceGUI:Create("Label")
+					classLabel:SetText(string.format("%s", GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[charData.classId] or "Unknown Class"))
+					classLabel:SetWidth(180)
+					charGroup:AddChild(classLabel)
 
 					local roles = {"TANK", "HEALER", "DAMAGER"}
 					local checkBoxes = {} -- Keep checkboxes scoped to the character group
 					for i, role in ipairs(roles) do
 						local checkbox = AceGUI:Create("CheckBox")
-						checkbox:SetLabel(string.sub(role, 1, 1));
+						checkbox:SetLabel(role);
 						checkbox:SetType("radio"); -- Changed to radio as per original code logic
 						if charData.customRoles then
 						   checkbox:SetValue(GT.Modules.Utils:TableContains(charData.customRoles, role))
@@ -178,7 +206,7 @@ function Dawn:PopulateRoleEditorFrame()
 						checkbox:SetUserData("charFullName", charFullName);
 						checkbox:SetUserData("role", role);
 						checkbox:SetUserData("checkBoxes", checkBoxes); -- Pass the local checkboxes table
-						checkbox:SetWidth(35);
+						checkbox:SetWidth(100);
 						checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
 						   local cbBnet = widget:GetUserData("bnet")
 						   local cbCharFullName = widget:GetUserData("charFullName")
@@ -260,8 +288,6 @@ end
 function Dawn:PopulateKeyListFrame()
     local frame = Dawn.mainFrame -- Use the main frame property
     if not frame or not frame.keysEditBox then
-        -- Frame might exist but widget doesn't, or frame doesn't exist
-        -- print(addonName, "Debug: PopulateKeyListFrame - Frame or keysEditBox missing.")
         return
     end
     -- ... (Keep the existing logic to generate and format outputString) ...
@@ -305,6 +331,10 @@ function Dawn:PopulateKeyListFrame()
 	if outputString == "" then	outputString = "No keystones found in database." end
 
     frame.keysEditBox:SetText(outputString)
+end
+
+function Dawn:PopulateDungeonFrame()
+	return
 end
 
 
