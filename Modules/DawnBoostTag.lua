@@ -20,8 +20,11 @@ end
 Dawn.keys = {}
 function Dawn:loadKeyList()
 	local partyBnets = GT.Modules.Utils:FetchPartyMembersBNet(GT.Modules.Player:GetAllPlayerData())
-	if not partyBnets or #partyBnets == 0 then
+	if not partyBnets then
 		return
+	end
+	if #partyBnets == 0 then
+		partyBnets = { GT.Modules.Player:GetBNetTag() }
 	end
 	self.keys = {}
 	for _, bnet in ipairs(partyBnets) do
@@ -439,7 +442,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 				ilvlStr,
 				tradeStr
 			)
-			fullOutputString = fullOutputString .. "**" .. charOutput .. "**\n"
+			fullOutputString = fullOutputString .. "** " .. charOutput .. " **\n"
 		end
 	end
 
@@ -504,7 +507,8 @@ function Dawn:OnCommReceived(_, message, _, sender)
             localPlayerEntry.char = localPlayerEntry.char or {} 
             for charName, charData in pairs(incomingChars) do
                  if type(charData) == "table" then
-                      localPlayerEntry.char[charName] = charData 
+					charData.customRoles = localPlayerEntry.char[charName].customRoles or {}
+                    localPlayerEntry.char[charName] = charData
                  end
             end
         end

@@ -52,6 +52,7 @@ function addon:OnInitialize()
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+    self:RegisterEvent("GROUP_ROSTER_UPDATE")
 end
 
 -- Called when PLAYER_ENTERING_WORLD  fires
@@ -62,6 +63,14 @@ function addon:PLAYER_ENTERING_WORLD(event, status)
         C_Timer.After(5, function()
             Dawn:UpdateData()
         end)
+    end
+end
+
+-- Called when GROUP_ROSTER_UPDATE  fires
+function addon:GROUP_ROSTER_UPDATE(event, status)
+    local Dawn = GT.Modules and GT.Modules.Dawn
+    if Dawn then
+        Dawn:UpdateData()
     end
 end
 
