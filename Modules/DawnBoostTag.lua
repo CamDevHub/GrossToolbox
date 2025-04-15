@@ -19,8 +19,16 @@ end
 
 Dawn.keys = {}
 function Dawn:loadKeyList()
+	local partyBnets = GT.Modules.Utils:FetchPartyMembersBNet(GT.Modules.Player:GetAllPlayerData())
+	if not partyBnets or #partyBnets == 0 then
+		return
+	end
 	self.keys = {}
-	for bnet, player in pairs(GT.Modules.Player:GetAllPlayerData()) do
+	for _, bnet in ipairs(partyBnets) do
+		local player = GT.Modules.Player:GetOrCreatePlayerData(bnet)
+		if not player or not player.char then
+			return
+		end
 		if player.char then
 			for charFullName, charData in pairs(player.char) do
 				if charData and charData.keystone and charData.keystone.hasKey then
@@ -219,17 +227,19 @@ function Dawn:PopulateRoleEditorFrame()
 						checkbox:SetUserData("checkBoxes", checkBoxes);
 						checkbox:SetWidth(100);
 						checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-						   local cbBnet = widget:GetUserData("bnet")
-						   local cbCharFullName = widget:GetUserData("charFullName")
-						   local otherCheckBoxes = widget:GetUserData("checkBoxes")
-						   local rolesToSet = {}
-						   for roleValue, cb in pairs(otherCheckBoxes) do
-							   if cb:GetValue() then
-								   table.insert(rolesToSet, roleValue)
-							   end
-						   end
-
-						   GT.Modules.Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
+							local cbBnet = widget:GetUserData("bnet")
+							local cbCharFullName = widget:GetUserData("charFullName")
+							local otherCheckBoxes = widget:GetUserData("checkBoxes")
+							local rolesToSet = {}
+							for roleValue, cb in pairs(otherCheckBoxes) do
+								if cb:GetValue() then
+									table.insert(rolesToSet, roleValue)
+								end
+							end
+							table.sort(rolesToSet, function(a, b)
+								return a > b
+							end)
+							GT.Modules.Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
 					   end);
 					   charGroup:AddChild(checkbox)
 					   checkBoxes[role] = checkbox 
@@ -254,6 +264,7 @@ function Dawn:PopulateDisplayFrame()
      if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.playersEditBox:SetText("Discord handle not set bro !")
 	else
+		local numberOfPlayers = 1
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
@@ -266,6 +277,7 @@ function Dawn:PopulateDisplayFrame()
 					for charFullName, _ in pairs(player.char) do
 						if partyMembers[charFullName] then
 							includePlayer = true
+							numberOfPlayers = numberOfPlayers + 1
 							break
 						end
 					end
@@ -274,6 +286,9 @@ function Dawn:PopulateDisplayFrame()
 			if includePlayer then
 				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
 			end
+		end
+		if numberOfPlayers > 1 then
+			fullOutputString = "###" .. GT.Modules.Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
 		end
 		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
 		frame.playersEditBox:HighlightText(0, 9999)
@@ -311,13 +326,14 @@ function Dawn:PopulateKeyListFrame()
 end
 
 function Dawn:PopulateDungeonFrame()
-	local frame = Dawn.mainFrame 
+	local frame = Dawn.mainFrame
 	if not frame or not frame.keysEditBox then
 		return
 	end
 
 	local iconSize = 75
 	local dungeonsContainer = frame.dungeonsContainer
+	dungeonsContainer:ReleaseChildren()
 	for key, dungeon in pairs(GT.Modules.Data.DUNGEON_TABLE) do
 		local maxKeyLevel = 0
 		local minKeyLevel = 0
@@ -386,8 +402,8 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 		local data = chars[charName]
 		if data and data.keystone and data.keystone.hasKey then
 			local roleIndicator = {
-				HEALER = ":healer: ",
 				TANK = ":Tank: ",
+				HEALER = ":healer: ",
 				DAMAGER = ":DPS: "
 			}
 			local roleIndicatorStr = ""
@@ -414,7 +430,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 			end
 			local ilvlStr = string.format(":Armor: %d iLvl", data.iLvl or 0)
 			local tradeStr = "Can trade all :gift:"
-			local playerOutput = string.format("%s %s | %s | %s | %s | %s | %s",
+			local charOutput = string.format("%s %s | %s | %s | %s | %s | %s",
 				roleIndicatorStr,
 				classStr,
 				factionStr,
@@ -423,7 +439,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 				ilvlStr,
 				tradeStr
 			)
-			fullOutputString = fullOutputString .. playerOutput .. "\n"
+			fullOutputString = fullOutputString .. "**" .. charOutput .. "**\n"
 		end
 	end
 
@@ -482,7 +498,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 
 		local localPlayerEntry = GT.Modules.Player:GetOrCreatePlayerData(bnet)
-		localPlayerEntry.discordTag = senderDiscordTag 
+		localPlayerEntry.discordTag = senderDiscordTag
 
         if type(incomingChars) == "table" then
             localPlayerEntry.char = localPlayerEntry.char or {} 

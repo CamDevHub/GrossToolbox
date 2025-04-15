@@ -33,6 +33,27 @@ function Utils:FetchPartyMembersFullName()
     return partyMemberFullNames
 end
 
+function Utils:FetchPartyMembersBNet(players)
+    local bnets = {}
+    local partyMemberFullNames = self:FetchPartyMembersFullName()
+
+    for fullName in pairs(partyMemberFullNames) do
+        local found = false
+        for bnet, player in pairs(players) do
+            for currentFullName, _ in pairs(player.char) do
+                if currentFullName == fullName then
+                    table.insert(bnets, bnet)
+                    found = true
+                    break
+                end
+            end
+            if found then break end
+        end
+    end
+
+    return bnets
+end
+
 function Utils:TableContains(tbl, item)
 	if type(tbl) ~= "table" then return false end
 	for _, value in ipairs(tbl) do

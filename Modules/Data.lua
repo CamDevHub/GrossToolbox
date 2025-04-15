@@ -93,3 +93,10 @@ Data.DUNGEON_TABLE = {
     [2293] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain" },
     [2097] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon" }
 }
+
+Data.DAWN_SIGN = {
+    [2] = "Duo",
+    [3] = "Trio",
+    [4] = "Quad",
+    [5] = "Penta",
+}
