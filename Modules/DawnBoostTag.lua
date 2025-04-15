@@ -17,6 +17,27 @@ function Dawn:Init(database)
 	print(addonName, "- Dawn Module Initialized with DB.")
 end
 
+Dawn.keys = {}
+function Dawn:loadKeyList()
+	self.keys = {}
+	for bnet, player in pairs(GT.Modules.Player:GetAllPlayerData()) do
+		if player.char then
+			for charFullName, charData in pairs(player.char) do
+				if charData and charData.keystone and charData.keystone.hasKey then
+					table.insert(self.keys, {
+						charName = charFullName,
+						classId = charData.classId,
+						level = charData.keystone.level or 0,
+						mapID = charData.keystone.mapID,
+						mapName = charData.keystone.mapID and
+							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map"
+					})
+				end
+			end
+		end
+	end
+end
+
 -- Update data using AceDB structure (db.global.char)
 function Dawn:UpdateData()
 	-- Fetch character stats and update the database (using Player and Character modules)
@@ -29,7 +50,7 @@ function Dawn:UpdateData()
 	-- Fetch current stats and store them
 	local charTable = GT.Modules.Character:FetchCurrentCharacterStats()
 	GT.Modules.Character:SetCharacterData(bnet, fullName, charTable)
-
+	self:loadKeyList()
 	print(addonName, ": Updated data for", fullName)
 end
 
@@ -122,7 +143,6 @@ function Dawn:GetOrCreateMainFrame()
     tabGroup:SelectTab("data")
 
     Dawn.mainFrame = frame
-    print(addonName, ": AceGUI Main Frame created.")
     return frame
 end
 
@@ -210,7 +230,6 @@ function Dawn:PopulateRoleEditorFrame()
 						   end
 
 						   GT.Modules.Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
-						   print(addonName, "Set roles for", cbCharFullName, "to", table.concat(rolesToSet, ", "))
 					   end);
 					   charGroup:AddChild(checkbox)
 					   checkBoxes[role] = checkbox 
@@ -266,24 +285,7 @@ function Dawn:PopulateKeyListFrame()
     if not frame or not frame.keysEditBox then
         return
     end
-    local keyDataList = {}
-	for bnet, player in pairs(GT.Modules.Player:GetAllPlayerData()) do
-		if player.char then
-			for charFullName, charData in pairs(player.char) do
-				if charData and charData.keystone and charData.keystone.hasKey then
-					table.insert(keyDataList, {
-						charName = charFullName,
-						classId = charData.classId,
-						level = charData.keystone.level or 0,
-						mapID = charData.keystone.mapID,
-						mapName = charData.keystone.mapID and
-							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map"
-					})
-				end
-			end
-		end
-	end
-
+    local keyDataList = Dawn.keys
 	table.sort(keyDataList, function(a, b)
 		local mapNameA = a.mapName or ""
 		local mapNameB = b.mapName or ""
@@ -315,21 +317,17 @@ function Dawn:PopulateDungeonFrame()
 	end
 
 	local iconSize = 75
-	local dungeonsContainer = frame.dungeonsContainer 
+	local dungeonsContainer = frame.dungeonsContainer
 	for key, dungeon in pairs(GT.Modules.Data.DUNGEON_TABLE) do
 		local maxKeyLevel = 0
 		local minKeyLevel = 0
-		for bnet, player in pairs(GT.Modules.Player:GetAllPlayerData()) do
-			if player.char then
-				for charFullName, charData in pairs(player.char) do
-					if charData and charData.keystone and charData.keystone.hasKey and charData.keystone.mapID == key then
-						maxKeyLevel = math.max(maxKeyLevel, charData.keystone.level or 0)
-						if minKeyLevel == 0 then
-							minKeyLevel = charData.keystone.level or 0
-						else 
-							minKeyLevel = math.min(minKeyLevel, charData.keystone.level or 0)
-						end
-					end
+		for _, keyData in pairs(Dawn.keys) do
+			if keyData.mapID == key then
+				maxKeyLevel = math.max(maxKeyLevel, keyData.level or 0)
+				if minKeyLevel == 0 then
+					minKeyLevel = keyData.level or 0
+				else 
+					minKeyLevel = math.min(minKeyLevel, keyData.level or 0)
 				end
 			end
 		end
@@ -352,6 +350,7 @@ function Dawn:PopulateDungeonFrame()
 			else
 				keyRangeLevelStr = tostring(minKeyLevel) .. " - " .. tostring(maxKeyLevel)
 			end
+
 			local levelLabel = AceGUI:Create("Label")
 			levelLabel:SetText(keyRangeLevelStr)
 			levelLabel:SetFontObject(GameFontNormalHuge)
@@ -366,6 +365,7 @@ function Dawn:PopulateDungeonFrame()
 			dungeonsContainer:AddChild(iconContainer)
 		end
 	end
+	dungeonsContainer:DoLayout()
 end
 
 
@@ -497,6 +497,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		print(addonName, ": Received and processed data from", sender)
 
+		self:loadKeyList()
         local frame = Dawn.mainFrame
         if frame and frame:IsVisible() then
 			print(addonName, "Repopulating visible frame...")
