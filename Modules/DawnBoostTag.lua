@@ -38,6 +38,7 @@ function Dawn:loadKeyList()
 					table.insert(self.keys, {
 						charName = charFullName,
 						classId = charData.classId,
+						className = charData.className,
 						level = charData.keystone.level or 0,
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
@@ -267,12 +268,20 @@ function Dawn:PopulateDisplayFrame()
      if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.playersEditBox:SetText("Discord handle not set bro !")
 	else
+
+		local maxClassNameLength = 0
+		for _, keystoneData in ipairs(self.keys) do
+			if keystoneData.className and #keystoneData.className > maxClassNameLength then
+				maxClassNameLength = #keystoneData.className
+			end
+		end
+
 		local numberOfPlayers = 1
 		local fullOutputString = ""
 		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
 		fullOutputString = fullOutputString ..
-			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
+			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false, maxClassNameLength) .. "\n"
 		for bnet, player in pairs(players) do
 			local includePlayer = false;
 			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
@@ -291,7 +300,7 @@ function Dawn:PopulateDisplayFrame()
 			end
 		end
 		if numberOfPlayers > 1 then
-			fullOutputString = "###" .. GT.Modules.Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
+			fullOutputString = "### " .. GT.Modules.Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
 		end
 		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
 		frame.playersEditBox:HighlightText(0, 9999)
@@ -388,7 +397,7 @@ function Dawn:PopulateDungeonFrame()
 end
 
 
-function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
+function Dawn:GeneratePlayerString(player, bnet, addDiscordTag, maxClassNameLength)
 	local fullOutputString = ""
 	if addDiscordTag and player.discordTag and player.discordTag ~= "" then
 		fullOutputString = fullOutputString .. string.format("|cffffcc00%s|r\n", player.discordTag)
@@ -399,30 +408,48 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	for charName, _ in pairs(chars) do
 		table.insert(sortedChars, charName)
 	end
-	table.sort(sortedChars)
 
+	table.sort(chars, function(a, b)
+		local aRoles = a.customRoles or {a.role}
+		local bRoles = b.customRoles or {b.role}
+        if #aRoles ~= #bRoles then
+            return #aRoles > #bRoles -- Character with more roles comes first
+        end
+        return a.name < b.name
+    end)
+
+	maxClassNameLength = maxClassNameLength or 0
 	for _, charName in ipairs(sortedChars) do
 		local data = chars[charName]
 		if data and data.keystone and data.keystone.hasKey then
 			local roleIndicator = {
-				TANK = ":Tank: ",
-				HEALER = ":healer: ",
-				DAMAGER = ":DPS: "
+				TANK = ":Tank:",
+				HEALER = ":healer:",
+				DAMAGER = ":DPS:"
 			}
 			local roleIndicatorStr = ""
+			local nbRoles = 0
 			if data.customRoles then
 				for _, role in ipairs(data.customRoles) do
+					nbRoles = nbRoles + 1
 					roleIndicatorStr = roleIndicatorStr .. (roleIndicator[role] or ":Unknown:")
 				end
 			else
-				roleIndicatorStr = roleIndicator[data.role] or ":Unknown:"
+				nbRoles = 1
+				roleIndicatorStr = "" .. (roleIndicator[data.role] or ":Unknown:")
 			end
-
+			roleIndicatorStr = string.rep(" ", 6 * (3-nbRoles)) .. roleIndicatorStr
 			local factionStr = ""
 			if data.faction and data.faction ~= "Neutral" then
 				factionStr = ":" .. string.lower(data.faction) .. ":"
 			end
-			local classStr = string.format("%s", data.className or "No Class")
+			
+			--hacky way to get the around the same length in discord
+			local hackyMaxClassNameLength = maxClassNameLength
+			if maxClassNameLength ~= #data.className then
+				hackyMaxClassNameLength = maxClassNameLength + 2
+			end
+			local classStr = string.format("%-" .. hackyMaxClassNameLength .. "s", data.className or "No Class")
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
 			if data.keystone.hasKey then
