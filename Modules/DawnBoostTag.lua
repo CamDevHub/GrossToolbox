@@ -6,19 +6,17 @@ GT.Modules.Dawn = Dawn
 local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 
+Dawn.data = {}
 local db
 function Dawn:Init(database)
-	db = database -- Store the database reference passed from the core addon file
+	db = database
 	if not db then
 		print(addonName, "Error: Dawn received nil database!"); return
 	end
-	-- No longer need to call GetOrCreateDisplayFrames here,
-	-- as the frame is created on demand by ToggleFrame/GetOrCreateMainFrame.
 	print(addonName, "- Dawn Module Initialized with DB.")
 end
 
-Dawn.data = {}
-function Dawn:loadKeyList()
+function Dawn:loadDawnDataTable()
 	local partyBnets = GT.Modules.Utils:FetchPartyMembersBNet(GT.Modules.Player:GetAllPlayerData())
 	if not partyBnets then
 		return
@@ -38,7 +36,7 @@ function Dawn:loadKeyList()
 		if player.char then
 			local charsWithKey = {}
 			for charFullName, charData in pairs(player.char) do
-				if charData and charData.keystone and charData.keystone.hasKey then
+				if charData and charData.keystone and charData.keystone.level and charData.keystone.level > 2 then
 					table.insert(self.data.keys, {
 						charName = charFullName,
 						classId = charData.classId,
@@ -60,17 +58,14 @@ end
 
 -- Update data using AceDB structure (db.global.char)
 function Dawn:UpdateData()
-	-- Fetch character stats and update the database (using Player and Character modules)
 	local bnet = GT.Modules.Player:GetBNetTag()
 	local fullName = GT.Modules.Character:GetFullName()
 
-	-- Ensure player data exists before trying to set character data
-	GT.Modules.Player:GetOrCreatePlayerData(bnet) -- Creates player entry if needed
+	GT.Modules.Player:GetOrCreatePlayerData(bnet)
 
-	-- Fetch current stats and store them
 	local charTable = GT.Modules.Character:FetchCurrentCharacterStats()
 	GT.Modules.Character:SetCharacterData(bnet, fullName, charTable)
-	self:loadKeyList()
+	self:loadDawnDataTable()
 end
 
 function Dawn:DrawDataFrame(frame, container)
@@ -110,12 +105,12 @@ function Dawn:DrawDataFrame(frame, container)
     frame.requestButton = requestButton
 end
 
-function Dawn:DrawRoleEditorFrame(frame, container)
-	 -- === Tab 2: Role Editor ===
-	 local roleTabContainer = AceGUI:Create("ScrollFrame")
-	 roleTabContainer:SetLayout("Flow")
-	 container:AddChild(roleTabContainer)
-	 frame.roleEditorScroll = roleTabContainer
+function Dawn:DrawPlayerEditorFrame(frame, container)
+	 -- === Tab 2: Player Editor ===
+	 local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
+	 playerEditorTabContainer:SetLayout("Flow")
+	 container:AddChild(playerEditorTabContainer)
+	 frame.playerEditorScroll = playerEditorTabContainer
 end
 
 function Dawn:GetOrCreateMainFrame()
@@ -142,7 +137,7 @@ function Dawn:GetOrCreateMainFrame()
     tabGroup:SetLayout("Fill") 
     tabGroup:SetTabs({
         {text = "Data", value = "data"},
-        {text = "Role Editor", value = "roles"}
+        {text = "Player Editor", value = "players"}
     })
     frame:AddChild(tabGroup)
     frame.tabGroup = tabGroup
@@ -153,9 +148,9 @@ function Dawn:GetOrCreateMainFrame()
 			self:DrawDataFrame(frame, widget)
 			self:PopulateDataFrame()
 			frame.playersEditBox:SetFocus()
-		elseif group == "roles" then
-			self:DrawRoleEditorFrame(frame, widget)
-			self:PopulateRoleEditorFrame()
+		elseif group == "players" then
+			self:DrawPlayerEditorFrame(frame, widget)
+			self:PopulatePlayerEditorFrame()
 		end
     end)
 
@@ -171,13 +166,13 @@ function Dawn:PopulateDataFrame()
 	self:PopulateDungeonFrame()
 end
 
-function Dawn:PopulateRoleEditorFrame()
+function Dawn:PopulatePlayerEditorFrame()
 	local frame = Dawn.mainFrame
-	if not db or not frame.roleEditorScroll then
-		print(addonName, "Error: PopulateRoleEditorFrame - scroll widget or DB missing.")
+	if not db or not frame.playerEditorScroll then
+		print(addonName, "Error: PopulatePlayerEditorFrame - scroll widget or DB missing.")
 		return
 	end
-	local scroll = frame.roleEditorScroll
+	local scroll = frame.playerEditorScroll
 
 	scroll:ReleaseChildren()
 	scroll:SetScroll(0)
@@ -214,22 +209,21 @@ function Dawn:PopulateRoleEditorFrame()
 					classLabel:SetWidth(180)
 					charGroup:AddChild(classLabel)
 					
-					local noKeyCheckbox = AceGUI:Create("CheckBox")
-					noKeyCheckbox:SetLabel("No Key");
-					noKeyCheckbox:SetType("radio");
-					noKeyCheckbox:SetUserData("bnet", bnet);
-					noKeyCheckbox:SetUserData("charFullName", charFullName);
-					noKeyCheckbox:SetValue(GT.Modules.Character:GetCharacterNoKeyStatus(bnet, charFullName))
-					noKeyCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+					local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
+					noKeyForBoostCheckbox:SetLabel("No Key");
+					noKeyForBoostCheckbox:SetType("radio");
+					noKeyForBoostCheckbox:SetUserData("bnet", bnet);
+					noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
+					noKeyForBoostCheckbox:SetValue(GT.Modules.Character:GetCharacternoKeyForBoostStatus(bnet, charFullName))
+					noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
 						local cbBnet = widget:GetUserData("bnet")
 						local cbCharFullName = widget:GetUserData("charFullName")
-						GT.Modules.Character:SetCharacterNoKeyStatus(cbBnet, cbCharFullName, isChecked)
+						GT.Modules.Character:SetCharacternoKeyForBoostStatus(cbBnet, cbCharFullName, isChecked)
 					end)
-					charGroup:AddChild(noKeyCheckbox)
+					charGroup:AddChild(noKeyForBoostCheckbox)
 
-					local roles = {"TANK", "HEALER", "DAMAGER"}
 					local checkBoxes = {}
-					for i, role in ipairs(roles) do
+					for role, _ in pairs(GT.Modules.Data.ROLES) do
 						local checkbox = AceGUI:Create("CheckBox")
 						checkbox:SetLabel(role);
 						checkbox:SetType("radio");
@@ -290,10 +284,8 @@ function Dawn:PopulateDisplayFrame()
 		end
 
 		local numberOfPlayers = 1
-		local fullOutputString = ""
 		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
-		fullOutputString = fullOutputString ..
-			self:GeneratePlayerString(self.data.players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
+		local fullOutputString = self:GeneratePlayerString(self.data.players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
 		if IsInGroup() then
 			for bnet, player in pairs(self.data.players) do
 				if bnet ~= GT.Modules.Player:GetBNetTag() then
@@ -422,24 +414,19 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
         return a.name < b.name
     end)
 
-	for _, charName in ipairs(chars) do
-		local data = chars[charName]
-		if data and data.keystone and data.keystone.hasKey then
-			local roleIndicator = {
-				TANK = ":Tank:",
-				HEALER = ":healer:",
-				DAMAGER = ":DPS:"
-			}
+	for charName, data in pairs(chars) do
+		print(charName)
+		if data and data.keystone then
 			local roleIndicatorStr = ""
 			local nbRoles = 0
 			if data.customRoles and #data.customRoles > 0 then
 				for _, role in ipairs(data.customRoles) do
 					nbRoles = nbRoles + 1
-					roleIndicatorStr = roleIndicatorStr .. (roleIndicator[role] or ":Unknown:")
+					roleIndicatorStr = roleIndicatorStr .. (GT.Modules.Data.ROLES[role] or ":Unknown:")
 				end
 			else
 				nbRoles = 1
-				roleIndicatorStr = "" .. (roleIndicator[data.role] or ":Unknown:")
+				roleIndicatorStr = "" .. (GT.Modules.Data.ROLES[data.role] or ":Unknown:")
 			end
 			roleIndicatorStr = string.rep(" ", 6 * (maxRole-nbRoles)) .. roleIndicatorStr
 			local factionStr = ""
@@ -450,8 +437,8 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 			local classStr = data.className or "No Class"
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
-			if data.keystone.hasKey then
-				if data.keystone.noKey then
+			if data.keystone then
+				if data.keystone.noKeyForBoost then
 					keyStr = keyStr ..
 						string.format("No key")
 				else
@@ -548,7 +535,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		print(addonName, ": Received and processed data from", sender)
 
-		self:loadKeyList()
+		self:loadDawnDataTable()
         local frame = Dawn.mainFrame
         if frame and frame:IsVisible() then
 			print(addonName, "Repopulating visible frame...")

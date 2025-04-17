@@ -40,7 +40,6 @@ function Character:FetchCurrentCharacterStats()
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-
     self:UpdateKeystone(charData)
 
     return charData
@@ -52,10 +51,9 @@ function Character:UpdateKeystone(charData)
     local keyData = charData.keystone
 
     local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
-    keyData.hasKey = keystoneLevel and keystoneLevel >= 2
-	keyData.noKey = false
+	keyData.noKeyForBoostForBoost = false
 
-    if keyData.hasKey then
+    if keystoneLevel then
         keyData.level = keystoneLevel
         keyData.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
         keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_TABLE[keyData.mapID].name or "Unknown"
@@ -72,16 +70,16 @@ function Character:SetCharacterCustomRoles(bnet, charFullName, roles)
     db.global.player[bnet].char[charFullName].customRoles = roles
 end
 
-function Character:SetCharacterNoKeyStatus(bnet, charFullName, noKey)
+function Character:SetCharacternoKeyForBoostStatus(bnet, charFullName, noKeyForBoost)
     if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
 
-    db.global.player[bnet].char[charFullName].keystone.noKey = noKey
+    db.global.player[bnet].char[charFullName].keystone.noKeyForBoost = noKeyForBoost
 end
 
-function Character:GetCharacterNoKeyStatus(bnet, charFullName)
+function Character:GetCharacternoKeyForBoostStatus(bnet, charFullName)
     if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
 
-    return db.global.player[bnet].char[charFullName].keystone.noKey
+    return db.global.player[bnet].char[charFullName].keystone.noKeyForBoost
 end
 
 function Character:GetCharacterData(bnet, charFullName)

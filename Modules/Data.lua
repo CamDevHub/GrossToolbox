@@ -9,6 +9,12 @@ GT.headers = {
 }
 GT.COMM_PREFIX = "GTComm"
 
+Data.ROLES = {
+	TANK = ":Tank:",
+	HEALER = ":healer:",
+	DAMAGER = ":DPS:"
+}
+
 Data.CLASS_ID_TO_ENGLISH_NAME = {
     [1] = "Warrior",
     [2] = "Paladin",
