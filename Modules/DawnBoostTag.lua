@@ -290,6 +290,7 @@ function Dawn:PopulateDisplayFrame()
 			for bnet, player in pairs(self.data.players) do
 				if bnet ~= GT.Modules.Player:GetBNetTag() then
 					fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
+					numberOfPlayers = numberOfPlayers + 1
 				end
 			end
 		end
@@ -398,13 +399,6 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	end
 
 	local chars = player.char or {}
-	local maxRole = 1
-	for charName, charData in pairs(chars) do
-		if #charData.customRoles > maxRole then
-			maxRole = #charData.customRoles
-		end
-	end
-
 	table.sort(chars, function(a, b)
 		local aRoles = a.customRoles or {a.role}
 		local bRoles = b.customRoles or {b.role}
@@ -415,20 +409,15 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
     end)
 
 	for charName, data in pairs(chars) do
-		print(charName)
 		if data and data.keystone then
 			local roleIndicatorStr = ""
-			local nbRoles = 0
 			if data.customRoles and #data.customRoles > 0 then
 				for _, role in ipairs(data.customRoles) do
-					nbRoles = nbRoles + 1
 					roleIndicatorStr = roleIndicatorStr .. (GT.Modules.Data.ROLES[role] or ":Unknown:")
 				end
 			else
-				nbRoles = 1
 				roleIndicatorStr = "" .. (GT.Modules.Data.ROLES[data.role] or ":Unknown:")
 			end
-			roleIndicatorStr = string.rep(" ", 6 * (maxRole-nbRoles)) .. roleIndicatorStr
 			local factionStr = ""
 			if data.faction and data.faction ~= "Neutral" then
 				factionStr = ":" .. string.lower(data.faction) .. ":"
