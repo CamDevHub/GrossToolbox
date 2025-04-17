@@ -17,7 +17,7 @@ function Dawn:Init(database)
 	print(addonName, "- Dawn Module Initialized with DB.")
 end
 
-Dawn.keys = {}
+Dawn.data = {}
 function Dawn:loadKeyList()
 	local partyBnets = GT.Modules.Utils:FetchPartyMembersBNet(GT.Modules.Player:GetAllPlayerData())
 	if not partyBnets then
@@ -26,24 +26,33 @@ function Dawn:loadKeyList()
 	if #partyBnets == 0 then
 		partyBnets = { GT.Modules.Player:GetBNetTag() }
 	end
-	self.keys = {}
+	self.data = {
+		keys={},
+		players={}
+	}
 	for _, bnet in ipairs(partyBnets) do
 		local player = GT.Modules.Player:GetOrCreatePlayerData(bnet)
 		if not player or not player.char then
 			return
 		end
 		if player.char then
+			local charsWithKey = {}
 			for charFullName, charData in pairs(player.char) do
 				if charData and charData.keystone and charData.keystone.hasKey then
-					table.insert(self.keys, {
+					table.insert(self.data.keys, {
 						charName = charFullName,
 						classId = charData.classId,
+						className = charData.className,
 						level = charData.keystone.level or 0,
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
 							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map"
 					})
+					charsWithKey[charFullName] = charData
 				end
+			end
+			if next(charsWithKey) ~= nil then
+				self.data.players[bnet] = {char = charsWithKey, discordTag = player.discordTag}
 			end
 		end
 	end
@@ -62,7 +71,6 @@ function Dawn:UpdateData()
 	local charTable = GT.Modules.Character:FetchCurrentCharacterStats()
 	GT.Modules.Character:SetCharacterData(bnet, fullName, charTable)
 	self:loadKeyList()
-	print(addonName, ": Updated data for", fullName)
 end
 
 function Dawn:DrawDataFrame(frame, container)
@@ -174,18 +182,11 @@ function Dawn:PopulateRoleEditorFrame()
 	scroll:ReleaseChildren()
 	scroll:SetScroll(0)
 
-	local sortedBnets = {}
-	for bnet, _ in pairs(db.global.player) do table.insert(sortedBnets, bnet) end
-	table.sort(sortedBnets)
-
-	for _, bnet in ipairs(sortedBnets) do
-		local player = db.global.player[bnet]
-
+	for bnet, player in pairs(self.data.players) do
 		local playerHeader = AceGUI:Create("Heading")
 		playerHeader:SetText(player.discordTag or bnet)
 		playerHeader:SetFullWidth(true)
 		scroll:AddChild(playerHeader)
-
 		if player.char then
 			local sortedChars = {}
 			for charName, _ in pairs(player.char) do table.insert(sortedChars, charName) end
@@ -212,6 +213,19 @@ function Dawn:PopulateRoleEditorFrame()
 					classLabel:SetText(string.format("%s", GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[charData.classId] or "Unknown Class"))
 					classLabel:SetWidth(180)
 					charGroup:AddChild(classLabel)
+					
+					local noKeyCheckbox = AceGUI:Create("CheckBox")
+					noKeyCheckbox:SetLabel("No Key");
+					noKeyCheckbox:SetType("radio");
+					noKeyCheckbox:SetUserData("bnet", bnet);
+					noKeyCheckbox:SetUserData("charFullName", charFullName);
+					noKeyCheckbox:SetValue(GT.Modules.Character:GetCharacterNoKeyStatus(bnet, charFullName))
+					noKeyCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+						local cbBnet = widget:GetUserData("bnet")
+						local cbCharFullName = widget:GetUserData("charFullName")
+						GT.Modules.Character:SetCharacterNoKeyStatus(cbBnet, cbCharFullName, isChecked)
+					end)
+					charGroup:AddChild(noKeyCheckbox)
 
 					local roles = {"TANK", "HEALER", "DAMAGER"}
 					local checkBoxes = {}
@@ -267,31 +281,28 @@ function Dawn:PopulateDisplayFrame()
      if not db.global.config.discordTag or db.global.config.discordTag == "" then
 		frame.playersEditBox:SetText("Discord handle not set bro !")
 	else
+
+		local maxClassNameLength = 0
+		for _, keystoneData in ipairs(self.data.keys) do
+			if keystoneData.className and #keystoneData.className > maxClassNameLength then
+				maxClassNameLength = #keystoneData.className
+			end
+		end
+
 		local numberOfPlayers = 1
 		local fullOutputString = ""
-		local players = GT.Modules.Player:GetAllPlayerData()
 		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
 		fullOutputString = fullOutputString ..
-			self:GeneratePlayerString(players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
-		for bnet, player in pairs(players) do
-			local includePlayer = false;
-			if bnet ~= GT.Modules.Player:GetBNetTag() and IsInGroup() then
-				if player.char then
-					for charFullName, _ in pairs(player.char) do
-						if partyMembers[charFullName] then
-							includePlayer = true
-							numberOfPlayers = numberOfPlayers + 1
-							break
-						end
-					end
+			self:GeneratePlayerString(self.data.players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
+		if IsInGroup() then
+			for bnet, player in pairs(self.data.players) do
+				if bnet ~= GT.Modules.Player:GetBNetTag() then
+					fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
 				end
-			end
-			if includePlayer then
-				fullOutputString = fullOutputString .. self:GeneratePlayerString(player, bnet, true) .. "\n"
 			end
 		end
 		if numberOfPlayers > 1 then
-			fullOutputString = "###" .. GT.Modules.Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
+			fullOutputString = "### " .. GT.Modules.Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
 		end
 		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
 		frame.playersEditBox:HighlightText(0, 9999)
@@ -303,7 +314,7 @@ function Dawn:PopulateKeyListFrame()
     if not frame or not frame.keysEditBox then
         return
     end
-    local keyDataList = Dawn.keys
+    local keyDataList = self.data.keys
 	table.sort(keyDataList, function(a, b)
 		local mapNameA = a.mapName or ""
 		local mapNameB = b.mapName or ""
@@ -340,7 +351,7 @@ function Dawn:PopulateDungeonFrame()
 	for key, dungeon in pairs(GT.Modules.Data.DUNGEON_TABLE) do
 		local maxKeyLevel = 0
 		local minKeyLevel = 0
-		for _, keyData in pairs(Dawn.keys) do
+		for _, keyData in pairs(self.data.keys) do
 			if keyData.mapID == key then
 				maxKeyLevel = math.max(maxKeyLevel, keyData.level or 0)
 				if minKeyLevel == 0 then
@@ -395,39 +406,58 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	end
 
 	local chars = player.char or {}
-	local sortedChars = {}
-	for charName, _ in pairs(chars) do
-		table.insert(sortedChars, charName)
+	local maxRole = 1
+	for charName, charData in pairs(chars) do
+		if #charData.customRoles > maxRole then
+			maxRole = #charData.customRoles
+		end
 	end
-	table.sort(sortedChars)
 
-	for _, charName in ipairs(sortedChars) do
+	table.sort(chars, function(a, b)
+		local aRoles = a.customRoles or {a.role}
+		local bRoles = b.customRoles or {b.role}
+        if #aRoles ~= #bRoles then
+            return #aRoles > #bRoles
+        end
+        return a.name < b.name
+    end)
+
+	for _, charName in ipairs(chars) do
 		local data = chars[charName]
 		if data and data.keystone and data.keystone.hasKey then
 			local roleIndicator = {
-				TANK = ":Tank: ",
-				HEALER = ":healer: ",
-				DAMAGER = ":DPS: "
+				TANK = ":Tank:",
+				HEALER = ":healer:",
+				DAMAGER = ":DPS:"
 			}
 			local roleIndicatorStr = ""
-			if data.customRoles then
+			local nbRoles = 0
+			if data.customRoles and #data.customRoles > 0 then
 				for _, role in ipairs(data.customRoles) do
+					nbRoles = nbRoles + 1
 					roleIndicatorStr = roleIndicatorStr .. (roleIndicator[role] or ":Unknown:")
 				end
 			else
-				roleIndicatorStr = roleIndicator[data.role] or ":Unknown:"
+				nbRoles = 1
+				roleIndicatorStr = "" .. (roleIndicator[data.role] or ":Unknown:")
 			end
-
+			roleIndicatorStr = string.rep(" ", 6 * (maxRole-nbRoles)) .. roleIndicatorStr
 			local factionStr = ""
 			if data.faction and data.faction ~= "Neutral" then
 				factionStr = ":" .. string.lower(data.faction) .. ":"
 			end
-			local classStr = string.format("%s", data.className or "No Class")
+			
+			local classStr = data.className or "No Class"
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
 			if data.keystone.hasKey then
-				keyStr = keyStr ..
-					string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+				if data.keystone.noKey then
+					keyStr = keyStr ..
+						string.format("No key")
+				else
+					keyStr = keyStr ..
+						string.format("+%d %s", data.keystone.level or 0, data.keystone.mapName or "Unknown")
+				end
 			else
 				keyStr = keyStr .. "No Key"
 			end
@@ -507,6 +537,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
             localPlayerEntry.char = localPlayerEntry.char or {} 
             for charName, charData in pairs(incomingChars) do
                  if type(charData) == "table" then
+					localPlayerEntry.char[charName] = localPlayerEntry.char[charName] or {}
 					charData.customRoles = localPlayerEntry.char[charName].customRoles or {}
                     localPlayerEntry.char[charName] = charData
                  end

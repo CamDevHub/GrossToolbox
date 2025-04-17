@@ -53,6 +53,7 @@ function Character:UpdateKeystone(charData)
 
     local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
     keyData.hasKey = keystoneLevel and keystoneLevel >= 2
+	keyData.noKey = false
 
     if keyData.hasKey then
         keyData.level = keystoneLevel
@@ -71,6 +72,18 @@ function Character:SetCharacterCustomRoles(bnet, charFullName, roles)
     db.global.player[bnet].char[charFullName].customRoles = roles
 end
 
+function Character:SetCharacterNoKeyStatus(bnet, charFullName, noKey)
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
+
+    db.global.player[bnet].char[charFullName].keystone.noKey = noKey
+end
+
+function Character:GetCharacterNoKeyStatus(bnet, charFullName)
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
+
+    return db.global.player[bnet].char[charFullName].keystone.noKey
+end
+
 function Character:GetCharacterData(bnet, charFullName)
     if db.global.player[bnet] and db.global.player[bnet].char and db.global.player[bnet].char[charFullName] then
         return db.global.player[bnet].char[charFullName]
@@ -85,6 +98,7 @@ function Character:SetCharacterData(bnet, charFullName, dataTable)
     if not db.global.player[bnet] then return end
 
     db.global.player[bnet].char = db.global.player[bnet].char or {}
+	db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
     dataTable.customRoles = db.global.player[bnet].char[charFullName].customRoles or {}
     db.global.player[bnet].char[charFullName] = dataTable
 end
