@@ -7,6 +7,7 @@ local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 
 Dawn.data = {}
+Dawn.reloadNeeded = false
 local db
 function Dawn:Init(database)
 	db = database
@@ -30,13 +31,10 @@ function Dawn:loadDawnDataTable()
 	}
 	for _, bnet in ipairs(partyBnets) do
 		local player = GT.Modules.Player:GetOrCreatePlayerData(bnet)
-		if not player or not player.char then
-			return
-		end
-		if player.char then
+		if player and player.char then
 			local charsWithKey = {}
 			for charFullName, charData in pairs(player.char) do
-				if charData and charData.keystone and charData.keystone.level and charData.keystone.level > 2 then
+				if charData and charData.keystone and charData.keystone.level then
 					table.insert(self.data.keys, {
 						charName = charFullName,
 						classId = charData.classId,
@@ -44,7 +42,8 @@ function Dawn:loadDawnDataTable()
 						level = charData.keystone.level or 0,
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
-							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map"
+							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map",
+						noKeyForBoost = charData.keystone.noKeyForBoost or false
 					})
 					charsWithKey[charFullName] = charData
 				end
@@ -161,6 +160,10 @@ function Dawn:GetOrCreateMainFrame()
 end
 
 function Dawn:PopulateDataFrame()
+	if self.reloadNeeded then
+		self:loadDawnDataTable()
+		self.reloadNeeded = false
+	end
 	self:PopulateDisplayFrame()
 	self:PopulateKeyListFrame()
 	self:PopulateDungeonFrame()
@@ -219,6 +222,7 @@ function Dawn:PopulatePlayerEditorFrame()
 						local cbBnet = widget:GetUserData("bnet")
 						local cbCharFullName = widget:GetUserData("charFullName")
 						GT.Modules.Character:SetCharacternoKeyForBoostStatus(cbBnet, cbCharFullName, isChecked)
+						Dawn.reloadNeeded = true
 					end)
 					charGroup:AddChild(noKeyForBoostCheckbox)
 
@@ -253,7 +257,7 @@ function Dawn:PopulatePlayerEditorFrame()
 							GT.Modules.Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
 					   end);
 					   charGroup:AddChild(checkbox)
-					   checkBoxes[role] = checkbox 
+					   checkBoxes[role] = checkbox
 					end
 
 
@@ -284,7 +288,6 @@ function Dawn:PopulateDisplayFrame()
 		end
 
 		local numberOfPlayers = 1
-		local partyMembers = GT.Modules.Utils:FetchPartyMembersFullName()
 		local fullOutputString = self:GeneratePlayerString(self.data.players[GT.Modules.Player:GetBNetTag()], GT.Modules.Player:GetBNetTag(), false) .. "\n"
 		if IsInGroup() then
 			for bnet, player in pairs(self.data.players) do
@@ -321,11 +324,13 @@ function Dawn:PopulateKeyListFrame()
 
     local outputString = ""
     for _, keyInfo in ipairs(keyDataList) do
-        outputString = outputString .. string.format("%s: +%d %s\n",
-            keyInfo.charName,
-            keyInfo.level,
-            keyInfo.mapName
-        )
+		if not keyInfo.noKeyForBoost then
+			outputString = outputString .. string.format("%s: +%d %s\n",
+				keyInfo.charName,
+				keyInfo.level,
+				keyInfo.mapName
+			)
+		end
     end
 	if outputString == "" then	outputString = "No keystones found in database." end
 
@@ -345,7 +350,7 @@ function Dawn:PopulateDungeonFrame()
 		local maxKeyLevel = 0
 		local minKeyLevel = 0
 		for _, keyData in pairs(self.data.keys) do
-			if keyData.mapID == key then
+			if keyData.mapID == key and not keyData.noKeyForBoost then
 				maxKeyLevel = math.max(maxKeyLevel, keyData.level or 0)
 				if minKeyLevel == 0 then
 					minKeyLevel = keyData.level or 0

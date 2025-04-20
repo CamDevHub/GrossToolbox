@@ -95,6 +95,7 @@ function addon:OnEnable()
                 if button == "LeftButton" then
                     local Dawn = GT.Modules and GT.Modules.Dawn
                     if Dawn then
+                        Dawn:UpdateData()
                         Dawn:ToggleFrame()
                     end
                 elseif button == "RightButton" then

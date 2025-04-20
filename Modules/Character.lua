@@ -33,7 +33,7 @@ function Character:FetchCurrentCharacterStats()
     else
         charData.specName, charData.role = "No Spec", nil
     end
-    local className, _, classId = UnitClass("player")
+    local _, _, classId = UnitClass("player")
     charData.className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
     charData.classId = classId
 
@@ -51,7 +51,7 @@ function Character:UpdateKeystone(charData)
     local keyData = charData.keystone
 
     local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
-	keyData.noKeyForBoostForBoost = false
+	keyData.noKeyForBoost = false
 
     if keystoneLevel then
         keyData.level = keystoneLevel
