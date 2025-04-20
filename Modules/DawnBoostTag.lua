@@ -43,8 +43,7 @@ function Dawn:loadDawnDataTable()
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
 							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map",
-						noKeyForBoost = charData.keystone.noKeyForBoost or false,
-						hide = charData.hide or false,
+						custom = charData.custom or {}
 					})
 					charsWithKey[charFullName] = charData
 				end
@@ -134,7 +133,7 @@ function Dawn:GetOrCreateMainFrame()
     frame:SetCallback("OnClose", function(widget) CloseFrame() end)
 
     local tabGroup = AceGUI:Create("TabGroup")
-    tabGroup:SetLayout("Fill") 
+    tabGroup:SetLayout("Fill")
     tabGroup:SetTabs({
         {text = "Data", value = "data"},
         {text = "Player Editor", value = "players"}
@@ -341,7 +340,7 @@ function Dawn:PopulateKeyListFrame()
 
     local outputString = ""
     for _, keyInfo in ipairs(keyDataList) do
-		if not keyInfo.noKeyForBoost and not keyInfo.hide then
+		if not keyInfo.custom.noKeyForBoost and not keyInfo.custom.hide then
 			outputString = outputString .. string.format("%s: +%d %s\n",
 				keyInfo.charName,
 				keyInfo.level,
@@ -367,7 +366,7 @@ function Dawn:PopulateDungeonFrame()
 		local maxKeyLevel = 0
 		local minKeyLevel = 0
 		for _, keyData in pairs(self.data.keys) do
-			if keyData.mapID == key and not keyData.noKeyForBoost then
+			if keyData.mapID == key and not keyData.custom.noKeyForBoost and not keyData.custom.hide then
 				maxKeyLevel = math.max(maxKeyLevel, keyData.level or 0)
 				if minKeyLevel == 0 then
 					minKeyLevel = keyData.level or 0
@@ -430,8 +429,9 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
         return a.name < b.name
     end)
 
-	for charName, data in pairs(chars) do
-		if data and data.keystone and not data.hide then
+	local nbChar = 0
+	for _, data in pairs(chars) do
+		if data and data.keystone and not data.custom.hide then
 			local roleIndicatorStr = ""
 			if data.customRoles and #data.customRoles > 0 then
 				for _, role in ipairs(data.customRoles) do
@@ -449,7 +449,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 			local scoreStr = ":Raiderio: " .. (data.rating or 0)
 			local keyStr = ":Keystone: "
 			if data.keystone then
-				if data.keystone.noKeyForBoost then
+				if data.custom.noKeyForBoost then
 					keyStr = keyStr ..
 						string.format("No key")
 				else
@@ -470,10 +470,15 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 				ilvlStr,
 				tradeStr
 			)
+
+			nbChar = nbChar + 1
 			fullOutputString = fullOutputString .. "** " .. charOutput .. " **\n"
 		end
 	end
 
+	if addDiscordTag and player.discordTag and player.discordTag ~= "" and nbChar > 0 then
+		fullOutputString = string.format("|cffffcc00%s|r\n", player.discordTag) .. fullOutputString
+	end
 	return fullOutputString
 end
 

@@ -29,6 +29,20 @@ function Player:GetOrCreatePlayerData(bnet)
 		db.global.player[bnet] = { discordTag = "", char = {} }
 	end
 
+	for _, charData in pairs(db.global.player[bnet].char) do
+		if not charData.custom then
+			charData.custom = {}
+		end
+		if not charData.custom.noKeyForBoost then
+			charData.custom.noKeyForBoost = false
+		end
+		if not charData.custom.hide then
+			charData.custom.hide = false
+		end
+		if not charData.custom.roles then
+			charData.custom.roles = {}
+		end
+	end
 	return db.global.player[bnet]
 end
 

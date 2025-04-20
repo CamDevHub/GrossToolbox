@@ -63,35 +63,47 @@ function Character:UpdateKeystone(charData)
 end
 
 function Character:SetCharacterCustomRoles(bnet, charFullName, roles)
-    if not db.global.player[bnet] then return end
-
-    db.global.player[bnet].char = db.global.player[bnet].char or {}
+    if not db.global.player[bnet] or not db.global.player[bnet].char then return end
     db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
-    db.global.player[bnet].char[charFullName].customRoles = roles
+    if not db.global.player[bnet].char[charFullName].custom then
+        db.global.player[bnet].char[charFullName].custom = {}
+    end
+
+    db.global.player[bnet].char[charFullName].custom.roles = roles
 end
 
 function Character:SetCharacternoKeyForBoostStatus(bnet, charFullName, noKeyForBoost)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
+    if not db.global.player[bnet].char[charFullName].custom then
+        db.global.player[bnet].char[charFullName].custom = {}
+    end
 
-    db.global.player[bnet].char[charFullName].keystone.noKeyForBoost = noKeyForBoost
+    db.global.player[bnet].char[charFullName].custom.noKeyForBoost = noKeyForBoost
 end
 
 function Character:GetCharacternoKeyForBoostStatus(bnet, charFullName)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] or not db.global.player[bnet].char[charFullName].keystone then return end
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
+    if not db.global.player[bnet].char[charFullName].custom then
+        db.global.player[bnet].char[charFullName].custom = {}
+    end
 
-    return db.global.player[bnet].char[charFullName].keystone.noKeyForBoost
+    return db.global.player[bnet].char[charFullName].custom.noKeyForBoost or false
 end
 
 function Character:SetCharacterHideStatus(bnet, charFullName, isHidden)
     if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-
-    db.global.player[bnet].char[charFullName].hide = isHidden
+    if not db.global.player[bnet].char[charFullName].custom then
+        db.global.player[bnet].char[charFullName].custom = {}
+    end
+    db.global.player[bnet].char[charFullName].custom.hide = isHidden
 end
 
 function Character:GetCharacterHideStatus(bnet, charFullName)
     if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-
-    return db.global.player[bnet].char[charFullName].hide
+    if not db.global.player[bnet].char[charFullName].custom then
+        db.global.player[bnet].char[charFullName].custom = {}
+    end
+    return db.global.player[bnet].char[charFullName].custom.hide or false
 end
 
 function Character:GetCharacterData(bnet, charFullName)
@@ -109,8 +121,10 @@ function Character:SetCharacterData(bnet, charFullName, dataTable)
 
     db.global.player[bnet].char = db.global.player[bnet].char or {}
 	db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
-    dataTable.customRoles = db.global.player[bnet].char[charFullName].customRoles or {}
-    dataTable.hide = db.global.player[bnet].char[charFullName].hide or false
-    dataTable.keystone.noKeyForBoost = db.global.player[bnet].char[charFullName].keystone.noKeyForBoost or false
+    dataTable.custom = {
+        roles = dataTable.custom and dataTable.custom.roles or nil,
+        hide = dataTable.custom and dataTable.custom.hide or nil,
+        noKeyForBoost = dataTable.custom and dataTable.custom.noKeyForBoost or nil,
+    }
     db.global.player[bnet].char[charFullName] = dataTable
 end
