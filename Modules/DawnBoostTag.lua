@@ -43,7 +43,8 @@ function Dawn:loadDawnDataTable()
 						mapID = charData.keystone.mapID,
 						mapName = charData.keystone.mapID and
 							GT.Modules.Data.DUNGEON_TABLE[charData.keystone.mapID].name or "Unknown Map",
-						noKeyForBoost = charData.keystone.noKeyForBoost or false
+						noKeyForBoost = charData.keystone.noKeyForBoost or false,
+						hide = charData.hide or false,
 					})
 					charsWithKey[charFullName] = charData
 				end
@@ -199,22 +200,23 @@ function Dawn:PopulatePlayerEditorFrame()
 
 					local nameLabel = AceGUI:Create("Label")
 					nameLabel:SetText(string.format("%s", charFullName))
-					nameLabel:SetWidth(180)
+					nameLabel:SetWidth(140)
 					charGroup:AddChild(nameLabel)
 
 					local ratingLabel = AceGUI:Create("Label")
 					ratingLabel:SetText(string.format("Rating: %d", charData.rating or 0))
-					ratingLabel:SetWidth(180)
+					ratingLabel:SetWidth(140)
 					charGroup:AddChild(ratingLabel)
 
 					local classLabel = AceGUI:Create("Label")
 					classLabel:SetText(string.format("%s", GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[charData.classId] or "Unknown Class"))
-					classLabel:SetWidth(180)
+					classLabel:SetWidth(140)
 					charGroup:AddChild(classLabel)
 					
 					local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
 					noKeyForBoostCheckbox:SetLabel("No Key");
 					noKeyForBoostCheckbox:SetType("radio");
+					noKeyForBoostCheckbox:SetWidth(100);
 					noKeyForBoostCheckbox:SetUserData("bnet", bnet);
 					noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
 					noKeyForBoostCheckbox:SetValue(GT.Modules.Character:GetCharacternoKeyForBoostStatus(bnet, charFullName))
@@ -225,6 +227,21 @@ function Dawn:PopulatePlayerEditorFrame()
 						Dawn.reloadNeeded = true
 					end)
 					charGroup:AddChild(noKeyForBoostCheckbox)
+
+					local hideCharCheckbox = AceGUI:Create("CheckBox")
+					hideCharCheckbox:SetLabel("Hide");
+					hideCharCheckbox:SetType("radio");
+					hideCharCheckbox:SetWidth(100);
+					hideCharCheckbox:SetUserData("bnet", bnet);
+					hideCharCheckbox:SetUserData("charFullName", charFullName);
+					hideCharCheckbox:SetValue(GT.Modules.Character:GetCharacterHideStatus(bnet, charFullName))
+					hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+						local cbBnet = widget:GetUserData("bnet")
+						local cbCharFullName = widget:GetUserData("charFullName")
+						GT.Modules.Character:SetCharacterHideStatus(cbBnet, cbCharFullName, isChecked)
+						Dawn.reloadNeeded = true
+					end)
+					charGroup:AddChild(hideCharCheckbox)
 
 					local checkBoxes = {}
 					for role, _ in pairs(GT.Modules.Data.ROLES) do
@@ -324,7 +341,7 @@ function Dawn:PopulateKeyListFrame()
 
     local outputString = ""
     for _, keyInfo in ipairs(keyDataList) do
-		if not keyInfo.noKeyForBoost then
+		if not keyInfo.noKeyForBoost and not keyInfo.hide then
 			outputString = outputString .. string.format("%s: +%d %s\n",
 				keyInfo.charName,
 				keyInfo.level,
@@ -414,7 +431,7 @@ function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
     end)
 
 	for charName, data in pairs(chars) do
-		if data and data.keystone then
+		if data and data.keystone and not data.hide then
 			local roleIndicatorStr = ""
 			if data.customRoles and #data.customRoles > 0 then
 				for _, role in ipairs(data.customRoles) do

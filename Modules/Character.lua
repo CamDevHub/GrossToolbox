@@ -82,6 +82,18 @@ function Character:GetCharacternoKeyForBoostStatus(bnet, charFullName)
     return db.global.player[bnet].char[charFullName].keystone.noKeyForBoost
 end
 
+function Character:SetCharacterHideStatus(bnet, charFullName, isHidden)
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
+
+    db.global.player[bnet].char[charFullName].hide = isHidden
+end
+
+function Character:GetCharacterHideStatus(bnet, charFullName)
+    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
+
+    return db.global.player[bnet].char[charFullName].hide
+end
+
 function Character:GetCharacterData(bnet, charFullName)
     if db.global.player[bnet] and db.global.player[bnet].char and db.global.player[bnet].char[charFullName] then
         return db.global.player[bnet].char[charFullName]
@@ -98,5 +110,7 @@ function Character:SetCharacterData(bnet, charFullName, dataTable)
     db.global.player[bnet].char = db.global.player[bnet].char or {}
 	db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
     dataTable.customRoles = db.global.player[bnet].char[charFullName].customRoles or {}
+    dataTable.hide = db.global.player[bnet].char[charFullName].hide or false
+    dataTable.keystone.noKeyForBoost = db.global.player[bnet].char[charFullName].keystone.noKeyForBoost or false
     db.global.player[bnet].char[charFullName] = dataTable
 end
