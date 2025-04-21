@@ -522,7 +522,6 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
 		print(addonName, ": Received and processed data from", sender)
 
-		self:loadDawnDataTable()
         local frame = Dawn.mainFrame
         if frame and frame:IsVisible() then
 			print(addonName, "Repopulating visible frame...")
