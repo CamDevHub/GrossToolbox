@@ -18,23 +18,23 @@ function Dawn:Init(database)
 end
 
 function Dawn:loadDawnDataTable()
-	local partyBnets = GT.Modules.Utils:FetchPartyMembersBNet(GT.Modules.Player:GetAllPlayerData())
-	if not partyBnets then
+	local partyBnets = GT.Modules.Player:FetchPartyMembersBnet()
+	if not partyBnets or type(partyBnets) ~= "table" then
 		return
 	end
 	if #partyBnets == 0 then
-		partyBnets = { GT.Modules.Player:GetBNetTag() }
+		partyBnets = { GT.Modules.Player:GetBNetTagForUnit("player") }
 	end
 	self.data = {
 		keys={},
 		players={}
 	}
 	for _, bnet in ipairs(partyBnets) do
-		local player = GT.Modules.Player:GetOrCreatePlayerData(bnet)
-		if player and player.char then
+		local characters = GT.Modules.CharacterPlayer:GetAllCharactersForPlayer(bnet)
+		if characters and next(characters) ~= nil then
 			local charsWithKey = {}
-			for charFullName, charData in pairs(player.char) do
-				if charData and charData.keystone and charData.keystone.level then
+			for _, character in ipairs(characters.char) do
+				if character and character.keystone and character.keystone.level then
 					table.insert(self.data.keys, {
 						charName = charFullName,
 						classId = charData.classId,
@@ -415,10 +415,6 @@ end
 
 function Dawn:GeneratePlayerString(player, bnet, addDiscordTag)
 	local fullOutputString = ""
-	if addDiscordTag and player.discordTag and player.discordTag ~= "" then
-		fullOutputString = fullOutputString .. string.format("|cffffcc00%s|r\n", player.discordTag)
-	end
-
 	local chars = player.char or {}
 	table.sort(chars, function(a, b)
 		local aRoles = a.customRoles or {a.role}

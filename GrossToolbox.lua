@@ -24,7 +24,7 @@ local defaults = {
         minimap = {
             hide = false,
         },
-        player = {}
+        players = {}
     }
 }
 

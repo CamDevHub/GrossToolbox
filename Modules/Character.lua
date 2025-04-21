@@ -5,15 +5,55 @@ local Character = {}
 GT.Modules.Character = Character
 
 local db
+
+local function GetOrCreateCharacterData(bnet, fullName)
+    if not db or not db.global.players then return nil end
+    db.global.player[bnet] = db.global.player[bnet] or {}
+    db.global.player[bnet].characters = db.global.player[bnet].characters or {}
+    db.global.player[bnet].characters[fullName] = db.global.player[bnet].characters[fullName] or {}
+    return db.global.player[bnet].characters[fullName]
+end
+
+local function GetOrCreateCharacterCustomData(bnet, charFullName)
+    local charData = GetOrCreateCharacterData(bnet, charFullName)
+    if not charData then return nil end
+    charData.custom = charData.custom or {}
+    return charData.custom
+end
+
+local function UpdateKeystone(charData)
+    if not charData then return end
+    charData.keystone = charData.keystone or {}
+    local keyData = charData.keystone
+
+    local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
+
+    if keystoneLevel then
+        keyData.level = keystoneLevel
+        keyData.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
+        keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_TABLE[keyData.mapID].name or "Unknown"
+    else
+        keyData.level, keyData.mapID, keyData.mapName = nil, nil, nil
+    end
+end
+
 function Character:Init(database)
     db = database
     if not db then return end
 end
 
-function Character:GetFullName()
-    local name = UnitName("player")
-    local realm = GetRealmName()
-    return name .. "-" .. realm
+function Character:GetFullName(unit)
+    local fullName = nil
+    if UnitExists(unit) then
+        local name, realm = UnitName(unit)
+        if name then
+            if not (realm and realm ~= "") then
+                realm = GetRealmName()
+            end
+            fullName = name .. "-" .. realm
+        end
+    end
+    return fullName
 end
 
 function Character:FetchCurrentCharacterStats()
@@ -21,13 +61,13 @@ function Character:FetchCurrentCharacterStats()
 
     local avgItemLevel = GetAverageItemLevel()
     charData.iLvl = avgItemLevel and math.floor(avgItemLevel) or 0
-    local factionName, factionLocalized = UnitFactionGroup("player")
+    local factionName, _ = UnitFactionGroup("player")
     charData.faction = factionName or "Neutral"
 
 
     local specIndex = GetSpecialization()
     if specIndex and specIndex > 0 then
-        local specID, specName, _, _, role = GetSpecializationInfo(specIndex)
+        local specID, _, _, _, role = GetSpecializationInfo(specIndex)
         charData.specName = GT.Modules.Data.SPEC_ID_TO_ENGLISH_NAME[specID]
         charData.role = role
     else
@@ -40,91 +80,78 @@ function Character:FetchCurrentCharacterStats()
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-    self:UpdateKeystone(charData)
+    UpdateKeystone(charData)
 
     return charData
 end
 
-function Character:UpdateKeystone(charData)
-    if not charData then return end
-    charData.keystone = charData.keystone or {}
-    local keyData = charData.keystone
+function Character:GetCharacterCustomRoles(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        return customData.roles or {}
+    end
+    return {}
+end
 
-    local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
-	keyData.noKeyForBoost = false
-
-    if keystoneLevel then
-        keyData.level = keystoneLevel
-        keyData.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
-        keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_TABLE[keyData.mapID].name or "Unknown"
-    else
-        keyData.level, keyData.mapID, keyData.mapName = nil, nil, nil
+function Character:SetCharacterCustomRoles(bnet, fullName, roles)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        customData.roles = roles
     end
 end
 
-function Character:SetCharacterCustomRoles(bnet, charFullName, roles)
-    if not db.global.player[bnet] or not db.global.player[bnet].char then return end
-    db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
-    if not db.global.player[bnet].char[charFullName].custom then
-        db.global.player[bnet].char[charFullName].custom = {}
-    end
-
-    db.global.player[bnet].char[charFullName].custom.roles = roles
-end
-
-function Character:SetCharacternoKeyForBoostStatus(bnet, charFullName, noKeyForBoost)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-    if not db.global.player[bnet].char[charFullName].custom then
-        db.global.player[bnet].char[charFullName].custom = {}
-    end
-
-    db.global.player[bnet].char[charFullName].custom.noKeyForBoost = noKeyForBoost
-end
-
-function Character:GetCharacternoKeyForBoostStatus(bnet, charFullName)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-    if not db.global.player[bnet].char[charFullName].custom then
-        db.global.player[bnet].char[charFullName].custom = {}
-    end
-
-    return db.global.player[bnet].char[charFullName].custom.noKeyForBoost or false
-end
-
-function Character:SetCharacterHideStatus(bnet, charFullName, isHidden)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-    if not db.global.player[bnet].char[charFullName].custom then
-        db.global.player[bnet].char[charFullName].custom = {}
-    end
-    db.global.player[bnet].char[charFullName].custom.hide = isHidden
-end
-
-function Character:GetCharacterHideStatus(bnet, charFullName)
-    if not db.global.player[bnet] or not db.global.player[bnet].char or not db.global.player[bnet].char[charFullName] then return end
-    if not db.global.player[bnet].char[charFullName].custom then
-        db.global.player[bnet].char[charFullName].custom = {}
-    end
-    return db.global.player[bnet].char[charFullName].custom.hide or false
-end
-
-function Character:GetCharacterData(bnet, charFullName)
-    if db.global.player[bnet] and db.global.player[bnet].char and db.global.player[bnet].char[charFullName] then
-        return db.global.player[bnet].char[charFullName]
+function Character:SetCharacterNoKeyForBoostStatus(bnet, fullName, isNoKey)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        customData.noKey = isNoKey
     end
 end
 
-function Character:GetAllCharactersForPlayer(bnet)
-    return db.global.player[bnet].char or {}
+function Character:GetCharacterNoKeyForBoostStatus(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        return customData.noKey or false
+    end
+    return false
 end
 
-function Character:SetCharacterData(bnet, charFullName, dataTable)
-    if not db.global.player[bnet] then return end
+function Character:SetCharacterHideStatus(bnet, fullName, isHidden)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        customData.hidden = isHidden
+    end
+end
 
-    db.global.player[bnet].char = db.global.player[bnet].char or {}
-	db.global.player[bnet].char[charFullName] = db.global.player[bnet].char[charFullName] or {}
-    dataTable.custom = {
-        roles = dataTable.custom and dataTable.custom.roles or nil,
-        hide = dataTable.custom and dataTable.custom.hide or nil,
-        noKeyForBoost = dataTable.custom and dataTable.custom.noKeyForBoost or nil,
+function Character:GetCharacterHideStatus(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    if customData then
+        return customData.hidden or false
+    end
+    return false
+end
+
+function Character:GetCharacterKeystone(bnet, fullName)
+    local character = GetOrCreateCharacterData(bnet, fullName)
+    local keystone = {
+        level = nil,
+        mapID = nil,
+        mapName = nil
     }
-    db.global.player[bnet].char[charFullName] = dataTable
+    if character and character.keystone then
+        keystone.level = character.keystone.level
+        keystone.mapID = character.keystone.mapID
+        keystone.mapName = character.keystone.mapName
+    end
+    return keystone
+end
+
+function Character:SetCharacterData(bnet, fullName, dataTable)
+    local character = GetOrCreateCharacterData(bnet, fullName)
+    if character then
+        for key, value in pairs(dataTable) do
+            if key ~= "custom" then
+                character[key] = value
+            end
+        end
+    end
 end

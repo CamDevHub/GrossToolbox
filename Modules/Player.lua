@@ -10,56 +10,60 @@ function Player:Init(database)
 	if not db then return end
 end
 
-function Player:GetBNetTag()
-	local bnetData = C_BattleNet.GetAccountInfoByGUID(UnitGUID("player"))
+local function GetOrCreatePlayerData(bnet)
+	if not db or not db.global.players then return nil end
+	if not db.global.players[bnet] then
+		db.global.players[bnet] = { discordTag = "", char = {} }
+	end
+	return db.global.players[bnet]
+end
+
+function Player:GetBNetTagForUnit(unit)
+	local bnetData = C_BattleNet.GetAccountInfoByGUID(UnitGUID(unit))
 	local bnetTag
 	if bnetData then bnetTag = bnetData.battleTag end
 	return bnetTag
 end
 
-function Player:UpdateDiscordTagForLocalPlayer(tag)
-	local bnet = self:GetBNetTag()
-	if db.global.player[bnet] then
-		db.global.player[bnet].discordTag = tag
-	end
-end
+function Player:FetchPartyMembersBnet()
+    local bnets = {}
+    if IsInGroup() then
+        for i = 1, GetNumGroupMembers() do
+            local unit = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo()) and ("raid" .. i) or
+                ("party" .. i)
+			local bnet = self:GetBNetTagForUnit(unit)
+            if bnet then
+                bnets.insert(self:GetBNetTagForUnit(unit))
+            end
+        end
+    end
 
-function Player:GetOrCreatePlayerData(bnet)
-	if not db.global.player[bnet] then
-		db.global.player[bnet] = { discordTag = "", char = {} }
-	end
-
-	for _, charData in pairs(db.global.player[bnet].char) do
-		if not charData.custom then
-			charData.custom = {}
-		end
-		if not charData.custom.noKeyForBoost then
-			charData.custom.noKeyForBoost = false
-		end
-		if not charData.custom.hide then
-			charData.custom.hide = false
-		end
-		if not charData.custom.roles then
-			charData.custom.roles = {}
-		end
-	end
-	return db.global.player[bnet]
+    return bnets
 end
 
 function Player:SetDiscordTag(bnet, tag)
-	if db.global.player[bnet] then
-		db.global.player[bnet].discordTag = tag
+	local playerData = GetOrCreatePlayerData(bnet)
+	if playerData then
+		playerData.discordTag = tag
 	end
 end
 
 function Player:GetDiscordTag(bnet)
-	if db.global.player[bnet] then
-		return db.global.player[bnet].discordTag
+	local playerData = GetOrCreatePlayerData(bnet)
+	if playerData then
+		return playerData.discordTag
 	end
 end
 
-function Player:GetAllPlayerData()
-	if db.global.player then
-		return db.global.player
-	end
+function Player:GetAllCharactersForPlayer(bnet)
+    local player = GetOrCreatePlayerData(bnet)
+    if player and player.characters then
+        local characters = {}
+        for fullName, charData in pairs(player.characters) do
+            if charData then
+                table.insert(characters, fullName)
+            end
+        end
+        return characters
+    end
 end
