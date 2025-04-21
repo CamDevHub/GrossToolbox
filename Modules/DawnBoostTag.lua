@@ -34,6 +34,7 @@ function Dawn:UpdateData()
 	local bnet = Player:GetBNetTagForUnit("player")
 	local fullName = Character:GetFullName("player")
 
+	Player:SetDiscordTag(bnet, db.global.config.discordTag)
 	Character:BuildCurrentCharacter(bnet, fullName)
 end
 
@@ -151,104 +152,108 @@ function Dawn:PopulatePlayerEditorFrame()
 	scroll:SetScroll(0)
 
 	for _, bnet in ipairs(bnets) do
-		local playerHeader = AceGUI:Create("Heading")
-		playerHeader:SetText(GT.Modules.Player:GetDiscordTag(bnet))
-		playerHeader:SetFullWidth(true)
-		scroll:AddChild(playerHeader)
+		local discordTag = Player:GetDiscordTag(bnet)
+		if discordTag and discordTag ~= "" then
+			
+			local playerHeader = AceGUI:Create("Heading")
+			playerHeader:SetText(discordTag)
+			playerHeader:SetFullWidth(true)
+			scroll:AddChild(playerHeader)
 
-		local charactersName = GT.Modules.Player:GetCharactersName(bnet)
-		for _, charFullName in ipairs(charactersName) do
-			local keystone = Character:GetCharacterKeystone(bnet, charFullName)
-			local rating = Character:GetCharacterRating(bnet, charFullName)
-			local classId = Character:GetCharacterClassId(bnet, charFullName)
-			local charGroup = AceGUI:Create("SimpleGroup")
-			local hasKey = Character:GetCharacterHasKey(bnet, charFullName)
-			local isHidden = Character:GetCharacterIsHidden(bnet, charFullName)
+			local charactersName = Player:GetCharactersName(bnet)
+			for _, charFullName in ipairs(charactersName) do
+				local keystone = Character:GetCharacterKeystone(bnet, charFullName)
+				local rating = Character:GetCharacterRating(bnet, charFullName)
+				local classId = Character:GetCharacterClassId(bnet, charFullName)
+				local charGroup = AceGUI:Create("SimpleGroup")
+				local hasKey = Character:GetCharacterHasKey(bnet, charFullName)
+				local isHidden = Character:GetCharacterIsHidden(bnet, charFullName)
 
-			if keystone and keystone.level and keystone.level > 0 then
-				charGroup:SetLayout("Flow")
-				charGroup:SetFullWidth(true)
+				if keystone and keystone.level and keystone.level > 0 then
+					charGroup:SetLayout("Flow")
+					charGroup:SetFullWidth(true)
 
-				local nameLabel = AceGUI:Create("Label")
-				nameLabel:SetText(string.format("%s", charFullName))
-				nameLabel:SetWidth(140)
-				charGroup:AddChild(nameLabel)
+					local nameLabel = AceGUI:Create("Label")
+					nameLabel:SetText(string.format("%s", charFullName))
+					nameLabel:SetWidth(140)
+					charGroup:AddChild(nameLabel)
 
-				local ratingLabel = AceGUI:Create("Label")
-				ratingLabel:SetText(string.format("Rating: %d", rating))
-				ratingLabel:SetWidth(140)
-				charGroup:AddChild(ratingLabel)
+					local ratingLabel = AceGUI:Create("Label")
+					ratingLabel:SetText(string.format("Rating: %d", rating))
+					ratingLabel:SetWidth(140)
+					charGroup:AddChild(ratingLabel)
 
-				local classLabel = AceGUI:Create("Label")
-				classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
-				classLabel:SetWidth(140)
-				charGroup:AddChild(classLabel)
-				
-				local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
-				noKeyForBoostCheckbox:SetLabel("No Key");
-				noKeyForBoostCheckbox:SetType("checkbox");
-				noKeyForBoostCheckbox:SetWidth(100);
-				noKeyForBoostCheckbox:SetUserData("bnet", bnet);
-				noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
-				noKeyForBoostCheckbox:SetValue(not hasKey)
-				noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-					local cbBnet = widget:GetUserData("bnet")
-					local cbCharFullName = widget:GetUserData("charFullName")
-					Character:SetCharacterHasKey(cbBnet, cbCharFullName, not isChecked)
-				end)
-				charGroup:AddChild(noKeyForBoostCheckbox)
-
-				local hideCharCheckbox = AceGUI:Create("CheckBox")
-				hideCharCheckbox:SetLabel("Hide");
-				hideCharCheckbox:SetType("checkbox");
-				hideCharCheckbox:SetWidth(100);
-				hideCharCheckbox:SetUserData("bnet", bnet);
-				hideCharCheckbox:SetUserData("charFullName", charFullName);
-				hideCharCheckbox:SetValue(isHidden)
-				hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-					local cbBnet = widget:GetUserData("bnet")
-					local cbCharFullName = widget:GetUserData("charFullName")
-					Character:SetCharacterIsHidden(cbBnet, cbCharFullName, isChecked)
-				end)
-				charGroup:AddChild(hideCharCheckbox)
-
-				local checkBoxes = {}
-				for role, _ in pairs(Data.ROLES) do
-					local checkbox = AceGUI:Create("CheckBox")
-					checkbox:SetLabel(role);
-					checkbox:SetType("checkbox");
-
-					local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
-					if customRoles and #customRoles > 0 then
-						checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
-					end
-					checkbox:SetUserData("bnet", bnet);
-					checkbox:SetUserData("charFullName", charFullName);
-					checkbox:SetUserData("role", role);
-					checkbox:SetUserData("checkBoxes", checkBoxes);
-					checkbox:SetWidth(100);
-					checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+					local classLabel = AceGUI:Create("Label")
+					classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
+					classLabel:SetWidth(140)
+					charGroup:AddChild(classLabel)
+					
+					local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
+					noKeyForBoostCheckbox:SetLabel("No Key");
+					noKeyForBoostCheckbox:SetType("checkbox");
+					noKeyForBoostCheckbox:SetWidth(100);
+					noKeyForBoostCheckbox:SetUserData("bnet", bnet);
+					noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
+					noKeyForBoostCheckbox:SetValue(not hasKey)
+					noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
 						local cbBnet = widget:GetUserData("bnet")
 						local cbCharFullName = widget:GetUserData("charFullName")
-						local otherCheckBoxes = widget:GetUserData("checkBoxes")
-						local rolesToSet = {}
-						for roleValue, cb in pairs(otherCheckBoxes) do
-							if cb:GetValue() then
-								table.insert(rolesToSet, roleValue)
-							end
-						end
-						table.sort(rolesToSet, function(a, b)
-							return a > b
-						end)
-						Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
-					end);
-					charGroup:AddChild(checkbox)
-					checkBoxes[role] = checkbox
-				end
-			end
+						Character:SetCharacterHasKey(cbBnet, cbCharFullName, not isChecked)
+					end)
+					charGroup:AddChild(noKeyForBoostCheckbox)
 
-			charGroup:DoLayout()
-			scroll:AddChild(charGroup)
+					local hideCharCheckbox = AceGUI:Create("CheckBox")
+					hideCharCheckbox:SetLabel("Hide");
+					hideCharCheckbox:SetType("checkbox");
+					hideCharCheckbox:SetWidth(100);
+					hideCharCheckbox:SetUserData("bnet", bnet);
+					hideCharCheckbox:SetUserData("charFullName", charFullName);
+					hideCharCheckbox:SetValue(isHidden)
+					hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+						local cbBnet = widget:GetUserData("bnet")
+						local cbCharFullName = widget:GetUserData("charFullName")
+						Character:SetCharacterIsHidden(cbBnet, cbCharFullName, isChecked)
+					end)
+					charGroup:AddChild(hideCharCheckbox)
+
+					local checkBoxes = {}
+					for role, _ in pairs(Data.ROLES) do
+						local checkbox = AceGUI:Create("CheckBox")
+						checkbox:SetLabel(role);
+						checkbox:SetType("checkbox");
+
+						local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
+						if customRoles and #customRoles > 0 then
+							checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
+						end
+						checkbox:SetUserData("bnet", bnet);
+						checkbox:SetUserData("charFullName", charFullName);
+						checkbox:SetUserData("role", role);
+						checkbox:SetUserData("checkBoxes", checkBoxes);
+						checkbox:SetWidth(100);
+						checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+							local cbBnet = widget:GetUserData("bnet")
+							local cbCharFullName = widget:GetUserData("charFullName")
+							local otherCheckBoxes = widget:GetUserData("checkBoxes")
+							local rolesToSet = {}
+							for roleValue, cb in pairs(otherCheckBoxes) do
+								if cb:GetValue() then
+									table.insert(rolesToSet, roleValue)
+								end
+							end
+							table.sort(rolesToSet, function(a, b)
+								return a > b
+							end)
+							Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
+						end);
+						charGroup:AddChild(checkbox)
+						checkBoxes[role] = checkbox
+					end
+				end
+
+				charGroup:DoLayout()
+				scroll:AddChild(charGroup)
+			end
 		end
 	end
 
@@ -270,7 +275,8 @@ function Dawn:PopulateDisplayFrame()
 		if IsInGroup() then
 			for _, bnet in ipairs(Player:GetBNetOfPartyMembers()) do
 				if bnet ~= localBnet then
-					if #Player:GetCharactersForPlayer(bnet) > 0 then
+					local charactersName = Player:GetCharactersName(bnet)
+					if #charactersName > 0 then
 						fullOutputString = fullOutputString .. self:GeneratePlayerString(bnet, true) .. "\n"
 						numberOfPlayers = numberOfPlayers + 1
 					end
@@ -475,7 +481,7 @@ function Dawn:SendCharacterData()
 	local bnet = Player:GetBNetTagForUnit("player")
 	if not bnet then return end
 
-	local characters = Character:GetCharactersForPlayer(bnet)
+	local characters = Player:GetCharactersForPlayer(bnet)
 	if not characters or not db.global.config.discordTag then return end
 
 	local payload = {
