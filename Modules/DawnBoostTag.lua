@@ -179,7 +179,7 @@ function Dawn:PopulatePlayerEditorFrame()
 			
 			local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
 			noKeyForBoostCheckbox:SetLabel("No Key");
-			noKeyForBoostCheckbox:SetType("radio");
+			noKeyForBoostCheckbox:SetType("checkbox");
 			noKeyForBoostCheckbox:SetWidth(100);
 			noKeyForBoostCheckbox:SetUserData("bnet", bnet);
 			noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
@@ -193,7 +193,7 @@ function Dawn:PopulatePlayerEditorFrame()
 
 			local hideCharCheckbox = AceGUI:Create("CheckBox")
 			hideCharCheckbox:SetLabel("Hide");
-			hideCharCheckbox:SetType("radio");
+			hideCharCheckbox:SetType("checkbox");
 			hideCharCheckbox:SetWidth(100);
 			hideCharCheckbox:SetUserData("bnet", bnet);
 			hideCharCheckbox:SetUserData("charFullName", charFullName);
@@ -209,7 +209,7 @@ function Dawn:PopulatePlayerEditorFrame()
 			for role, _ in pairs(Data.ROLES) do
 				local checkbox = AceGUI:Create("CheckBox")
 				checkbox:SetLabel(role);
-				checkbox:SetType("radio");
+				checkbox:SetType("checkbox");
 
 				local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
 				if customRoles and #customRoles > 0 then
@@ -344,7 +344,7 @@ function Dawn:PopulateDungeonFrame()
 
 	for key, dungeon in pairs(Data.DUNGEON_TABLE) do
 		local maxKeyLevel = 0
-		local minKeyLevel = 0
+		local minKeyLevel = 99999
 
 		local partyBnets = Player:GetBNetOfPartyMembers()
 		for _, bnet in ipairs(partyBnets) do
@@ -353,11 +353,7 @@ function Dawn:PopulateDungeonFrame()
 				local keystone = Character:GetCharacterKeystone(bnet, charName)
 				if keystone and keystone.mapID == key and Character:GetCharacterHasKey(bnet, charName) and not Character:GetCharacterIsHidden(bnet, charName) then
 					maxKeyLevel = math.max(maxKeyLevel, keystone.level or 0)
-					if minKeyLevel == 0 then
-						minKeyLevel = keystone.level or 0
-					else 
-						minKeyLevel = math.min(minKeyLevel, keystone.level or 0)
-					end
+					minKeyLevel = math.min(minKeyLevel, keystone.level or 0)
 				end
 			end
 		end
@@ -428,10 +424,10 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
 			if keystone and keystone.level then
 				if Character:GetCharacterHasKey(bnet, name) then
 					keyStr = keyStr ..
-						string.format("No key")
+					string.format("+%d %s", keystone.level, keystone.mapName or "Unknown")
 				else
 					keyStr = keyStr ..
-						string.format("+%d %s", keystone.level, keystone.mapName or "Unknown")
+					string.format("No key")
 				end
 			else
 				keyStr = keyStr .. "No Key"
@@ -503,7 +499,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
 	elseif string.sub(message, 1, 10) == GT.headers.player then
 		local success, data = AceSerializer:Deserialize(string.sub(message, 11))
 
-		if not success or type(data) ~= "table" or not data.bnet or not data.char then
+		if not success or type(data) ~= "table" or not data.bnet or not data.characters then
 			print(addonName, ": Invalid or malformed data from", sender)
 			return
 		end
