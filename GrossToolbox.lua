@@ -16,6 +16,7 @@ local AceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0")
 
 local addon = AceAddon:NewAddon("GrossToolbox", "AceConsole-3.0", "AceEvent-3.0")
 GT.addon = addon
+GT.debug = true
 
 -- Define the default structure for your database
 local defaults = {
