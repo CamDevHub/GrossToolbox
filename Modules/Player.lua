@@ -11,6 +11,7 @@ function Player:Init(database)
 end
 
 local function GetOrCreatePlayerData(bnet)
+	if not db then return nil end
 	if not db.global.players[bnet] then
 		db.global.players[bnet] = { discordTag = "", characters = {} }
 	end
@@ -48,6 +49,8 @@ function Player:GetBNetOfPartyMembers()
 end
 
 function Player:GetCharactersName(bnet)
+	if not db then return end
+
 	local player = GetOrCreatePlayerData(bnet)
 	if not player then return end
 
@@ -65,22 +68,16 @@ function Player:SetDiscordTag(bnet, tag)
 end
 
 function Player:GetDiscordTag(bnet)
+	if not db then return end
+
 	local player = GetOrCreatePlayerData(bnet)
 	if not player then return end
 	return player.discordTag
 end
 
-function Player:GetCharactersNameForPlayer(bnet)
-	local player = GetOrCreatePlayerData(bnet)
-	local names = {}
-	if not player then return names end
-	for name, _ in pairs(player.characters) do
-		table.insert(names, name)
-	end
-	return names
-end
-
 function Player:GetCharactersForPlayer(bnet)
+	if not db then return end
+
 	local player = GetOrCreatePlayerData(bnet)
 	if not player then return end
 	return player.characters

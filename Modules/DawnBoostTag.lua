@@ -34,8 +34,7 @@ function Dawn:UpdateData()
 	local bnet = Player:GetBNetTagForUnit("player")
 	local fullName = Character:GetFullName("player")
 
-	local charTable = Character:FetchCurrentCharacterStats()
-	Character:SetCharacterData(bnet, fullName, charTable)
+	Character:BuildCurrentCharacter(bnet, fullName)
 end
 
 function Dawn:DrawDataFrame(frame, container)

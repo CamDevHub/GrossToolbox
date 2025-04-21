@@ -5,13 +5,13 @@ local Character = {}
 GT.Modules.Character = Character
 
 local db
-local Utils
+local Data
 function Character:Init(database)
     db = database
     if not db then return end
 
-    Utils = GT.Modules.Utils
-    if not Utils then return end
+    Data = GT.Modules.Data
+    if not Data then return end
 end
 
 local function GetOrCreateCharacterData(bnet, fullName)
@@ -30,20 +30,18 @@ local function GetOrCreateCharacterCustomData(bnet, charFullName)
     return charData.custom
 end
 
-local function UpdateKeystone(charData)
-    if not charData then return end
-    charData.keystone = charData.keystone or {}
-    local keyData = charData.keystone
-
+local function GetKeystone()
+    local keystone = {}
     local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
-
     if keystoneLevel then
-        keyData.level = keystoneLevel
-        keyData.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
-        keyData.mapName = keyData.mapID and GT.Modules.Data.DUNGEON_TABLE[keyData.mapID].name or "Unknown"
+        keystone.level = keystoneLevel
+        keystone.mapID = C_MythicPlus.GetOwnedKeystoneMapID()
+        keystone.mapName = keystone.mapID and Data.DUNGEON_TABLE[keystone.mapID].name or "Unknown"
     else
-        keyData.level, keyData.mapID, keyData.mapName = nil, nil, nil
+        keystone.level, keystone.mapID, keystone.mapName = nil, nil, nil
     end
+
+    return keystone
 end
 
 function Character:GetFullName(unit)
@@ -60,9 +58,8 @@ function Character:GetFullName(unit)
     return fullName
 end
 
-function Character:FetchCurrentCharacterStats()
+function Character:BuildCurrentCharacter(bnet, fullName)
     local charData = {}
-
     local avgItemLevel = GetAverageItemLevel()
     charData.iLvl = avgItemLevel and math.floor(avgItemLevel) or 0
     local factionName, _ = UnitFactionGroup("player")
@@ -83,12 +80,13 @@ function Character:FetchCurrentCharacterStats()
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-    UpdateKeystone(charData)
-
-    return charData
+    self:SetCharacterData(bnet, fullName, charData)
+    self:SetCharacterKeystone(bnet, fullName, GetKeystone())
 end
 
 function Character:SetCharacterData(bnet, fullName, dataTable)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         for key, value in pairs(dataTable) do
@@ -100,14 +98,19 @@ function Character:SetCharacterData(bnet, fullName, dataTable)
 end
 
 function Character:GetCharacterCustomRoles(bnet, fullName)
+    local roles = {}
+    if not db then return roles end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
-    if customData then
-        return customData.roles or {}
+    if customData and customData.roles then
+        roles = { table.unpack(customData.roles) }
     end
-    return {}
+    return roles
 end
 
 function Character:SetCharacterCustomRoles(bnet, fullName, roles)
+    if not db then return end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData then
         customData.roles = roles
@@ -115,22 +118,28 @@ function Character:SetCharacterCustomRoles(bnet, fullName, roles)
 end
 
 function Character:SetCharacterHasKey(bnet, fullName, hasKey)
+    if not db then return end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData then
         customData.hasKey = hasKey
-        Utils:DebugPrint("SetCharacterHasKey", bnet, fullName, tostring(hasKey))
     end
 end
 
 function Character:GetCharacterHasKey(bnet, fullName)
+    local hasKey = false
+    if not db then return hasKey end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData then
-        return customData.hasKey or false
+        hasKey = customData.hasKey or false
     end
-    return true
+    return hasKey
 end
 
 function Character:SetCharacterIsHidden(bnet, fullName, isHidden)
+    if not db then return end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData then
         customData.isHidden = isHidden
@@ -138,20 +147,25 @@ function Character:SetCharacterIsHidden(bnet, fullName, isHidden)
 end
 
 function Character:GetCharacterIsHidden(bnet, fullName)
+    local isHidden = false
+    if not db then return isHidden end
+
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData then
-        return customData.isHidden or false
+        isHidden = customData.isHidden or false
     end
-    return false
+    return isHidden
 end
 
 function Character:GetCharacterKeystone(bnet, fullName)
-    local character = GetOrCreateCharacterData(bnet, fullName)
     local keystone = {
         level = nil,
         mapID = nil,
         mapName = nil
     }
+    if not db then return keystone end
+
+    local character = GetOrCreateCharacterData(bnet, fullName)
     if character and character.keystone then
         keystone.level = character.keystone.level
         keystone.mapID = character.keystone.mapID
@@ -160,15 +174,33 @@ function Character:GetCharacterKeystone(bnet, fullName)
     return keystone
 end
 
-function Character:GetCharacterRating(bnet, fullName)
+function Character:SetCharacterKeystone(bnet, fullName, keystone)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.rating or 0
+        character.keystone = {
+            level = keystone.level,
+            mapID = keystone.mapID,
+            mapName = keystone.mapName
+        }
     end
-    return 0
+end
+
+function Character:GetCharacterRating(bnet, fullName)
+    local rating = 0
+    if not db then return rating end
+
+    local character = GetOrCreateCharacterData(bnet, fullName)
+    if character then
+        rating = character.rating or 0
+    end
+    return rating
 end
 
 function Character:SetCharacterRating(bnet, fullName, rating)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.rating = rating
@@ -176,14 +208,19 @@ function Character:SetCharacterRating(bnet, fullName, rating)
 end
 
 function Character:GetCharacterClassId(bnet, fullName)
+    local classId = 0
+    if not db then return classId end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.classId or nil
+        classId = character.classId
     end
-    return nil
+    return classId
 end
 
 function Character:SetCharacterClassId(bnet, fullName, classId)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.classId = classId
@@ -191,14 +228,19 @@ function Character:SetCharacterClassId(bnet, fullName, classId)
 end
 
 function Character:GetCharacterSpecId(bnet, fullName)
+    local specId = 0
+    if not db then return specId end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.specId or nil
+        specId = character.specId or 0
     end
-    return nil
+    return specId
 end
 
 function Character:SetCharacterSpecId(bnet, fullName, specId)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.specId = specId
@@ -206,14 +248,19 @@ function Character:SetCharacterSpecId(bnet, fullName, specId)
 end
 
 function Character:GetCharacterRole(bnet, fullName)
+    local role = nil
+    if not db then return role end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.role or nil
+        role = character.role or nil
     end
-    return nil
+    return role
 end
 
 function Character:SetCharacterRole(bnet, fullName, role)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.role = role
@@ -221,14 +268,19 @@ function Character:SetCharacterRole(bnet, fullName, role)
 end
 
 function Character:GetCharacterFaction(bnet, fullName)
+    local faction = nil
+    if not db then return faction end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.faction or nil
+        faction = character.faction or nil
     end
-    return nil
+    return faction
 end
 
 function Character:SetCharacterFaction(bnet, fullName, faction)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.faction = faction
@@ -236,14 +288,19 @@ function Character:SetCharacterFaction(bnet, fullName, faction)
 end
 
 function Character:GetCharacterIlvl(bnet, fullName)
+    local ilvl = 0
+    if not db then return ilvl end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
-        return character.iLvl or 0
+        ilvl = character.iLvl or 0
     end
-    return 0
+    return ilvl
 end
 
 function Character:SetCharacterIlvl(bnet, fullName, ilvl)
+    if not db then return end
+
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         character.iLvl = ilvl
