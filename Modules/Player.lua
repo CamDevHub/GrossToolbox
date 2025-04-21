@@ -5,9 +5,13 @@ local Player = {}
 GT.Modules.Player = Player
 
 local db
+local Utils
 function Player:Init(database)
 	db = database
 	if not db then return end
+
+	Utils = GT.Modules.Utils
+	if not Utils then return end
 end
 
 local function GetOrCreatePlayerData(bnet)
@@ -38,11 +42,10 @@ function Player:GetBNetOfPartyMembers()
 				end
 			end
 		end
-	else
-		local bnetTag = self:GetBNetTagForUnit("player")
-		if bnetTag then
-			table.insert(bnetTags, bnetTag)
-		end
+	end
+	local bnetTag = self:GetBNetTagForUnit("player")
+	if bnetTag then
+		table.insert(bnetTags, bnetTag)
 	end
 
 	return bnetTags

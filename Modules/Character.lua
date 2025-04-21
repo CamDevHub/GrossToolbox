@@ -5,13 +5,16 @@ local Character = {}
 GT.Modules.Character = Character
 
 local db
-local Data
+local Data, Utils
 function Character:Init(database)
     db = database
     if not db then return end
 
     Data = GT.Modules.Data
     if not Data then return end
+
+    Utils = GT.Modules.Utils
+    if not Utils then return end
 end
 
 local function GetOrCreateCharacterData(bnet, fullName)
@@ -26,7 +29,11 @@ end
 local function GetOrCreateCharacterCustomData(bnet, charFullName)
     local charData = GetOrCreateCharacterData(bnet, charFullName)
     if not charData then return nil end
-    charData.custom = charData.custom or {}
+    charData.custom = charData.custom or {
+        roles = {},
+        hasKey = true,
+        isHidden = false
+    }
     return charData.custom
 end
 
@@ -103,7 +110,7 @@ function Character:GetCharacterCustomRoles(bnet, fullName)
 
     local customData = GetOrCreateCharacterCustomData(bnet, fullName)
     if customData and customData.roles then
-        roles = { table.unpack(customData.roles) }
+        roles = { unpack(customData.roles) }
     end
     return roles
 end
@@ -158,15 +165,12 @@ function Character:GetCharacterIsHidden(bnet, fullName)
 end
 
 function Character:GetCharacterKeystone(bnet, fullName)
-    local keystone = {
-        level = nil,
-        mapID = nil,
-        mapName = nil
-    }
+    local keystone = nil
     if not db then return keystone end
 
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character and character.keystone then
+        keystone = {}
         keystone.level = character.keystone.level
         keystone.mapID = character.keystone.mapID
         keystone.mapName = character.keystone.mapName

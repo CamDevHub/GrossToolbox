@@ -90,14 +90,14 @@ Data.SPEC_ID_TO_ENGLISH_NAME = {
 }
 
 Data.DUNGEON_TABLE = {
-    [2651] = { name = "DFC", icon = "Interface\\Icons\\inv_achievement_dungeon_darkflamecleft" },
-    [2661] = { name = "Brew", icon = "Interface\\Icons\\inv_achievement_dungeon_cinderbrewmeadery" },
-    [2773] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks" },
-    [2649] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame" },
-    [2648] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery" },
-    [1594] = { name = "ML", icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk" },
-    [2293] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain" },
-    [2097] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon" }
+    [2651] = { name = "DFC", icon = "Interface\\Icons\\inv_achievement_dungeon_darkflamecleft", spellId = 445441 },
+    [2661] = { name = "Brew", icon = "Interface\\Icons\\inv_achievement_dungeon_cinderbrewmeadery", spellId = 445440 },
+    [2773] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks", spellId = 1216786 },
+    [2649] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame", spellId = 445444 },
+    [2648] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery", spellId = 445443 },
+    [1594] = { name = "ML", icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk", spellId = 457553 },
+    [2293] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain", spellId = 354467 },
+    [2097] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon", spellId = 373274 }
 }
 
 Data.DAWN_SIGN = {
