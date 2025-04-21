@@ -17,9 +17,13 @@ function Config:SetupOptions()
         name = addonName,
         type = "group",
         args = {
-            -- Discord Tag Input
-            guildTag = {
+            keystoneHeader = {
                 order = 10,
+                type = "header",
+                name = "Keystone Options",
+            },
+            guildTag = {
+                order = 11,
                 type = "input",
                 name = "Discord Tag",
                 desc = "Set your team or guild tag",
@@ -34,11 +38,19 @@ function Config:SetupOptions()
                         db.global.player = db.global.player or {}
                         db.global.player[guid] = db.global.player[guid] or { name = UnitName("player"), char = {} }
                         db.global.player[guid].discordTag = val
-                        local CharInfo = GT.Modules and GT.Modules.CharacterInfo
-                        if CharInfo and CharInfo.displayFrame and CharInfo.displayFrame:IsShown() then
-                            CharInfo:PopulateDisplayFrame()
-                        end
                     end
+                end
+            },
+            screenshotOnMPlusEnd = {
+                order = 12, -- Adjust order as needed
+                type = "toggle",
+                name = "Screenshot on M+ End",
+                desc = "Take a screenshot automatically at the end of a Mythic+ dungeon.",
+                get = function()
+                    return db.global.config.screenshotOnMPlusEnd
+                end,
+                set = function(_, val)
+                    db.global.config.screenshotOnMPlusEnd = val
                 end
             },
 
@@ -82,4 +94,18 @@ end
 function Config:Init(database)
     db = database
     self:SetupOptions()
+end
+
+function Config:GetDiscordTag()
+    if db and db.global and db.global.config and db.global.config.discordTag then
+        return db.global.config.discordTag
+    end
+    return nil
+end
+
+function Config:GetScreenshotOnMPlusEnd()
+    if db and db.global and db.global.config and db.global.config.screenshotOnMPlusEnd then
+        return db.global.config.screenshotOnMPlusEnd
+    end
+    return false
 end

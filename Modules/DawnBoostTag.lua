@@ -8,7 +8,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 Dawn.data = {}
 local db
-local Character, Player, Data, Utils
+local Character, Player, Data, Utils, Config
 function Dawn:Init(database)
 	db = database
 	if not db then
@@ -27,6 +27,9 @@ function Dawn:Init(database)
 
 	Data = GT.Modules.Data
 	if not Data then return end
+
+	Config = GT.Modules.Config
+	if not Config then return end
 end
 
 -- Update data using AceDB structure (db.global.char)
@@ -34,7 +37,7 @@ function Dawn:UpdateData()
 	local bnet = Player:GetBNetTagForUnit("player")
 	local fullName = Character:GetFullName("player")
 
-	Player:SetDiscordTag(bnet, db.global.config.discordTag)
+	Player:SetDiscordTag(bnet, Config:GetDiscordTag())
 	Character:BuildCurrentCharacter(bnet, fullName)
 end
 
@@ -265,7 +268,9 @@ function Dawn:PopulateDisplayFrame()
     if not frame or not frame.playersEditBox then
         return
     end
-    if not db.global.config.discordTag or db.global.config.discordTag == "" then
+
+	local localDiscordTag = Config:GetDiscordTag()
+    if not localDiscordTag or localDiscordTag == "" then
 		frame.playersEditBox:SetText("Discord handle not set bro !")
 	else
 

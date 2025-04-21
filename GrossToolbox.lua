@@ -60,8 +60,7 @@ end
 function addon:PLAYER_ENTERING_WORLD(event, status)
     local Dawn = GT.Modules and GT.Modules.Dawn
     if Dawn then
-        -- No timer needed usually, data should be available
-        C_Timer.After(5, function()
+        C_Timer.After(3, function()
             Dawn:UpdateData()
         end)
     end
@@ -80,6 +79,12 @@ function addon:CHALLENGE_MODE_COMPLETED(event, status)
     local Dawn = GT.Modules and GT.Modules.Dawn
     if Dawn then
         Dawn:UpdateData()
+    end
+
+    if GT.Modules.Config:GetScreenshotOnMPlusEnd() then
+        C_Timer.After(2, function()
+            Screenshot()
+        end)
     end
 end
 
