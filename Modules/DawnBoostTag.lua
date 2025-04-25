@@ -288,9 +288,8 @@ function Dawn:PopulateDisplayFrame()
 				end
 			end
 		end
-		if numberOfPlayers > 1 then
-			fullOutputString = "### " .. Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
-		end
+		fullOutputString = "### " .. Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
+
 		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
 		frame.playersEditBox:HighlightText(0, 9999)
 	end

@@ -101,6 +101,7 @@ Data.DUNGEON_TABLE = {
 }
 
 Data.DAWN_SIGN = {
+    [1] = "Solo",
     [2] = "Duo",
     [3] = "Trio",
     [4] = "Quad",
