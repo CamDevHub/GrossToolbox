@@ -89,7 +89,7 @@ local function UpdateCurrentCharacterInfo(bnet, fullName)
 end
 
 function addon:UpdateData()
-    if not self.db or not self.db.global.weekly then return end
+    if not self.db then return end
 
     local bnet = GT.Modules.Player:GetBNetTagForUnit("player")
 	local fullName = GT.Modules.Character:GetFullName("player")

@@ -89,7 +89,6 @@ function Character:BuildCurrentCharacter(bnet, fullName)
 
     C_MythicPlus.RequestMapInfo()
     local runs = C_MythicPlus.GetRunHistory(false, true)
-
     table.sort(runs, function(a, b)
         return a.level > b.level
     end)
