@@ -8,7 +8,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 Dawn.data = {}
 local db
-local Character, Player, Data, Utils, Config
+local Character, Player, Data, Utils, Config, GrossFrame
 function Dawn:Init(database, frame)
 	db = database
 	if not db then
@@ -52,16 +52,12 @@ function Dawn:Init(database, frame)
 	GrossFrame:RegisterTab(signupTab)
 end
 
--- Update data using AceDB structure (db.global.char)
-function Dawn:UpdateData()
-	local bnet = Player:GetBNetTagForUnit("player")
-	local fullName = Character:GetFullName("player")
-
-	Player:SetDiscordTag(bnet, Config:GetDiscordTag())
-	Character:BuildCurrentCharacter(bnet, fullName)
-end
-
 function Dawn:DrawDataFrame(container)
+	if not container then return end
+
+	if not container.signup then
+		container.signup = {}
+	end
 	-- === Tab 1: Data (Players) ===
     local dataTabContainer = AceGUI:Create("SimpleGroup")
     dataTabContainer:SetLayout("Flow")
@@ -74,7 +70,7 @@ function Dawn:DrawDataFrame(container)
     playersEditBox:SetWidth(650)
     playersEditBox:SetHeight(500)
     dataTabContainer:AddChild(playersEditBox)
-	container.playersEditBox = playersEditBox
+	container.signup.playersEditBox = playersEditBox
 
     local keysEditBox = AceGUI:Create("MultiLineEditBox")
     keysEditBox:SetLabel("Keystone List")
@@ -82,13 +78,13 @@ function Dawn:DrawDataFrame(container)
     keysEditBox:SetWidth(250)
     keysEditBox:SetHeight(500)
     dataTabContainer:AddChild(keysEditBox)
-	container.keysEditBox = keysEditBox
+	container.signup.keysEditBox = keysEditBox
 
 	local dungeonsContainer = AceGUI:Create("SimpleGroup")
 	dungeonsContainer:SetLayout("Flow")
 	dungeonsContainer:SetWidth(160)
 	dataTabContainer:AddChild(dungeonsContainer)
-	container.dungeonsContainer = dungeonsContainer
+	container.signup.dungeonsContainer = dungeonsContainer
 
     local requestButton = AceGUI:Create("Button")
     requestButton:SetText("Request Party Data")
@@ -98,11 +94,16 @@ function Dawn:DrawDataFrame(container)
 end
 
 function Dawn:DrawPlayerEditorFrame(container)
+	if not container then return end
+
+	if not container.signup then
+		container.signup = {}
+	end
 	-- === Tab 2: Player Editor ===
 	local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
 	playerEditorTabContainer:SetLayout("Flow")
 	container:AddChild(playerEditorTabContainer)
-	container.playerEditorScroll = playerEditorTabContainer
+	container.signup.playerEditorScroll = playerEditorTabContainer
 end
 
 function Dawn:PopulateDataFrame(container)
@@ -112,7 +113,7 @@ function Dawn:PopulateDataFrame(container)
 end
 
 function Dawn:PopulatePlayerEditorFrame(container)
-	if not container or not container.playerEditorScroll then
+	if not container or not container.signup or not container.signup.playerEditorScroll then
 		return
 	end
 
@@ -121,7 +122,7 @@ function Dawn:PopulatePlayerEditorFrame(container)
 		return
 	end
 
-	local scroll = container.playerEditorScroll
+	local scroll = container.signup.playerEditorScroll
 	scroll:ReleaseChildren()
 	scroll:SetScroll(0)
 
@@ -235,11 +236,11 @@ function Dawn:PopulatePlayerEditorFrame(container)
 end
 
 function Dawn:PopulateDisplayFrame(container)
-    if not container or not container.playersEditBox then
+    if not container or not container.signup or not  container.signup.playersEditBox then
         return
     end
 
-	local playersEditBox = container.playersEditBox
+	local playersEditBox = container.signup.playersEditBox
 	local localDiscordTag = Config:GetDiscordTag()
     if not localDiscordTag or localDiscordTag == "" then
 		playersEditBox:SetText("Discord handle not set bro !")
@@ -267,11 +268,11 @@ function Dawn:PopulateDisplayFrame(container)
 end
 
 function Dawn:PopulateKeyListFrame(container)
-    if not container or not container.keysEditBox then
+    if not container or not container.signup or not container.signup.keysEditBox then
         return
     end
 
-	local keysEditBox = container.keysEditBox
+	local keysEditBox = container.signup.keysEditBox
 	local bnets = Player:GetBNetOfPartyMembers()
 	if not bnets or next(bnets) == nil then
 		return
@@ -323,12 +324,12 @@ function Dawn:PopulateKeyListFrame(container)
 end
 
 function Dawn:PopulateDungeonFrame(container)
-	if not container or not container.dungeonsContainer then
+	if not container or not container.signup or not container.signup.dungeonsContainer then
         return
     end
 
 	local iconSize = 75
-	local dungeonsContainer = container.dungeonsContainer
+	local dungeonsContainer = container.signup.dungeonsContainer
 	dungeonsContainer:ReleaseChildren()
 
 	for key, dungeon in pairs(Data.DUNGEON_TABLE) do
@@ -461,10 +462,20 @@ function Dawn:SendCharacterData()
 	local payload = {
 		bnet = bnet,
 		discordTag = db.global.config.discordTag,
-		characters = characters,
+		characters = {}
 	}
 
-	local AceSerializer = LibStub("AceSerializer-3.0")
+	for charName, charData in pairs(characters) do
+		if type(charData) == "table" then
+			payload.characters[charName] = {}
+			for key, value in pairs(charData) do
+				if key ~= "custom" and key ~= "weeklies" then
+					payload.characters[charName][key] = value
+				end
+			end
+		end
+	end
+
 	local serialized = AceSerializer:Serialize(payload)
 	local messageToSend = GT.headers.player .. serialized
 	if IsInGroup() then

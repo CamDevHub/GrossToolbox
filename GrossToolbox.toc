@@ -24,6 +24,7 @@ Modules\Utils.lua
 Modules\DawnBoostTag.lua
 Modules\Player.lua
 Modules\Character.lua
+Modules\Dungeon.lua
 Config.lua
 GrossFrame.lua
 GrossToolbox.lua

@@ -5,6 +5,7 @@ GT.Modules.GrossFrame = GrossFrame
 
 local AceGUI = LibStub("AceGUI-3.0")
 local Utils = GT.Modules.Utils
+local Config = GT.Modules.Config
 
 -- Internal state
 local registeredTabs = {} -- Table to hold tab definitions: { [value] = { text, value, drawFunc, populateFunc, module } }
@@ -32,7 +33,6 @@ function GrossFrame:GetOrCreateMainFrame()
     local function CloseFrame(widget)
         AceGUI:Release(widget)
         mainFrame = nil
-        print("GrossFrame: Frame closed.")
     end
     frame:SetCallback("OnClose", function(widget) CloseFrame(widget) end)
 
@@ -40,10 +40,10 @@ function GrossFrame:GetOrCreateMainFrame()
     tabGroup:SetLayout("Fill")
 
     local tabs = {}
-    local firstTabValue = nil
+    local firstTabValue = Config:GetLastOpenedTabValue()
     for value, definition in pairs(registeredTabs) do
         table.insert(tabs, { text = definition.text, value = value })
-        if not firstTabValue then firstTabValue = value end
+        if not firstTabValue or firstTabValue == "" then firstTabValue = value end
     end
 
     tabGroup:SetTabs(tabs)
@@ -61,6 +61,8 @@ function GrossFrame:GetOrCreateMainFrame()
 
             definition.drawFunc(containerWidget)
             definition.populateFunc(containerWidget)
+
+            Config:SetLastOpenedTabValue(groupValue)
         end
     end)
 

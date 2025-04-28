@@ -109,3 +109,16 @@ function Config:GetScreenshotOnMPlusEnd()
     end
     return false
 end
+
+function Config:GetLastOpenedTabValue()
+    if db and db.global and db.global.lastTab then
+        return db.global.config.lastTab
+    end
+    return false
+end
+
+function Config:SetLastOpenedTabValue(tabValue)
+    if db and db.global and db.global.lastTab then
+        db.global.config.lastTab = tabValue
+    end
+end

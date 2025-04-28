@@ -87,8 +87,34 @@ function Character:BuildCurrentCharacter(bnet, fullName)
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
+    C_MythicPlus.RequestMapInfo()
+    local runs = C_MythicPlus.GetRunHistory(false, true)
+
+    table.sort(runs, function(a, b)
+        return a.level > b.level
+    end)
+
+    local topRuns = {}
+    for i = 1, math.min(8, #runs) do
+        table.insert(topRuns, runs[i])
+    end
+    charData.weeklies = topRuns
+
     self:SetCharacterData(bnet, fullName, charData)
     self:SetCharacterKeystone(bnet, fullName, GetKeystone())
+end
+
+function Character:GetWeeklyData(bnet, fullName)
+    local weeklies = {}
+    if not db then return weeklies end
+
+    local character = GetOrCreateCharacterData(bnet, fullName)
+    if character and character.weeklies then
+        for i = 1, 8 do
+            weeklies[i] = character.weeklies[i] or { level = 0 }
+        end
+    end
+    return weeklies
 end
 
 function Character:SetCharacterData(bnet, fullName, dataTable)
@@ -97,9 +123,7 @@ function Character:SetCharacterData(bnet, fullName, dataTable)
     local character = GetOrCreateCharacterData(bnet, fullName)
     if character then
         for key, value in pairs(dataTable) do
-            if key ~= "custom" then
-                character[key] = value
-            end
+            character[key] = value
         end
     end
 end

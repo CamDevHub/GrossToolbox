@@ -25,7 +25,8 @@ local defaults = {
         minimap = {
             hide = false,
         },
-        players = {}
+        players = {},
+        lastTab = ""
     }
 }
 
@@ -44,6 +45,10 @@ function addon:OnInitialize()
         GT.Modules.Character:Init(self.db)
     end
 
+    if GT.Modules and GT.Modules.Dungeon and GT.Modules.Dungeon.Init then
+        GT.Modules.Dungeon:Init(self.db)
+    end
+
     if GT.Modules and GT.Modules.Dawn and GT.Modules.Dawn.Init then
         GT.Modules.Dawn:Init(self.db)
     end
@@ -57,34 +62,39 @@ end
 
 -- Called when PLAYER_ENTERING_WORLD  fires
 function addon:PLAYER_ENTERING_WORLD(event, status)
-    local Dawn = GT.Modules and GT.Modules.Dawn
-    if Dawn then
-        C_Timer.After(3, function()
-            Dawn:UpdateData()
-        end)
-    end
+    C_Timer.After(3, function()
+        self:UpdateData()
+    end)
 end
 
 -- Called when GROUP_ROSTER_UPDATE  fires
 function addon:GROUP_ROSTER_UPDATE(event, status)
-    local Dawn = GT.Modules and GT.Modules.Dawn
-    if Dawn then
-        Dawn:UpdateData()
-    end
+    self:UpdateData()
 end
 
 -- Called when CHALLENGE_MODE_COMPLETED  fires
 function addon:CHALLENGE_MODE_COMPLETED(event, status)
-    local Dawn = GT.Modules and GT.Modules.Dawn
-    if Dawn then
-        Dawn:UpdateData()
-    end
+    self:UpdateData()
 
     if GT.Modules.Config:GetScreenshotOnMPlusEnd() then
         C_Timer.After(2, function()
             Screenshot()
         end)
     end
+end
+
+local function UpdateCurrentCharacterInfo(bnet, fullName)
+	GT.Modules.Player:SetDiscordTag(bnet, GT.Modules.Config:GetDiscordTag())
+	GT.Modules.Character:BuildCurrentCharacter(bnet, fullName)
+end
+
+function addon:UpdateData()
+    if not self.db or not self.db.global.weekly then return end
+
+    local bnet = GT.Modules.Player:GetBNetTagForUnit("player")
+	local fullName = GT.Modules.Character:GetFullName("player")
+
+    UpdateCurrentCharacterInfo(bnet, fullName)
 end
 
 function addon:OnEnable()
@@ -98,7 +108,8 @@ function addon:OnEnable()
             tooltip = "GrossToolbox",
             OnClick = function(frame, button)
                 if button == "LeftButton" then
-                    GrossFrame:ToggleMainFrame()
+                    addon:UpdateData()
+                    GT.Modules.GrossFrame:ToggleMainFrame()
                 elseif button == "RightButton" then
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
                 end
@@ -110,22 +121,13 @@ end
 -- Slash command handler method
 function addon:SlashCommandHandler(input)
     local command = string.lower(input or "")
-    local Dawn = GT.Modules and GT.Modules.Dawn
 
-    if not Dawn then
-        print(addonName .. ": Dawn module not loaded!"); return
-    end
-
-    if command == "refresh" then
-        Dawn:UpdateData()
-        Dawn:SendCharacterData()
-        Dawn:ToggleFrame(true)
-    elseif command == "" or command == "dawn" then
-        Dawn:ToggleFrame()
+    if command == ""  then
+        GT.Modules.GrossFrame:ToggleMainFrame()
     elseif command == "config" then
         LibStub("AceConfigDialog-3.0"):Open(addonName)
     else
-        self:Print("Unknown command '" .. command .. "'. Use '/gt' to toggle display, or '/gt refresh' to update.")
+        self:Print("Unknown command '" .. command .. "'. Use '/gt' or '/gt config'.")
     end
 end
 
