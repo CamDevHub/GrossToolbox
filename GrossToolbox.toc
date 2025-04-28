@@ -25,4 +25,5 @@ Modules\DawnBoostTag.lua
 Modules\Player.lua
 Modules\Character.lua
 Config.lua
+GrossFrame.lua
 GrossToolbox.lua

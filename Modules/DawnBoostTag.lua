@@ -9,7 +9,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 Dawn.data = {}
 local db
 local Character, Player, Data, Utils, Config
-function Dawn:Init(database)
+function Dawn:Init(database, frame)
 	db = database
 	if not db then
 		print(addonName, "Error: Dawn received nil database!"); return
@@ -30,6 +30,26 @@ function Dawn:Init(database)
 
 	Config = GT.Modules.Config
 	if not Config then return end
+
+	GrossFrame = GT.Modules.GrossFrame
+	if not GrossFrame then return end
+
+	local signupTab = {
+		text = "Signup",
+		value = "signup",
+		drawFunc = function(container) self:DrawDataFrame(container) end,
+		populateFunc = function(container) self:PopulateDataFrame(container) end,
+		module = Dawn
+	}
+	local playerEditorTab = {
+		text = "Player Editor",
+		value = "playerEditor",
+		drawFunc = function(container) self:DrawPlayerEditorFrame(container) end,
+		populateFunc = function(container) self:PopulatePlayerEditorFrame(container) end,
+		module = Dawn
+	}
+	GrossFrame:RegisterTab(playerEditorTab)
+	GrossFrame:RegisterTab(signupTab)
 end
 
 -- Update data using AceDB structure (db.global.char)
@@ -41,7 +61,7 @@ function Dawn:UpdateData()
 	Character:BuildCurrentCharacter(bnet, fullName)
 end
 
-function Dawn:DrawDataFrame(frame, container)
+function Dawn:DrawDataFrame(container)
 	-- === Tab 1: Data (Players) ===
     local dataTabContainer = AceGUI:Create("SimpleGroup")
     dataTabContainer:SetLayout("Flow")
@@ -49,12 +69,12 @@ function Dawn:DrawDataFrame(frame, container)
     container:AddChild(dataTabContainer)
 
     local playersEditBox = AceGUI:Create("MultiLineEditBox")
-    playersEditBox:SetLabel("Player Data")
+    playersEditBox:SetLabel("Players Data")
     playersEditBox:DisableButton(true)
     playersEditBox:SetWidth(650)
     playersEditBox:SetHeight(500)
     dataTabContainer:AddChild(playersEditBox)
-    frame.playersEditBox = playersEditBox
+	container.playersEditBox = playersEditBox
 
     local keysEditBox = AceGUI:Create("MultiLineEditBox")
     keysEditBox:SetLabel("Keystone List")
@@ -62,86 +82,37 @@ function Dawn:DrawDataFrame(frame, container)
     keysEditBox:SetWidth(250)
     keysEditBox:SetHeight(500)
     dataTabContainer:AddChild(keysEditBox)
-    frame.keysEditBox = keysEditBox
+	container.keysEditBox = keysEditBox
 
 	local dungeonsContainer = AceGUI:Create("SimpleGroup")
 	dungeonsContainer:SetLayout("Flow")
 	dungeonsContainer:SetWidth(160)
 	dataTabContainer:AddChild(dungeonsContainer)
-	frame.dungeonsContainer = dungeonsContainer
+	container.dungeonsContainer = dungeonsContainer
 
     local requestButton = AceGUI:Create("Button")
     requestButton:SetText("Request Party Data")
     requestButton:SetWidth(200)
     requestButton:SetCallback("OnClick", Dawn.RequestData)
     dataTabContainer:AddChild(requestButton)
-    frame.requestButton = requestButton
 end
 
-function Dawn:DrawPlayerEditorFrame(frame, container)
-	 -- === Tab 2: Player Editor ===
-	 local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
-	 playerEditorTabContainer:SetLayout("Flow")
-	 container:AddChild(playerEditorTabContainer)
-	 frame.playerEditorScroll = playerEditorTabContainer
+function Dawn:DrawPlayerEditorFrame(container)
+	-- === Tab 2: Player Editor ===
+	local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
+	playerEditorTabContainer:SetLayout("Flow")
+	container:AddChild(playerEditorTabContainer)
+	container.playerEditorScroll = playerEditorTabContainer
 end
 
-function Dawn:GetOrCreateMainFrame()
-    if Dawn.mainFrame then
-        return Dawn.mainFrame
-    end
-
-
-    local frame = AceGUI:Create("Frame")
-    frame:SetTitle("GrossToolbox")
-    frame:SetLayout("Fill")
-    frame:SetWidth(1120)
-    frame:SetHeight(650)
-    frame:EnableResize(false)
-	frame:SetStatusText("GrossToolbox - Dawn Module")
-
-	local function CloseFrame()
-        AceGUI:Release(frame)
-        Dawn.mainFrame = nil
-    end
-    frame:SetCallback("OnClose", function(widget) CloseFrame() end)
-
-    local tabGroup = AceGUI:Create("TabGroup")
-    tabGroup:SetLayout("Fill")
-    tabGroup:SetTabs({
-        {text = "Data", value = "data"},
-        {text = "Player Editor", value = "players"}
-    })
-    frame:AddChild(tabGroup)
-    frame.tabGroup = tabGroup
-
-	tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
-		widget:ReleaseChildren()
-		if group == "data" then
-			self:DrawDataFrame(frame, widget)
-			self:PopulateDataFrame()
-			frame.playersEditBox:SetFocus()
-		elseif group == "players" then
-			self:DrawPlayerEditorFrame(frame, widget)
-			self:PopulatePlayerEditorFrame()
-		end
-    end)
-
-    tabGroup:SelectTab("data")
-
-    Dawn.mainFrame = frame
-    return frame
+function Dawn:PopulateDataFrame(container)
+	Dawn:PopulateDisplayFrame(container)
+	Dawn:PopulateKeyListFrame(container)
+	Dawn:PopulateDungeonFrame(container)
 end
 
-function Dawn:PopulateDataFrame()
-	self:PopulateDisplayFrame()
-	self:PopulateKeyListFrame()
-	self:PopulateDungeonFrame()
-end
-
-function Dawn:PopulatePlayerEditorFrame()
-	local frame = Dawn.mainFrame
-	if not frame.playerEditorScroll then
+function Dawn:PopulatePlayerEditorFrame(container)
+	if not container or not container.playerEditorScroll then
 		return
 	end
 
@@ -150,7 +121,7 @@ function Dawn:PopulatePlayerEditorFrame()
 		return
 	end
 
-	local scroll = frame.playerEditorScroll
+	local scroll = container.playerEditorScroll
 	scroll:ReleaseChildren()
 	scroll:SetScroll(0)
 
@@ -263,15 +234,15 @@ function Dawn:PopulatePlayerEditorFrame()
 	scroll:DoLayout()
 end
 
-function Dawn:PopulateDisplayFrame()
-    local frame = Dawn.mainFrame 
-    if not frame or not frame.playersEditBox then
+function Dawn:PopulateDisplayFrame(container)
+    if not container or not container.playersEditBox then
         return
     end
 
+	local playersEditBox = container.playersEditBox
 	local localDiscordTag = Config:GetDiscordTag()
     if not localDiscordTag or localDiscordTag == "" then
-		frame.playersEditBox:SetText("Discord handle not set bro !")
+		playersEditBox:SetText("Discord handle not set bro !")
 	else
 
 		local numberOfPlayers = 1
@@ -290,17 +261,17 @@ function Dawn:PopulateDisplayFrame()
 		end
 		fullOutputString = "### " .. Data.DAWN_SIGN[numberOfPlayers] .. " sign:\n" .. fullOutputString
 
-		frame.playersEditBox:SetText(fullOutputString:sub(1, -3))
-		frame.playersEditBox:HighlightText(0, 9999)
+		playersEditBox:SetText(fullOutputString:sub(1, -3))
+		playersEditBox:HighlightText(0, 9999)
 	end
 end
 
-function Dawn:PopulateKeyListFrame()
-    local frame = Dawn.mainFrame
-    if not frame or not frame.keysEditBox then
+function Dawn:PopulateKeyListFrame(container)
+    if not container or not container.keysEditBox then
         return
     end
 
+	local keysEditBox = container.keysEditBox
 	local bnets = Player:GetBNetOfPartyMembers()
 	if not bnets or next(bnets) == nil then
 		return
@@ -348,17 +319,16 @@ function Dawn:PopulateKeyListFrame()
 		end
     end
 
-    frame.keysEditBox:SetText(outputString)
+    keysEditBox:SetText(outputString)
 end
 
-function Dawn:PopulateDungeonFrame()
-	local frame = Dawn.mainFrame
-	if not frame or not frame.keysEditBox then
-		return
-	end
+function Dawn:PopulateDungeonFrame(container)
+	if not container or not container.dungeonsContainer then
+        return
+    end
 
 	local iconSize = 75
-	local dungeonsContainer = frame.dungeonsContainer
+	local dungeonsContainer = container.dungeonsContainer
 	dungeonsContainer:ReleaseChildren()
 
 	for key, dungeon in pairs(Data.DUNGEON_TABLE) do
@@ -553,20 +523,4 @@ function Dawn:OnCommReceived(_, message, _, sender)
 			self:PopulateDataFrame()
         end
 	end
-end
-
-function Dawn:ToggleFrame()
-    local frame = Dawn.mainFrame
-    if not frame then
-		frame = self:GetOrCreateMainFrame()
-		if not frame then
-			print(addonName, "Error: Could not get or create main display frame.")
-			return
-		end
-		self:PopulateDataFrame()
-        frame:Show()
-    else
-        frame:Release()
-        Dawn.mainFrame = nil
-    end
 end

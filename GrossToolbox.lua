@@ -32,13 +32,8 @@ local defaults = {
 function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
-    -- Initialize modules AFTER the DB is ready
     if GT.Modules and GT.Modules.Config and GT.Modules.Config.Init then
         GT.Modules.Config:Init(self.db)
-    end
-
-    if GT.Modules and GT.Modules.Dawn and GT.Modules.Dawn.Init then
-        GT.Modules.Dawn:Init(self.db)
     end
 
     if GT.Modules and GT.Modules.Player and GT.Modules.Player.Init then
@@ -47,6 +42,10 @@ function addon:OnInitialize()
 
     if GT.Modules and GT.Modules.Character and GT.Modules.Character.Init then
         GT.Modules.Character:Init(self.db)
+    end
+
+    if GT.Modules and GT.Modules.Dawn and GT.Modules.Dawn.Init then
+        GT.Modules.Dawn:Init(self.db)
     end
 
     self:RegisterChatCommand("gt", "SlashCommandHandler")
@@ -99,11 +98,7 @@ function addon:OnEnable()
             tooltip = "GrossToolbox",
             OnClick = function(frame, button)
                 if button == "LeftButton" then
-                    local Dawn = GT.Modules and GT.Modules.Dawn
-                    if Dawn then
-                        Dawn:UpdateData()
-                        Dawn:ToggleFrame()
-                    end
+                    GrossFrame:ToggleMainFrame()
                 elseif button == "RightButton" then
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
                 end
