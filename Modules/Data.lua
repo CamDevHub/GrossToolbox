@@ -32,6 +32,22 @@ Data.CLASS_ID_TO_ENGLISH_NAME = {
     ["Unknown"] = "Unknown Class"
 }
 
+Data.CLASS_TO_ARMOR_TYPE = {
+    ["Warrior"] = "Plate",
+    ["Paladin"] = "Plate", 
+    ["Death Knight"] = "Plate",
+    ["Priest"] = "Cloth",
+    ["Mage"] = "Cloth",
+    ["Warlock"] = "Cloth",
+    ["Rogue"] = "Leather",
+    ["Monk"] = "Leather",
+    ["Druid"] = "Leather",
+    ["Demon Hunter"] = "Leather",
+    ["Hunter"] = "Mail",
+    ["Shaman"] = "Mail",
+    ["Evoker"] = "Mail"
+}
+
 Data.SPEC_ID_TO_ENGLISH_NAME = {
     -- Death Knight
     [250] = "Blood",
