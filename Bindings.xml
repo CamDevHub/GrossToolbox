@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="TOGGLE_GROSSTOOLBOX" category="Gross Toolbox">
+        GT.Modules.GrossFrame:ToggleMainFrame()
+    </Binding>
+</Bindings>

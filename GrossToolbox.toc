@@ -29,5 +29,6 @@ Modules\Player.lua
 Modules\Character.lua
 Modules\Weekly.lua
 Config.lua
+Localization.lua
 GrossFrame.lua
 GrossToolbox.lua
