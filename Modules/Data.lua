@@ -111,7 +111,7 @@ Data.DUNGEON_TABLE = {
     [2773] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks", spellId = 1216786 },
     [2649] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame", spellId = 445444 },
     [2648] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery", spellId = 445443 },
-    [1594] = { name = "ML", icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk", spellId = 457553 },
+    [1594] = { name = "ML", icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk", spellId = 467553 },
     [2293] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain", spellId = 354467 },
     [2097] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon", spellId = 373274 }
 }

@@ -3,6 +3,9 @@ local addonName = GT.addonName or "GrossToolbox"
 local Utils = {}
 GT.Modules.Utils = Utils
 
+-- Define module name for initialization logging
+Utils.moduleName = "Utils"
+
 function Utils:TableContainsValue(tbl, item)
     -- Validate table parameter
     if type(tbl) ~= "table" then

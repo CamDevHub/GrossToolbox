@@ -4,8 +4,13 @@ local addonName = GT.addonName or "GrossToolbox"
 local Player = {}
 GT.Modules.Player = Player
 
+-- Define module name for initialization logging
+Player.moduleName = "Player"
+
+-- Define module dependencies
 local db
 local Utils
+
 function Player:Init(database)
 	-- Validate database parameter
 	if not database then
@@ -16,12 +21,12 @@ function Player:Init(database)
 	-- Store database reference
 	db = database
 	
-	-- Validate and store Utils module reference
-	if not GT or not GT.Modules or not GT.Modules.Utils then
+	-- Load Utils module
+	Utils = GT.Modules.Utils
+	if not Utils then
 		print(addonName .. ": Player module initialization failed - Utils module not found")
 		return false
 	end
-	Utils = GT.Modules.Utils
 	
 	-- Initialize database structure if needed
 	if not db.global then

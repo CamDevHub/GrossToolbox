@@ -92,8 +92,36 @@ function Config:SetupOptions()
 end
 
 function Config:Init(database)
+    -- Validate database parameter
+    if not database then
+        print(addonName .. ": Config module initialization failed - missing database")
+        return false
+    end
+    
+    -- Store database reference
     db = database
+    
+    -- Initialize config structure if needed
+    if not db.global then
+        db.global = {}
+    end
+    
+    if not db.global.config then
+        db.global.config = {}
+    end
+    
+    -- Setup options
     self:SetupOptions()
+    
+    -- Load Utils module if available
+    local Utils = GT.Modules.Utils
+    if Utils then
+        Utils:DebugPrint("Config module initialized successfully")
+    else
+        print(addonName .. ": Config module initialized successfully")
+    end
+    
+    return true
 end
 
 function Config:GetDiscordTag()

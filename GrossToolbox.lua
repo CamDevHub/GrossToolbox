@@ -16,7 +16,7 @@ local AceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0")
 
 local addon = AceAddon:NewAddon("GrossToolbox", "AceConsole-3.0", "AceEvent-3.0")
 GT.addon = addon
-GT.debug = true
+GT.debug = false
 
 -- Define the default structure for your database
 local defaults = {
@@ -32,32 +32,50 @@ local defaults = {
 
 function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
-
-    if GT.Modules and GT.Modules.Config and GT.Modules.Config.Init then
-        GT.Modules.Config:Init(self.db)
+    
+    -- Define modules to initialize in the correct dependency order
+    local modulesToInitialize = {
+        "Config",
+        "Character",
+        "Player",
+        "Weekly",
+        "Dawn"
+    }
+    
+    -- Get Utils for debug logging
+    local Utils = GT.Modules.Utils
+    if not Utils then
+        print(addonName .. ": Critical error - Utils module not found")
+        return
     end
-
-    if GT.Modules and GT.Modules.Player and GT.Modules.Player.Init then
-        GT.Modules.Player:Init(self.db)
+    
+    -- Now initialize the modules with proper debug logging
+    for i = 1, #modulesToInitialize do
+        local moduleName = modulesToInitialize[i]
+        local module = GT.Modules[moduleName]
+        if module and type(module.Init) == "function" then
+            local success = module:Init(self.db)
+            if not success then
+                Utils:DebugPrint("Warning - " .. moduleName .. " module initialization failed")
+            end
+        else
+            if not module then
+                Utils:DebugPrint("Warning - " .. moduleName .. " module not found")
+            elseif type(module.Init) ~= "function" then
+                Utils:DebugPrint("Warning - " .. moduleName .. " module missing Init function")
+            end
+        end
     end
-
-    if GT.Modules and GT.Modules.Character and GT.Modules.Character.Init then
-        GT.Modules.Character:Init(self.db)
-    end
-
-    if GT.Modules and GT.Modules.Dungeon and GT.Modules.Dungeon.Init then
-        GT.Modules.Dungeon:Init(self.db)
-    end
-
-    if GT.Modules and GT.Modules.Dawn and GT.Modules.Dawn.Init then
-        GT.Modules.Dawn:Init(self.db)
-    end
-
+    
+    -- Register slash command
     self:RegisterChatCommand("gt", "SlashCommandHandler")
-
+    
+    -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
+    
+    Utils:DebugPrint("Initialization complete")
 end
 
 -- Called when PLAYER_ENTERING_WORLD  fires

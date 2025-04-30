@@ -1,53 +1,86 @@
 local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 
-local Dungeon = {}
-GT.Modules.Dungeon = Dungeon
+local Weekly = {}
+GT.Modules.Weekly = Weekly
 
 local AceGUI = LibStub("AceGUI-3.0")
+local AceHook = LibStub("AceHook-3.0")
 
+-- Define module name for initialization logging
+Weekly.moduleName = "Weekly"
+
+-- Define module dependencies
 local db
 local Data, Utils, GrossFrame, Character, Player
-function Dungeon:Init(database)
+
+function Weekly:Init(database)
+  -- Validate database parameter
+  if not database then
+    print(addonName .. ": Weekly module initialization failed - missing database")
+    return false
+  end
+  
+  -- Store database reference
   db = database
-  if not db then return end
-
+  
+  -- Load required modules
   Data = GT.Modules.Data
-  if not Data then return end
-
+  if not Data then
+    print(addonName .. ": Weekly module initialization failed - Data module not found")
+    return false
+  end
+  
   Utils = GT.Modules.Utils
-  if not Utils then return end
-
+  if not Utils then
+    print(addonName .. ": Weekly module initialization failed - Utils module not found")
+    return false
+  end
+  
   Character = GT.Modules.Character
-	if not Character then return end
-
-	Player = GT.Modules.Player
-	if not Player then return end
-
+  if not Character then
+    print(addonName .. ": Weekly module initialization failed - Character module not found")
+    return false
+  end
+  
+  Player = GT.Modules.Player
+  if not Player then
+    print(addonName .. ": Weekly module initialization failed - Player module not found")
+    return false
+  end
+  
   GrossFrame = GT.Modules.GrossFrame
-  if not GrossFrame then return end
-
+  if not GrossFrame then
+    print(addonName .. ": Weekly module initialization failed - GrossFrame module not found")
+    return false
+  end
+  
+  -- Register UI tab
   local signupTab = {
-    text = "M+ Display",
-    value = "DungeonTab",
+    text = "Weekly",
+    value = "weeklyTab",
     drawFunc = function(container) self:DrawFrame(container) end,
     populateFunc = function(container) self:PopulateFrame(container) end,
-    module = Dungeon
-	}
-
+    module = Weekly
+  }
+  
   GrossFrame:RegisterTab(signupTab)
+  
+  -- Log successful initialization
+  Utils:DebugPrint("Weekly module initialized successfully")
+  return true
 end
 
-function Dungeon:DrawFrame(container)
+function Weekly:DrawFrame(container)
   if not container then return end
 
-	if not container.dungeon then
-		container.dungeon = {}
+	if not container.weekly then
+		container.weekly = {}
 	end
 
-  local DungeonTabContainer = AceGUI:Create("ScrollFrame")
-	DungeonTabContainer:SetLayout("Flow")
-	container:AddChild(DungeonTabContainer)
+  local weeklyTabContainer = AceGUI:Create("ScrollFrame")
+	weeklyTabContainer:SetLayout("Flow")
+	container:AddChild(weeklyTabContainer)
 
   -- Create a header row for the table
   local headerRow = AceGUI:Create("SimpleGroup")
@@ -76,12 +109,12 @@ function Dungeon:DrawFrame(container)
   missingHeader:SetJustifyH("CENTER")
   headerRow:AddChild(missingHeader)
 
-  DungeonTabContainer:AddChild(headerRow)
-  container.dungeon.dungeonScroll = DungeonTabContainer
+  weeklyTabContainer:AddChild(headerRow)
+  container.weekly.weeklyScroll = weeklyTabContainer
 end
 
-function Dungeon:PopulateFrame(container)
-  if not container or not container.dungeon or not container.dungeon.dungeonScroll then
+function Weekly:PopulateFrame(container)
+  if not container or not container.weekly or not container.weekly.weeklyScroll then
     return
   end
 
@@ -134,7 +167,9 @@ function Dungeon:PopulateFrame(container)
     missingLabel:SetJustifyH("CENTER")
     characterFrame:AddChild(missingLabel)
 
-    container.dungeon.dungeonScroll:AddChild(characterFrame)
+    container.weekly.weeklyScroll:AddChild(characterFrame)
   end
-  container.dungeon.dungeonScroll:DoLayout()
+  
+  -- Final layout update
+  container.weekly.weeklyScroll:DoLayout()
 end

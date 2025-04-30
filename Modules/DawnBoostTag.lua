@@ -7,56 +7,62 @@ local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 
 Dawn.data = {}
+
+-- Define module name for initialization logging
+Dawn.moduleName = "Dawn"
+
+-- Define module dependencies
 local db
 local Character, Player, Data, Utils, Config, GrossFrame
+
 function Dawn:Init(database, frame)
 	-- Validate database parameter
 	if not database then
-		print(addonName .. ": Error: Dawn module initialization failed - missing database")
+		print(addonName .. ": Dawn module initialization failed - missing database")
 		return false
 	end
 	
 	-- Store database reference
 	db = database
 	
-	-- Validate GT.Modules exists
-	if not GT or not GT.Modules then
-		print(addonName .. ": Error: Dawn module initialization failed - GT.Modules not found")
+	-- Load required modules
+	Utils = GT.Modules.Utils
+	if not Utils then
+		print(addonName .. ": Dawn module initialization failed - Utils module not found")
 		return false
 	end
 	
-	-- Define required modules and their local variable references
-	local requiredModules = {
-		{ name = "Utils", ref = function(module) Utils = module end },
-		{ name = "Character", ref = function(module) Character = module end },
-		{ name = "Player", ref = function(module) Player = module end },
-		{ name = "Data", ref = function(module) Data = module end },
-		{ name = "Config", ref = function(module) Config = module end },
-		{ name = "GrossFrame", ref = function(module) GrossFrame = module end }
-	}
+	Character = GT.Modules.Character
+	if not Character then
+		print(addonName .. ": Dawn module initialization failed - Character module not found")
+		return false
+	end
 	
-	-- Load all required modules
-	for _, moduleInfo in ipairs(requiredModules) do
-		local module = GT.Modules[moduleInfo.name]
-		if not module then
-			print(addonName .. ": Error: Dawn module initialization failed - " .. moduleInfo.name .. " module not found")
-			return false
-		end
-		-- Set the local reference to the module
-		moduleInfo.ref(module)
+	Player = GT.Modules.Player
+	if not Player then
+		print(addonName .. ": Dawn module initialization failed - Player module not found")
+		return false
+	end
+	
+	Data = GT.Modules.Data
+	if not Data then
+		print(addonName .. ": Dawn module initialization failed - Data module not found")
+		return false
+	end
+	
+	Config = GT.Modules.Config
+	if not Config then
+		print(addonName .. ": Dawn module initialization failed - Config module not found")
+		return false
+	end
+	
+	GrossFrame = GT.Modules.GrossFrame
+	if not GrossFrame then
+		print(addonName .. ": Dawn module initialization failed - GrossFrame module not found")
+		return false
 	end
 	
 	-- Register UI tabs
-	self:RegisterTabs()
-	
-	-- Report successful initialization
-	Utils:DebugPrint("Dawn module initialized successfully")
-	return true
-end
-
--- Register UI tabs with GrossFrame
-function Dawn:RegisterTabs()
-	-- Signup tab configuration
 	local signupTab = {
 		text = "Signup",
 		value = "signup",
@@ -65,7 +71,6 @@ function Dawn:RegisterTabs()
 		module = Dawn
 	}
 	
-	-- Player Editor tab configuration
 	local playerEditorTab = {
 		text = "Player Editor",
 		value = "playerEditor",
@@ -74,9 +79,12 @@ function Dawn:RegisterTabs()
 		module = Dawn
 	}
 	
-	-- Register tabs with GrossFrame
 	GrossFrame:RegisterTab(playerEditorTab)
 	GrossFrame:RegisterTab(signupTab)
+	
+	-- Log successful initialization
+	Utils:DebugPrint("Dawn module initialized successfully")
+	return true
 end
 
 function Dawn:DrawDataFrame(container)
@@ -143,7 +151,7 @@ function Dawn:DrawPlayerEditorFrame(container)
 end
 
 function Dawn:PopulateDataFrame(container)
-	Dawn:PopulateDisplayFrame(container)
+	Dawn:PopulateSignupFrame(container)
 	Dawn:PopulateKeyListFrame(container)
 	Dawn:PopulateDungeonFrame(container)
 end
@@ -271,7 +279,7 @@ function Dawn:PopulatePlayerEditorFrame(container)
 	scroll:DoLayout()
 end
 
-function Dawn:PopulateDisplayFrame(container)
+function Dawn:PopulateSignupFrame(container)
     -- Validate container and required UI elements
     if not container or not container.signup or not container.signup.playersEditBox then
         Utils:DebugPrint("PopulateDisplayFrame: Missing required UI elements")
@@ -316,7 +324,7 @@ function Dawn:GenerateTeamTakeContent(localBnet)
     -- Add local player's discord tag
     local localDiscordTag = Player:GetDiscordTag(localBnet)
     if localDiscordTag and localDiscordTag ~= "" then
-        output = output .. localDiscordTag .. "\n"
+        output = output .. localDiscordTag .. " "
     end
     
     -- Add group members' discord tags
@@ -546,39 +554,39 @@ function Dawn:PopulateDungeonFrame(container)
             end
         end
 
+        local iconContainer = AceGUI:Create("SimpleGroup")
+        iconContainer:SetLayout("Fill")
+        iconContainer:SetWidth(iconSize + 5)
+        iconContainer:SetHeight(iconSize + 5)
+
+        local icon = AceGUI:Create("InsecureIcon")
+        icon:SetImage(dungeon.icon)
+        icon:SetImageSize(iconSize, iconSize)
+        icon:SetLabel(dungeon.name)
+        icon:SetSecureAction("spell", dungeon.spellId, "player")
+        iconContainer:AddChild(icon)
+
+        local keyRangeLevelStr = ""
+        if minKeyLevel == maxKeyLevel then
+            keyRangeLevelStr = tostring(minKeyLevel)
+        else
+            keyRangeLevelStr = tostring(minKeyLevel) .. " - " .. tostring(maxKeyLevel)
+        end
+
         if maxKeyLevel > 0 then
-            local iconContainer = AceGUI:Create("SimpleGroup")
-            iconContainer:SetLayout("Fill")
-            iconContainer:SetWidth(iconSize + 5)
-            iconContainer:SetHeight(iconSize + 5)
-
-            local icon = AceGUI:Create("Icon")
-            icon:SetImage(dungeon.icon)
-            icon:SetImageSize(iconSize, iconSize)
-            icon:SetLabel(dungeon.name)
-            icon:SetUserData("spellId", dungeon.spellId)
-            iconContainer:AddChild(icon)
-
-            local keyRangeLevelStr = ""
-            if minKeyLevel == maxKeyLevel then
-                keyRangeLevelStr = tostring(minKeyLevel)
-            else
-                keyRangeLevelStr = tostring(minKeyLevel) .. " - " .. tostring(maxKeyLevel)
-            end
-
             local levelLabel = AceGUI:Create("Label")
             levelLabel:SetText(keyRangeLevelStr)
-            levelLabel:SetFontObject(GameFontNormalHuge)
-            levelLabel:SetColor(0, 1, 0)
+            levelLabel:SetFontObject(GameFontNormalHuge2Outline)
+            levelLabel:SetColor(1, 1, 1)
             levelLabel:SetJustifyH("CENTER")
             levelLabel:SetJustifyV("MIDDLE")
             levelLabel:SetWidth(iconSize)
             levelLabel:SetHeight(15)
             levelLabel.frame:SetPoint("CENTER", icon.frame, "TOP", 0, -20)
             iconContainer:AddChild(levelLabel)
-
-            dungeonsContainer:AddChild(iconContainer)
         end
+
+        dungeonsContainer:AddChild(iconContainer)
     end
     dungeonsContainer:DoLayout()
 end

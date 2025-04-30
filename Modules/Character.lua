@@ -4,8 +4,13 @@ local addonName = GT.addonName or "GrossToolbox"
 local Character = {}
 GT.Modules.Character = Character
 
+-- Define module name for initialization logging
+Character.moduleName = "Character"
+
+-- Define module dependencies
 local db
 local Data, Utils
+
 function Character:Init(database)
     -- Validate database parameter
     if not database then
@@ -16,19 +21,19 @@ function Character:Init(database)
     -- Store database reference
     db = database
     
-    -- Validate and store Data module reference
-    if not GT or not GT.Modules or not GT.Modules.Data then
+    -- Load Data module
+    Data = GT.Modules.Data
+    if not Data then
         print(addonName .. ": Character module initialization failed - Data module not found")
         return false
     end
-    Data = GT.Modules.Data
     
-    -- Validate and store Utils module reference
-    if not GT.Modules.Utils then
+    -- Load Utils module
+    Utils = GT.Modules.Utils
+    if not Utils then
         print(addonName .. ": Character module initialization failed - Utils module not found")
         return false
     end
-    Utils = GT.Modules.Utils
     
     -- Initialize database structure if needed
     if not db.global then
