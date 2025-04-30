@@ -577,7 +577,6 @@ function Dawn:PopulateDungeonFrame(container)
         icon:SetCallback("OnEnter", function()
             -- Save current dungeon key for filtering
             self.currentHoveredDungeon = key
-            print(  "Hovered dungeon:", key, dungeon.name)
             -- Store original text if we haven't already
             if not self.originalKeysText and container.signup.keysEditBox then
                 self.originalKeysText = container.signup.keysEditBox:GetText()
