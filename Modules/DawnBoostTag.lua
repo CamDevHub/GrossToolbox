@@ -199,17 +199,20 @@ function Dawn:PopulatePlayerEditorFrame(container)
 
                     local nameLabel = AceGUI:Create("Label")
                     nameLabel:SetText(string.format("%s", charFullName))
-                    nameLabel:SetWidth(140)
+                    nameLabel:SetWidth(180)
+                    nameLabel:SetFontObject(GameFontHighlight)
                     charGroup:AddChild(nameLabel)
 
                     local ratingLabel = AceGUI:Create("Label")
                     ratingLabel:SetText(string.format("Rating: %d", rating))
-                    ratingLabel:SetWidth(140)
+                    ratingLabel:SetWidth(120)
+                    ratingLabel:SetFontObject(GameFontHighlight)
                     charGroup:AddChild(ratingLabel)
 
                     local classLabel = AceGUI:Create("Label")
                     classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
-                    classLabel:SetWidth(140)
+                    classLabel:SetWidth(120)
+                    classLabel:SetFontObject(GameFontHighlight)
                     charGroup:AddChild(classLabel)
 
                     local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
