@@ -8,6 +8,10 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 Dawn.data = {}
 
+-- Add these variables at the module level
+Dawn.currentHoveredDungeon = nil
+Dawn.originalKeysText = nil
+
 -- Define module name for initialization logging
 Dawn.moduleName = "Dawn"
 
@@ -564,6 +568,36 @@ function Dawn:PopulateDungeonFrame(container)
         icon:SetImageSize(iconSize, iconSize)
         icon:SetLabel(dungeon.name)
         icon:SetSecureAction("spell", dungeon.spellId, "player")
+        
+        -- Store dungeon info in the icon's user data
+        icon:SetUserData("dungeonKey", key)
+        icon:SetUserData("dungeonName", dungeon.name)
+        
+        -- Add hover functionality to filter keystone list
+        icon:SetCallback("OnEnter", function()
+            -- Save current dungeon key for filtering
+            self.currentHoveredDungeon = key
+            print(  "Hovered dungeon:", key, dungeon.name)
+            -- Store original text if we haven't already
+            if not self.originalKeysText and container.signup.keysEditBox then
+                self.originalKeysText = container.signup.keysEditBox:GetText()
+            end
+            
+            -- Filter the keystone list to show only this dungeon's keys
+            self:FilterKeystoneList(container, key)
+        end)
+
+        icon:SetCallback("OnLeave", function()
+            -- Clear current hover state
+            self.currentHoveredDungeon = nil
+            
+            -- Restore original keystone list
+            if self.originalKeysText and container.signup.keysEditBox then
+                container.signup.keysEditBox:SetText(self.originalKeysText)
+                self.originalKeysText = nil
+            end
+        end)
+        
         iconContainer:AddChild(icon)
 
         local keyRangeLevelStr = ""
@@ -583,12 +617,71 @@ function Dawn:PopulateDungeonFrame(container)
             levelLabel:SetWidth(iconSize)
             levelLabel:SetHeight(15)
             levelLabel.frame:SetPoint("CENTER", icon.frame, "TOP", 0, -20)
+            
+            -- Add shadow to the key level text
+            if levelLabel.label then
+                levelLabel.label:SetShadowColor(0, 0, 0, 1)
+                levelLabel.label:SetShadowOffset(2, -2)
+            end
+            
             iconContainer:AddChild(levelLabel)
         end
 
         dungeonsContainer:AddChild(iconContainer)
     end
     dungeonsContainer:DoLayout()
+end
+
+-- New function to filter the keystone list
+function Dawn:FilterKeystoneList(container, dungeonKey)
+    if not container or not container.signup or not container.signup.keysEditBox then
+        return
+    end
+
+    local keysEditBox = container.signup.keysEditBox
+    local bnets = Player:GetBNetOfPartyMembers()
+    if not bnets or next(bnets) == nil then
+        return
+    end
+
+    local keyDataList = {}
+    for _, bnet in ipairs(bnets) do
+        local characters = Player:GetCharactersName(bnet)
+        for _, charName in ipairs(characters) do
+            local keystone = Character:GetCharacterKeystone(bnet, charName)
+            
+            -- Only include keys for the hovered dungeon
+            if self:IsValidCharacter(bnet, charName, true) and keystone.mapID == dungeonKey then
+                table.insert(keyDataList, {
+                    charName = charName,
+                    level = keystone.level or 0,
+                    mapName = keystone.mapName or "Unknown",
+                    hasKey = Character:GetCharacterHasKey(bnet, charName)
+                })
+            end
+        end
+    end
+
+    local outputString = ""
+    if #keyDataList == 0 then
+        outputString = "No keystones found for this dungeon."
+    else
+        -- Sort by level (highest first)
+        table.sort(keyDataList, function(a, b)
+            return a.level > b.level
+        end)
+
+        -- Format the filtered list with highlight
+        outputString = "|cFFFFD700Keystones for " .. Data.DUNGEON_TABLE[dungeonKey].name .. ":|r\n\n"
+        for _, keyInfo in ipairs(keyDataList) do
+            outputString = outputString .. string.format("|cFF00FF00%s: +%d|r\n",
+                keyInfo.charName,
+                keyInfo.level
+            )
+        end
+    end
+
+    keysEditBox:SetText(outputString)
 end
 
 function Dawn:GeneratePlayerString(bnet, addDiscordTag)
