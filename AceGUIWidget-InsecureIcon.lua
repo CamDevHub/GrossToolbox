@@ -12,6 +12,17 @@ local select, pairs, print = select, pairs, print
 local CreateFrame, UIParent = CreateFrame, UIParent
 
 --[[-----------------------------------------------------------------------------
+Scripts
+-------------------------------------------------------------------------------]]
+local function Control_OnEnter(frame)
+	frame.obj:Fire("OnEnter")
+end
+
+local function Control_OnLeave(frame)
+	frame.obj:Fire("OnLeave")
+end
+
+--[[-----------------------------------------------------------------------------
 Methods
 -------------------------------------------------------------------------------]]
 local methods = {
@@ -99,6 +110,8 @@ local function Constructor()
 	frame:Hide()
 
 	frame:EnableMouse(true)
+	frame:SetScript("OnEnter", Control_OnEnter)
+	frame:SetScript("OnLeave", Control_OnLeave)
 	frame:RegisterForClicks("AnyUp", "AnyDown")
 
 	local label = frame:CreateFontString(nil, "BACKGROUND", "GameFontHighlight")
