@@ -29,7 +29,8 @@ local methods = {
 	["OnAcquire"] = function(self)
 		self:SetHeight(110)
 		self:SetWidth(110)
-		self:SetLabel()
+		self:SetBottomLabel()
+		self:SetTopLabel()
 		self:SetImage(nil)
 		self:SetImageSize(64, 64)
 		self:SetDisabled(false)
@@ -37,13 +38,24 @@ local methods = {
 
 	-- ["OnRelease"] = nil,
 
-	["SetLabel"] = function(self, text)
+	["SetBottomLabel"] = function(self, text)
 		if text and text ~= "" then
-			self.label:Show()
-			self.label:SetText(text)
+			self.bottomLabel:Show()
+			self.bottomLabel:SetText(text)
 			self:SetHeight(self.image:GetHeight() + 25)
 		else
-			self.label:Hide()
+			self.bottomLabel:Hide()
+			self:SetHeight(self.image:GetHeight() + 10)
+		end
+	end,
+
+	["SetTopLabel"] = function(self, text)
+		if text and text ~= "" then
+			self.topLabel:Show()
+			self.topLabel:SetText(text)
+			self:SetHeight(self.image:GetHeight() + 25)
+		else
+			self.topLabel:Hide()
 			self:SetHeight(self.image:GetHeight() + 10)
 		end
 	end,
@@ -66,7 +78,7 @@ local methods = {
 		self.image:SetWidth(width)
 		self.image:SetHeight(height)
 		--self.frame:SetWidth(width + 30)
-		if self.label:IsShown() then
+		if self.bottomLabel:IsShown() then
 			self:SetHeight(height + 25)
 		else
 			self:SetHeight(height + 10)
@@ -77,11 +89,13 @@ local methods = {
 		self.disabled = disabled
 		if disabled then
 			self.frame:Disable()
-			self.label:SetTextColor(0.5, 0.5, 0.5)
+			self.bottomLabel:SetTextColor(0.5, 0.5, 0.5)
+			self.topLabel:SetTextColor(0.5, 0.5, 0.5)
 			self.image:SetVertexColor(0.5, 0.5, 0.5, 0.5)
 		else
 			self.frame:Enable()
-			self.label:SetTextColor(1, 1, 1)
+			self.bottomLabel:SetTextColor(1, 1, 1)
+			self.topLabel:SetTextColor(1, 1, 1)
 			self.image:SetVertexColor(1, 1, 1, 1)
 		end
 	end,
@@ -114,12 +128,19 @@ local function Constructor()
 	frame:SetScript("OnLeave", Control_OnLeave)
 	frame:RegisterForClicks("AnyUp", "AnyDown")
 
-	local label = frame:CreateFontString(nil, "BACKGROUND", "GameFontHighlight")
-	label:SetPoint("BOTTOMLEFT")
-	label:SetPoint("BOTTOMRIGHT")
-	label:SetJustifyH("CENTER")
-	label:SetJustifyV("TOP")
-	label:SetHeight(18)
+	local topLabel = frame:CreateFontString(nil, "BACKGROUND", "SystemFont_Shadow_Large_Outline")
+	topLabel:SetPoint("TOPLEFT")
+	topLabel:SetPoint("TOPRIGHT")
+	topLabel:SetJustifyH("CENTER")
+	topLabel:SetJustifyV("BOTTOM")
+	topLabel:SetHeight(25)
+
+	local bottomLabel = frame:CreateFontString(nil, "BACKGROUND", "SystemFont_Shadow_Large_Outline")
+	bottomLabel:SetPoint("BOTTOMLEFT")
+	bottomLabel:SetPoint("BOTTOMRIGHT")
+	bottomLabel:SetJustifyH("CENTER")
+	bottomLabel:SetJustifyV("TOP")
+	bottomLabel:SetHeight(18)
 
 	local image = frame:CreateTexture(nil, "BACKGROUND")
 	image:SetWidth(64)
@@ -133,7 +154,8 @@ local function Constructor()
 	highlight:SetBlendMode("ADD")
 
 	local widget = {
-		label = label,
+		bottomLabel = bottomLabel,
+		topLabel = topLabel,
 		image = image,
 		frame = frame,
 		type  = Type

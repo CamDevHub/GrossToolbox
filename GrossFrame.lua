@@ -27,7 +27,7 @@ function GrossFrame:GetOrCreateMainFrame()
     frame:SetLayout("Fill")
     frame:EnableResize(false)
     frame:SetStatusText(addonName)
-    frame:SetWidth(1120)
+    frame:SetWidth(1125)
     frame:SetHeight(650)
 
     local function CloseFrame(widget)

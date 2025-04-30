@@ -20,84 +20,84 @@ local db
 local Character, Player, Data, Utils, Config, GrossFrame
 
 function Dawn:Init(database, frame)
-	-- Validate database parameter
-	if not database then
-		print(addonName .. ": Dawn module initialization failed - missing database")
-		return false
-	end
-	
-	-- Store database reference
-	db = database
-	
-	-- Load required modules
-	Utils = GT.Modules.Utils
-	if not Utils then
-		print(addonName .. ": Dawn module initialization failed - Utils module not found")
-		return false
-	end
-	
-	Character = GT.Modules.Character
-	if not Character then
-		print(addonName .. ": Dawn module initialization failed - Character module not found")
-		return false
-	end
-	
-	Player = GT.Modules.Player
-	if not Player then
-		print(addonName .. ": Dawn module initialization failed - Player module not found")
-		return false
-	end
-	
-	Data = GT.Modules.Data
-	if not Data then
-		print(addonName .. ": Dawn module initialization failed - Data module not found")
-		return false
-	end
-	
-	Config = GT.Modules.Config
-	if not Config then
-		print(addonName .. ": Dawn module initialization failed - Config module not found")
-		return false
-	end
-	
-	GrossFrame = GT.Modules.GrossFrame
-	if not GrossFrame then
-		print(addonName .. ": Dawn module initialization failed - GrossFrame module not found")
-		return false
-	end
-	
-	-- Register UI tabs
-	local signupTab = {
-		text = "Signup",
-		value = "signup",
-		drawFunc = function(container) self:DrawDataFrame(container) end,
-		populateFunc = function(container) self:PopulateDataFrame(container) end,
-		module = Dawn
-	}
-	
-	local playerEditorTab = {
-		text = "Player Editor",
-		value = "playerEditor",
-		drawFunc = function(container) self:DrawPlayerEditorFrame(container) end,
-		populateFunc = function(container) self:PopulatePlayerEditorFrame(container) end,
-		module = Dawn
-	}
-	
-	GrossFrame:RegisterTab(playerEditorTab)
-	GrossFrame:RegisterTab(signupTab)
-	
-	-- Log successful initialization
-	Utils:DebugPrint("Dawn module initialized successfully")
-	return true
+    -- Validate database parameter
+    if not database then
+        print(addonName .. ": Dawn module initialization failed - missing database")
+        return false
+    end
+
+    -- Store database reference
+    db = database
+
+    -- Load required modules
+    Utils = GT.Modules.Utils
+    if not Utils then
+        print(addonName .. ": Dawn module initialization failed - Utils module not found")
+        return false
+    end
+
+    Character = GT.Modules.Character
+    if not Character then
+        print(addonName .. ": Dawn module initialization failed - Character module not found")
+        return false
+    end
+
+    Player = GT.Modules.Player
+    if not Player then
+        print(addonName .. ": Dawn module initialization failed - Player module not found")
+        return false
+    end
+
+    Data = GT.Modules.Data
+    if not Data then
+        print(addonName .. ": Dawn module initialization failed - Data module not found")
+        return false
+    end
+
+    Config = GT.Modules.Config
+    if not Config then
+        print(addonName .. ": Dawn module initialization failed - Config module not found")
+        return false
+    end
+
+    GrossFrame = GT.Modules.GrossFrame
+    if not GrossFrame then
+        print(addonName .. ": Dawn module initialization failed - GrossFrame module not found")
+        return false
+    end
+
+    -- Register UI tabs
+    local signupTab = {
+        text = "Signup",
+        value = "signup",
+        drawFunc = function(container) self:DrawDataFrame(container) end,
+        populateFunc = function(container) self:PopulateDataFrame(container) end,
+        module = Dawn
+    }
+
+    local playerEditorTab = {
+        text = "Player Editor",
+        value = "playerEditor",
+        drawFunc = function(container) self:DrawPlayerEditorFrame(container) end,
+        populateFunc = function(container) self:PopulatePlayerEditorFrame(container) end,
+        module = Dawn
+    }
+
+    GrossFrame:RegisterTab(playerEditorTab)
+    GrossFrame:RegisterTab(signupTab)
+
+    -- Log successful initialization
+    Utils:DebugPrint("Dawn module initialized successfully")
+    return true
 end
 
 function Dawn:DrawDataFrame(container)
-	if not container then return end
+    if not container then return end
 
-	if not container.signup then
-		container.signup = {}
-	end
-	-- === Tab 1: Data (Players) ===
+    if not container.signup then
+        container.signup = {}
+    end
+    -- === Tab 1: Data (Players) ===
     local dataTabContainer = AceGUI:Create("SimpleGroup")
     dataTabContainer:SetLayout("Flow")
     dataTabContainer:SetAutoAdjustHeight(false)
@@ -109,7 +109,7 @@ function Dawn:DrawDataFrame(container)
     playersEditBox:SetWidth(650)
     playersEditBox:SetHeight(500)
     dataTabContainer:AddChild(playersEditBox)
-	container.signup.playersEditBox = playersEditBox
+    container.signup.playersEditBox = playersEditBox
 
     local keysEditBox = AceGUI:Create("MultiLineEditBox")
     keysEditBox:SetLabel("Keystone List")
@@ -117,13 +117,14 @@ function Dawn:DrawDataFrame(container)
     keysEditBox:SetWidth(250)
     keysEditBox:SetHeight(500)
     dataTabContainer:AddChild(keysEditBox)
-	container.signup.keysEditBox = keysEditBox
+    container.signup.keysEditBox = keysEditBox
 
-	local dungeonsContainer = AceGUI:Create("SimpleGroup")
-	dungeonsContainer:SetLayout("Flow")
-	dungeonsContainer:SetWidth(160)
-	dataTabContainer:AddChild(dungeonsContainer)
-	container.signup.dungeonsContainer = dungeonsContainer
+    local dungeonsContainer = AceGUI:Create("SimpleGroup")
+    dungeonsContainer:SetLayout("Flow")
+    dungeonsContainer:SetWidth(160)
+    dungeonsContainer:SetHeight(500)
+    dataTabContainer:AddChild(dungeonsContainer)
+    container.signup.dungeonsContainer = dungeonsContainer
 
     local requestButton = AceGUI:Create("Button")
     requestButton:SetText("Request Party Data")
@@ -138,149 +139,149 @@ function Dawn:DrawDataFrame(container)
         Dawn:PopulateDataFrame(container)
     end)
     dataTabContainer:AddChild(teamTakeCheckbox)
-	container.signup.teamTakeCheckbox = teamTakeCheckbox
+    dataTabContainer:DoLayout()
+    container.signup.teamTakeCheckbox = teamTakeCheckbox
 end
 
 function Dawn:DrawPlayerEditorFrame(container)
-	if not container then return end
+    if not container then return end
 
-	if not container.signup then
-		container.signup = {}
-	end
-	-- === Tab 2: Player Editor ===
-	local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
-	playerEditorTabContainer:SetLayout("Flow")
-	container:AddChild(playerEditorTabContainer)
-	container.signup.playerEditorScroll = playerEditorTabContainer
+    if not container.signup then
+        container.signup = {}
+    end
+    -- === Tab 2: Player Editor ===
+    local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
+    playerEditorTabContainer:SetLayout("Flow")
+    container:AddChild(playerEditorTabContainer)
+    container.signup.playerEditorScroll = playerEditorTabContainer
 end
 
 function Dawn:PopulateDataFrame(container)
-	Dawn:PopulateSignupFrame(container)
-	Dawn:PopulateKeyListFrame(container)
-	Dawn:PopulateDungeonFrame(container)
+    Dawn:PopulateSignupFrame(container)
+    Dawn:PopulateKeyListFrame(container)
+    Dawn:PopulateDungeonFrame(container)
 end
 
 function Dawn:PopulatePlayerEditorFrame(container)
-	if not container or not container.signup or not container.signup.playerEditorScroll then
-		return
-	end
+    if not container or not container.signup or not container.signup.playerEditorScroll then
+        return
+    end
 
-	local bnets = Player:GetBNetOfPartyMembers()
-	if not bnets or next(bnets) == nil then
-		return
-	end
+    local bnets = Player:GetBNetOfPartyMembers()
+    if not bnets or next(bnets) == nil then
+        return
+    end
 
-	local scroll = container.signup.playerEditorScroll
-	scroll:ReleaseChildren()
-	scroll:SetScroll(0)
+    local scroll = container.signup.playerEditorScroll
+    scroll:ReleaseChildren()
+    scroll:SetScroll(0)
 
-	for _, bnet in ipairs(bnets) do
-		local discordTag = Player:GetDiscordTag(bnet)
-		if discordTag and discordTag ~= "" then
-			
-			local playerHeader = AceGUI:Create("Heading")
-			playerHeader:SetText(discordTag)
-			playerHeader:SetFullWidth(true)
-			scroll:AddChild(playerHeader)
+    for _, bnet in ipairs(bnets) do
+        local discordTag = Player:GetDiscordTag(bnet)
+        if discordTag and discordTag ~= "" then
+            local playerHeader = AceGUI:Create("Heading")
+            playerHeader:SetText(discordTag)
+            playerHeader:SetFullWidth(true)
+            scroll:AddChild(playerHeader)
 
-			local charactersName = Player:GetCharactersName(bnet)
-			for _, charFullName in ipairs(charactersName) do
-				local keystone = Character:GetCharacterKeystone(bnet, charFullName)
-				local rating = Character:GetCharacterRating(bnet, charFullName)
-				local classId = Character:GetCharacterClassId(bnet, charFullName)
-				local charGroup = AceGUI:Create("SimpleGroup")
-				local hasKey = Character:GetCharacterHasKey(bnet, charFullName)
-				local isHidden = Character:GetCharacterIsHidden(bnet, charFullName)
+            local charactersName = Player:GetCharactersName(bnet)
+            for _, charFullName in ipairs(charactersName) do
+                local keystone = Character:GetCharacterKeystone(bnet, charFullName)
+                local rating = Character:GetCharacterRating(bnet, charFullName)
+                local classId = Character:GetCharacterClassId(bnet, charFullName)
+                local charGroup = AceGUI:Create("SimpleGroup")
+                local hasKey = Character:GetCharacterHasKey(bnet, charFullName)
+                local isHidden = Character:GetCharacterIsHidden(bnet, charFullName)
 
-				if keystone and keystone.level and keystone.level > 0 then
-					charGroup:SetLayout("Flow")
-					charGroup:SetFullWidth(true)
+                if keystone and keystone.level and keystone.level > 0 then
+                    charGroup:SetLayout("Flow")
+                    charGroup:SetFullWidth(true)
 
-					local nameLabel = AceGUI:Create("Label")
-					nameLabel:SetText(string.format("%s", charFullName))
-					nameLabel:SetWidth(140)
-					charGroup:AddChild(nameLabel)
+                    local nameLabel = AceGUI:Create("Label")
+                    nameLabel:SetText(string.format("%s", charFullName))
+                    nameLabel:SetWidth(140)
+                    charGroup:AddChild(nameLabel)
 
-					local ratingLabel = AceGUI:Create("Label")
-					ratingLabel:SetText(string.format("Rating: %d", rating))
-					ratingLabel:SetWidth(140)
-					charGroup:AddChild(ratingLabel)
+                    local ratingLabel = AceGUI:Create("Label")
+                    ratingLabel:SetText(string.format("Rating: %d", rating))
+                    ratingLabel:SetWidth(140)
+                    charGroup:AddChild(ratingLabel)
 
-					local classLabel = AceGUI:Create("Label")
-					classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
-					classLabel:SetWidth(140)
-					charGroup:AddChild(classLabel)
-					
-					local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
-					noKeyForBoostCheckbox:SetLabel("No Key");
-					noKeyForBoostCheckbox:SetType("checkbox");
-					noKeyForBoostCheckbox:SetWidth(100);
-					noKeyForBoostCheckbox:SetUserData("bnet", bnet);
-					noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
-					noKeyForBoostCheckbox:SetValue(not hasKey)
-					noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-						local cbBnet = widget:GetUserData("bnet")
-						local cbCharFullName = widget:GetUserData("charFullName")
-						Character:SetCharacterHasKey(cbBnet, cbCharFullName, not isChecked)
-					end)
-					charGroup:AddChild(noKeyForBoostCheckbox)
+                    local classLabel = AceGUI:Create("Label")
+                    classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
+                    classLabel:SetWidth(140)
+                    charGroup:AddChild(classLabel)
 
-					local hideCharCheckbox = AceGUI:Create("CheckBox")
-					hideCharCheckbox:SetLabel("Hide");
-					hideCharCheckbox:SetType("checkbox");
-					hideCharCheckbox:SetWidth(100);
-					hideCharCheckbox:SetUserData("bnet", bnet);
-					hideCharCheckbox:SetUserData("charFullName", charFullName);
-					hideCharCheckbox:SetValue(isHidden)
-					hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-						local cbBnet = widget:GetUserData("bnet")
-						local cbCharFullName = widget:GetUserData("charFullName")
-						Character:SetCharacterIsHidden(cbBnet, cbCharFullName, isChecked)
-					end)
-					charGroup:AddChild(hideCharCheckbox)
+                    local noKeyForBoostCheckbox = AceGUI:Create("CheckBox")
+                    noKeyForBoostCheckbox:SetLabel("No Key");
+                    noKeyForBoostCheckbox:SetType("checkbox");
+                    noKeyForBoostCheckbox:SetWidth(100);
+                    noKeyForBoostCheckbox:SetUserData("bnet", bnet);
+                    noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
+                    noKeyForBoostCheckbox:SetValue(not hasKey)
+                    noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+                        local cbBnet = widget:GetUserData("bnet")
+                        local cbCharFullName = widget:GetUserData("charFullName")
+                        Character:SetCharacterHasKey(cbBnet, cbCharFullName, not isChecked)
+                    end)
+                    charGroup:AddChild(noKeyForBoostCheckbox)
 
-					local checkBoxes = {}
-					for role, _ in pairs(Data.ROLES) do
-						local checkbox = AceGUI:Create("CheckBox")
-						checkbox:SetLabel(role);
-						checkbox:SetType("checkbox");
+                    local hideCharCheckbox = AceGUI:Create("CheckBox")
+                    hideCharCheckbox:SetLabel("Hide");
+                    hideCharCheckbox:SetType("checkbox");
+                    hideCharCheckbox:SetWidth(100);
+                    hideCharCheckbox:SetUserData("bnet", bnet);
+                    hideCharCheckbox:SetUserData("charFullName", charFullName);
+                    hideCharCheckbox:SetValue(isHidden)
+                    hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+                        local cbBnet = widget:GetUserData("bnet")
+                        local cbCharFullName = widget:GetUserData("charFullName")
+                        Character:SetCharacterIsHidden(cbBnet, cbCharFullName, isChecked)
+                    end)
+                    charGroup:AddChild(hideCharCheckbox)
 
-						local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
-						if customRoles and #customRoles > 0 then
-							checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
-						end
-						checkbox:SetUserData("bnet", bnet);
-						checkbox:SetUserData("charFullName", charFullName);
-						checkbox:SetUserData("role", role);
-						checkbox:SetUserData("checkBoxes", checkBoxes);
-						checkbox:SetWidth(100);
-						checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-							local cbBnet = widget:GetUserData("bnet")
-							local cbCharFullName = widget:GetUserData("charFullName")
-							local otherCheckBoxes = widget:GetUserData("checkBoxes")
-							local rolesToSet = {}
-							for roleValue, cb in pairs(otherCheckBoxes) do
-								if cb:GetValue() then
-									table.insert(rolesToSet, roleValue)
-								end
-							end
-							table.sort(rolesToSet, function(a, b)
-								return a > b
-							end)
-							Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
-						end);
-						charGroup:AddChild(checkbox)
-						checkBoxes[role] = checkbox
-					end
-				end
+                    local checkBoxes = {}
+                    for role, _ in pairs(Data.ROLES) do
+                        local checkbox = AceGUI:Create("CheckBox")
+                        checkbox:SetLabel(role);
+                        checkbox:SetType("checkbox");
 
-				charGroup:DoLayout()
-				scroll:AddChild(charGroup)
-			end
-		end
-	end
+                        local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
+                        if customRoles and #customRoles > 0 then
+                            checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
+                        end
+                        checkbox:SetUserData("bnet", bnet);
+                        checkbox:SetUserData("charFullName", charFullName);
+                        checkbox:SetUserData("role", role);
+                        checkbox:SetUserData("checkBoxes", checkBoxes);
+                        checkbox:SetWidth(100);
+                        checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
+                            local cbBnet = widget:GetUserData("bnet")
+                            local cbCharFullName = widget:GetUserData("charFullName")
+                            local otherCheckBoxes = widget:GetUserData("checkBoxes")
+                            local rolesToSet = {}
+                            for roleValue, cb in pairs(otherCheckBoxes) do
+                                if cb:GetValue() then
+                                    table.insert(rolesToSet, roleValue)
+                                end
+                            end
+                            table.sort(rolesToSet, function(a, b)
+                                return a > b
+                            end)
+                            Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
+                        end);
+                        charGroup:AddChild(checkbox)
+                        checkBoxes[role] = checkbox
+                    end
+                end
 
-	scroll:DoLayout()
+                charGroup:DoLayout()
+                scroll:AddChild(charGroup)
+            end
+        end
+    end
+
+    scroll:DoLayout()
 end
 
 function Dawn:PopulateSignupFrame(container)
@@ -292,14 +293,14 @@ function Dawn:PopulateSignupFrame(container)
 
     local playersEditBox = container.signup.playersEditBox
     local teamTakeCheckbox = container.signup.teamTakeCheckbox
-    
+
     -- Get local discord tag
     local localDiscordTag = Config:GetDiscordTag()
     if not localDiscordTag or localDiscordTag == "" then
         playersEditBox:SetText("Discord handle not set bro !")
         return
     end
-    
+
     -- Get local player's BNet tag
     local localBnet = Player:GetBNetTagForUnit("player")
     if not localBnet then
@@ -307,7 +308,7 @@ function Dawn:PopulateSignupFrame(container)
         playersEditBox:SetText("Could not get your BattleNet tag")
         return
     end
-    
+
     -- Generate appropriate content based on checkbox state
     local fullOutputString = ""
     if teamTakeCheckbox:GetValue() then
@@ -315,7 +316,7 @@ function Dawn:PopulateSignupFrame(container)
     else
         fullOutputString = self:GenerateNormalSignupContent(localBnet)
     end
-    
+
     -- Set and highlight text in edit box
     playersEditBox:SetText(fullOutputString)
     playersEditBox:HighlightText(0, 9999)
@@ -324,42 +325,42 @@ end
 -- Generate content for team take mode
 function Dawn:GenerateTeamTakeContent(localBnet)
     local output = "### Team Take\n"
-    
+
     -- Add local player's discord tag
     local localDiscordTag = Player:GetDiscordTag(localBnet)
     if localDiscordTag and localDiscordTag ~= "" then
         output = output .. localDiscordTag .. " "
     end
-    
+
     -- Add group members' discord tags
     output = output .. self:GetPartyMembersDiscordTags(localBnet)
-    
+
     -- Add armor type distribution
     output = output .. self:GetArmorDistribution()
-    
+
     return output
 end
 
 -- Get all party members' discord tags (excluding local player)
 function Dawn:GetPartyMembersDiscordTags(localBnet)
     local output = ""
-    
+
     -- Only process if in a group
     if not IsInGroup() then
         return output
     end
-    
+
     local partyMembers = Player:GetBNetOfPartyMembers()
     for _, bnet in ipairs(partyMembers) do
         -- Skip local player (already processed)
         if bnet and bnet ~= localBnet then
             local discordTag = Player:GetDiscordTag(bnet)
             if discordTag and discordTag ~= "" then
-                output = output .. discordTag .. "\n"
+                output = output .. discordTag
             end
         end
     end
-    
+
     return output
 end
 
@@ -397,7 +398,7 @@ function Dawn:GetArmorDistribution()
             output = output .. string.format("\n%s: %d", armorType, count)
         end
     end
-    
+
     return output
 end
 
@@ -407,13 +408,13 @@ function Dawn:IsValidCharacter(bnet, charName, checkHasKey)
     -- Get character data
     local keystone = Character:GetCharacterKeystone(bnet, charName)
     local isHidden = Character:GetCharacterIsHidden(bnet, charName)
-    
+
     -- Optionally check if character has a key for boosting
     if checkHasKey then
         local hasKey = Character:GetCharacterHasKey(bnet, charName)
         return keystone and keystone.level and keystone.level > 0 and hasKey and not isHidden
     end
-    
+
     -- Standard validation: has keystone and not hidden
     return keystone and keystone.level and keystone.level > 0 and not isHidden
 end
@@ -423,27 +424,27 @@ function Dawn:GenerateNormalSignupContent(localBnet)
     -- Initialize output variables
     local numberOfPlayers = 1
     local output = ""
-    
+
     -- Add local player's info
     local localPlayerString = self:GeneratePlayerString(localBnet, false)
     if localPlayerString and localPlayerString ~= "" then
         output = localPlayerString .. "\n"
     end
-    
+
     -- Add group members' info if in a group
     if IsInGroup() then
         output = output .. self:GetPartyMembersInfo(localBnet, numberOfPlayers)
     end
-    
+
     -- Add header with appropriate sign based on group size
     local signText = Data.DAWN_SIGN[numberOfPlayers] or "Unknown"
     output = "### " .. signText .. " sign:\n" .. output
-    
+
     -- Remove trailing newline if present
     if output:sub(-1) == "\n" then
         output = output:sub(1, -2)
     end
-    
+
     return output
 end
 
@@ -451,17 +452,17 @@ end
 function Dawn:GetPartyMembersInfo(localBnet, numberOfPlayers)
     local output = ""
     local partyMembers = Player:GetBNetOfPartyMembers()
-    
+
     -- Process each group member
     for _, bnet in ipairs(partyMembers) do
         -- Skip local player (already processed)
         if bnet and bnet ~= localBnet then
             local charactersName = Player:GetCharactersName(bnet)
-            
+
             -- Only add players with characters
             if charactersName and #charactersName > 0 then
                 local playerString = self:GeneratePlayerString(bnet, true)
-                
+
                 -- Add to output if player has valid data
                 if playerString and playerString ~= "" then
                     output = output .. playerString .. "\n"
@@ -470,7 +471,7 @@ function Dawn:GetPartyMembersInfo(localBnet, numberOfPlayers)
             end
         end
     end
-    
+
     return output, numberOfPlayers
 end
 
@@ -491,7 +492,7 @@ function Dawn:PopulateKeyListFrame(container)
         for _, charName in ipairs(characters) do
             local keystone = Character:GetCharacterKeystone(bnet, charName)
             local hasKey = Character:GetCharacterHasKey(bnet, charName)
-            
+
             -- Use our validation method with hasKey check
             if self:IsValidCharacter(bnet, charName, true) then
                 table.insert(keyDataList, {
@@ -499,7 +500,7 @@ function Dawn:PopulateKeyListFrame(container)
                     level = keystone.level or 0,
                     mapName = keystone.mapName or "Unknown",
                     hasKey = hasKey,
-                    isHidden = false  -- Already filtered by IsValidCharacter
+                    isHidden = false -- Already filtered by IsValidCharacter
                 })
             end
         end
@@ -540,6 +541,38 @@ function Dawn:PopulateDungeonFrame(container)
     local dungeonsContainer = container.signup.dungeonsContainer
     dungeonsContainer:ReleaseChildren()
 
+    local cooldownContainer = AceGUI:Create("SimpleGroup")
+    cooldownContainer:SetLayout("Fill")
+    cooldownContainer:SetFullWidth(true)
+    cooldownContainer:SetHeight(iconSize)
+
+    local cooldownLabel = AceGUI:Create("Label")
+    cooldownLabel:SetFontObject(SystemFont_Shadow_Large_Outline)
+    cooldownLabel:SetFullWidth(true)
+    cooldownLabel:SetJustifyH("CENTER") -- Center horizontally
+    cooldownLabel:SetJustifyV("MIDDLE") -- Center vertically
+
+    -- Use the spell ID of the first dungeon in the data table as they share the same cooldown
+    local spellID
+    for _, dungeon in pairs(Data.DUNGEON_TABLE) do
+        spellID = dungeon.spellId
+        break
+    end
+    if spellID then
+        local spellCooldown = C_Spell.GetSpellCooldown(spellID)
+        if spellCooldown and spellCooldown.isEnabled and spellCooldown.duration > 0 then
+            local remaining = math.ceil(spellCooldown.duration - (GetTime() - spellCooldown.startTime))
+            local hour = remaining / 3600
+            local minute = (remaining % 3600) / 60
+            cooldownLabel:SetText(string.format("CD: %dh %dm", hour, minute))
+            cooldownLabel:SetWidth(iconSize)
+        elseif spellCooldown.isEnabled then
+            cooldownLabel:SetText("CD: Ready")
+        end
+    end
+    cooldownContainer:AddChild(cooldownLabel)
+    dungeonsContainer:AddChild(cooldownContainer)
+
     for key, dungeon in pairs(Data.DUNGEON_TABLE) do
         local maxKeyLevel = 0
         local minKeyLevel = 99999
@@ -549,7 +582,7 @@ function Dawn:PopulateDungeonFrame(container)
             local charactersName = Player:GetCharactersName(bnet)
             for _, charName in ipairs(charactersName) do
                 local keystone = Character:GetCharacterKeystone(bnet, charName)
-                
+
                 -- Use our validation method
                 if self:IsValidCharacter(bnet, charName, true) and keystone.mapID == key then
                     maxKeyLevel = math.max(maxKeyLevel, keystone.level or 0)
@@ -559,20 +592,20 @@ function Dawn:PopulateDungeonFrame(container)
         end
 
         local iconContainer = AceGUI:Create("SimpleGroup")
-        iconContainer:SetLayout("Fill")
+        iconContainer:SetLayout("Flow")
         iconContainer:SetWidth(iconSize + 5)
         iconContainer:SetHeight(iconSize + 5)
 
         local icon = AceGUI:Create("InsecureIcon")
         icon:SetImage(dungeon.icon)
         icon:SetImageSize(iconSize, iconSize)
-        icon:SetLabel(dungeon.name)
+        icon:SetBottomLabel(dungeon.name)
         icon:SetSecureAction("spell", dungeon.spellId, "player")
-        
+
         -- Store dungeon info in the icon's user data
         icon:SetUserData("dungeonKey", key)
         icon:SetUserData("dungeonName", dungeon.name)
-        
+
         -- Add hover functionality to filter keystone list
         icon:SetCallback("OnEnter", function()
             -- Save current dungeon key for filtering
@@ -581,7 +614,7 @@ function Dawn:PopulateDungeonFrame(container)
             if not self.originalKeysText and container.signup.keysEditBox then
                 self.originalKeysText = container.signup.keysEditBox:GetText()
             end
-            
+
             -- Filter the keystone list to show only this dungeon's keys
             self:FilterKeystoneList(container, key)
         end)
@@ -589,14 +622,14 @@ function Dawn:PopulateDungeonFrame(container)
         icon:SetCallback("OnLeave", function()
             -- Clear current hover state
             self.currentHoveredDungeon = nil
-            
+
             -- Restore original keystone list
             if self.originalKeysText and container.signup.keysEditBox then
                 container.signup.keysEditBox:SetText(self.originalKeysText)
                 self.originalKeysText = nil
             end
         end)
-        
+
         iconContainer:AddChild(icon)
 
         local keyRangeLevelStr = ""
@@ -607,23 +640,7 @@ function Dawn:PopulateDungeonFrame(container)
         end
 
         if maxKeyLevel > 0 then
-            local levelLabel = AceGUI:Create("Label")
-            levelLabel:SetText(keyRangeLevelStr)
-            levelLabel:SetFontObject(GameFontNormalHuge2Outline)
-            levelLabel:SetColor(1, 1, 1)
-            levelLabel:SetJustifyH("CENTER")
-            levelLabel:SetJustifyV("MIDDLE")
-            levelLabel:SetWidth(iconSize)
-            levelLabel:SetHeight(15)
-            levelLabel.frame:SetPoint("CENTER", icon.frame, "TOP", 0, -20)
-            
-            -- Add shadow to the key level text
-            if levelLabel.label then
-                levelLabel.label:SetShadowColor(0, 0, 0, 1)
-                levelLabel.label:SetShadowOffset(2, -2)
-            end
-            
-            iconContainer:AddChild(levelLabel)
+            icon:SetTopLabel(keyRangeLevelStr)
         end
 
         dungeonsContainer:AddChild(iconContainer)
@@ -648,7 +665,7 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
         local characters = Player:GetCharactersName(bnet)
         for _, charName in ipairs(characters) do
             local keystone = Character:GetCharacterKeystone(bnet, charName)
-            
+
             -- Only include keys for the hovered dungeon
             if self:IsValidCharacter(bnet, charName, true) and keystone.mapID == dungeonKey then
                 table.insert(keyDataList, {
@@ -690,7 +707,7 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
     local characterNames = Player:GetCharactersName(bnet)
     for _, name in ipairs(characterNames) do
         local keystone = Character:GetCharacterKeystone(bnet, name)
-        
+
         -- Use our validation method, but don't require hasKey for display
         if self:IsValidCharacter(bnet, name, false) then
             local roleIndicatorStr = ""
@@ -716,10 +733,10 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
             if keystone.level and keystone.level > 0 then
                 if Character:GetCharacterHasKey(bnet, name) then
                     keyStr = keyStr ..
-                    string.format("+%d %s", keystone.level, keystone.mapName or "Unknown")
+                        string.format("+%d %s", keystone.level, keystone.mapName or "Unknown")
                 else
                     keyStr = keyStr ..
-                    string.format("No key")
+                        string.format("No key")
                 end
             else
                 keyStr = keyStr .. "No Key"
@@ -749,85 +766,85 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
 end
 
 function Dawn:SendCharacterData()
-	local bnet = Player:GetBNetTagForUnit("player")
-	if not bnet then return end
+    local bnet = Player:GetBNetTagForUnit("player")
+    if not bnet then return end
 
-	local characters = Player:GetCharactersForPlayer(bnet)
-	if not characters or not db.global.config.discordTag then return end
+    local characters = Player:GetCharactersForPlayer(bnet)
+    if not characters or not db.global.config.discordTag then return end
 
-	local payload = {
-		bnet = bnet,
-		discordTag = db.global.config.discordTag,
-		characters = {}
-	}
+    local payload = {
+        bnet = bnet,
+        discordTag = db.global.config.discordTag,
+        characters = {}
+    }
 
-	for charName, charData in pairs(characters) do
-		if type(charData) == "table" then
-			payload.characters[charName] = {}
-			for key, value in pairs(charData) do
-				if key ~= "custom" and key ~= "weeklies" then
-					payload.characters[charName][key] = value
-				end
-			end
-		end
-	end
+    for charName, charData in pairs(characters) do
+        if type(charData) == "table" then
+            payload.characters[charName] = {}
+            for key, value in pairs(charData) do
+                if key ~= "custom" and key ~= "weeklies" then
+                    payload.characters[charName][key] = value
+                end
+            end
+        end
+    end
 
-	local serialized = AceSerializer:Serialize(payload)
-	local messageToSend = GT.headers.player .. serialized
-	if IsInGroup() then
-		local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
-		LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, messageToSend, channel)
-	end
+    local serialized = AceSerializer:Serialize(payload)
+    local messageToSend = GT.headers.player .. serialized
+    if IsInGroup() then
+        local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+        LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, messageToSend, channel)
+    end
 end
 
 function Dawn:RequestData()
-	if IsInGroup() then
-		local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
-		LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
-		print(addonName, ": Requesting data from party members...")
-	else
-		print(addonName, ": You must be in a party to request data.")
-	end
+    if IsInGroup() then
+        local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+        LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
+        print(addonName, ": Requesting data from party members...")
+    else
+        print(addonName, ": You must be in a party to request data.")
+    end
 end
 
 function Dawn:OnCommReceived(_, message, _, sender)
-	if type(message) ~= "string" then return end
+    if type(message) ~= "string" then return end
 
-	if message == GT.headers.request then
-		if not UnitIsUnit("player", sender) then 
-			print(addonName, ": Received data request from", sender, ". Sending data.")
-			self:SendCharacterData()
-		end
-	elseif string.sub(message, 1, 10) == GT.headers.player then
-		local success, data = AceSerializer:Deserialize(string.sub(message, 11))
+    if message == GT.headers.request then
+        if not UnitIsUnit("player", sender) then
+            print(addonName, ": Received data request from", sender, ". Sending data.")
+            self:SendCharacterData()
+        end
+    elseif string.sub(message, 1, 10) == GT.headers.player then
+        local success, data = AceSerializer:Deserialize(string.sub(message, 11))
 
-		if not success or type(data) ~= "table" or not data.bnet or not data.characters then
-			print(addonName, ": Invalid or malformed data from", sender)
-			return
-		end
+        if not success or type(data) ~= "table" or not data.bnet or not data.characters then
+            print(addonName, ": Invalid or malformed data from", sender)
+            return
+        end
 
-		local bnet = data.bnet
-		local incomingChars = data.characters
-		local senderDiscordTag = data.discordTag or "" 
+        local bnet = data.bnet
+        local incomingChars = data.characters
+        local senderDiscordTag = data.discordTag or ""
 
 
-		local localPlayerEntry = Player:GetOrCreatePlayerData(bnet)
-		localPlayerEntry.discordTag = senderDiscordTag
+        local localPlayerEntry = Player:GetOrCreatePlayerData(bnet)
+        localPlayerEntry.discordTag = senderDiscordTag
 
         if type(incomingChars) == "table" then
             for charName, charData in pairs(incomingChars) do
-                 if type(charData) == "table" then
-					Character:SetCharacterData(bnet, charName, charData)
-                 end
+                if type(charData) == "table" then
+                    Character:SetCharacterData(bnet, charName, charData)
+                end
             end
         end
 
-		print(addonName, ": Received and processed data from", sender)
+        print(addonName, ": Received and processed data from", sender)
 
         local frame = Dawn.mainFrame
         if frame and frame:IsVisible() then
-			print(addonName, "Repopulating visible frame...")
-			self:PopulateDataFrame()
+            print(addonName, "Repopulating visible frame...")
+            self:PopulateDataFrame()
         end
-	end
+    end
 end

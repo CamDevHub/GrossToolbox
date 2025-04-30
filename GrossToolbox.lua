@@ -92,11 +92,10 @@ end
 
 -- Called when CHALLENGE_MODE_COMPLETED  fires
 function addon:CHALLENGE_MODE_COMPLETED(event, status)
-    self:UpdateData()
-
     if GT.Modules.Config:GetScreenshotOnMPlusEnd() then
         C_Timer.After(2, function()
             Screenshot()
+            self:UpdateData()
         end)
     end
 end
@@ -126,7 +125,6 @@ function addon:OnEnable()
             tooltip = "GrossToolbox",
             OnClick = function(frame, button)
                 if button == "LeftButton" then
-                    addon:UpdateData()
                     GT.Modules.GrossFrame:ToggleMainFrame()
                 elseif button == "RightButton" then
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
