@@ -63,3 +63,28 @@ function Utils:DebugPrint(...)
     local message = table.concat(args, " ")
     print("|cFF00FF00[DEBUG]|r " .. message)
 end
+
+-- Get class color code from class ID
+function Utils:GetClassColorFromID(classId)
+    -- Default to white if no valid class ID
+    local classColor = "|cFFFFFFFF"
+    
+    if not classId then
+        return classColor
+    end
+    
+    -- Get class name from ID
+    local className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
+    if className then
+        -- Get class color from WoW's built-in color table
+        local colorInfo = RAID_CLASS_COLORS[className:upper()]
+        if colorInfo then
+            classColor = string.format("|cFF%02x%02x%02x",
+                colorInfo.r * 255,
+                colorInfo.g * 255,
+                colorInfo.b * 255)
+        end
+    end
+    
+    return classColor
+end

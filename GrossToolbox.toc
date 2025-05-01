@@ -2,7 +2,7 @@
 ## Title: Gross Toolbox
 ## Notes: Toolbox for personnal use
 ## Author: Grosstartine
-## Version: 1.0
+## Version: 3.3.6
 ## SavedVariables: GrossToolboxDB
 
 Libs\LibStub\LibStub.lua

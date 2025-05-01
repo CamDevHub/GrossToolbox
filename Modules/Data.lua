@@ -11,9 +11,9 @@ GT.headers = {
 GT.COMM_PREFIX = "GTComm"
 
 Data.ROLES = {
-	TANK = ":Tank:",
-	HEALER = ":healer:",
-	DAMAGER = ":DPS:"
+    TANK = ":Tank:",
+    HEALER = ":healer:",
+    DAMAGER = ":DPS:"
 }
 
 Data.CLASS_ID_TO_ENGLISH_NAME = {
@@ -35,7 +35,7 @@ Data.CLASS_ID_TO_ENGLISH_NAME = {
 
 Data.CLASS_TO_ARMOR_TYPE = {
     ["Warrior"] = "Plate",
-    ["Paladin"] = "Plate", 
+    ["Paladin"] = "Plate",
     ["Death Knight"] = "Plate",
     ["Priest"] = "Cloth",
     ["Mage"] = "Cloth",

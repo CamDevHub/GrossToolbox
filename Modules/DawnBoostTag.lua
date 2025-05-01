@@ -204,13 +204,21 @@ function Dawn:PopulatePlayerEditorFrame(container)
                     charGroup:AddChild(nameLabel)
 
                     local ratingLabel = AceGUI:Create("Label")
-                    ratingLabel:SetText(string.format("Rating: %d", rating))
+                    local ratingColor = C_ChallengeMode.GetDungeonScoreRarityColor(rating) or { r = 1, g = 1, b = 1 }
+                    local coloredRatingText = string.format("|cff%02x%02x%02x %d|r",
+                        ratingColor.r * 255,
+                        ratingColor.g * 255,
+                        ratingColor.b * 255,
+                        rating)
+                    ratingLabel:SetText(coloredRatingText)
                     ratingLabel:SetWidth(120)
                     ratingLabel:SetFontObject(GameFontHighlight)
                     charGroup:AddChild(ratingLabel)
 
                     local classLabel = AceGUI:Create("Label")
-                    classLabel:SetText(string.format("%s", Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"))
+                    local className = Data.CLASS_ID_TO_ENGLISH_NAME[classId] or "Unknown Class"
+                    local classColorCode = Utils:GetClassColorFromID(classId)
+                    classLabel:SetText(string.format("%s%s|r", classColorCode, className))
                     classLabel:SetWidth(120)
                     classLabel:SetFontObject(GameFontHighlight)
                     charGroup:AddChild(classLabel)
@@ -232,7 +240,7 @@ function Dawn:PopulatePlayerEditorFrame(container)
                     local hideCharCheckbox = AceGUI:Create("CheckBox")
                     hideCharCheckbox:SetLabel("Hide");
                     hideCharCheckbox:SetType("checkbox");
-                    hideCharCheckbox:SetWidth(100);
+                    hideCharCheckbox:SetWidth(80);
                     hideCharCheckbox:SetUserData("bnet", bnet);
                     hideCharCheckbox:SetUserData("charFullName", charFullName);
                     hideCharCheckbox:SetValue(isHidden)
@@ -243,21 +251,38 @@ function Dawn:PopulatePlayerEditorFrame(container)
                     end)
                     charGroup:AddChild(hideCharCheckbox)
 
+                    -- Role icons mapping using built-in game icons
+                    local role_tex_file = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES.blp"
+                    local role_t = "\124T" .. role_tex_file .. ":%d:%d:"
+                    local roleIcons = {
+                        TANK = role_t .. "0:0:64:64:0:19:22:41\124t",
+                        HEALER = role_t .. "0:0:64:64:20:39:1:20\124t",
+                        DAMAGER = role_t .. "0:0:64:64:20:39:22:41\124t"
+                    }
+
+                    local roleGroup = AceGUI:Create("SimpleGroup")
+                    roleGroup:SetLayout("Flow")
+                    roleGroup:SetWidth(300) -- Adjust width as needed
+                    charGroup:AddChild(roleGroup)
+
                     local checkBoxes = {}
                     for role, _ in pairs(Data.ROLES) do
                         local checkbox = AceGUI:Create("CheckBox")
-                        checkbox:SetLabel(role);
-                        checkbox:SetType("checkbox");
+                        -- Use an empty label since we'll display the icon
+                        checkbox:SetLabel(roleIcons[role])
+                        checkbox:SetType("checkbox")
+                        checkbox:SetWidth(40) -- Make it more compact
 
                         local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
                         if customRoles and #customRoles > 0 then
                             checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
                         end
-                        checkbox:SetUserData("bnet", bnet);
-                        checkbox:SetUserData("charFullName", charFullName);
-                        checkbox:SetUserData("role", role);
-                        checkbox:SetUserData("checkBoxes", checkBoxes);
-                        checkbox:SetWidth(100);
+
+                        checkbox:SetUserData("bnet", bnet)
+                        checkbox:SetUserData("charFullName", charFullName)
+                        checkbox:SetUserData("role", role)
+                        checkbox:SetUserData("checkBoxes", checkBoxes)
+
                         checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
                             local cbBnet = widget:GetUserData("bnet")
                             local cbCharFullName = widget:GetUserData("charFullName")
@@ -272,8 +297,9 @@ function Dawn:PopulatePlayerEditorFrame(container)
                                 return a > b
                             end)
                             Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
-                        end);
-                        charGroup:AddChild(checkbox)
+                        end)
+
+                        roleGroup:AddChild(checkbox)
                         checkBoxes[role] = checkbox
                     end
                 end
@@ -378,8 +404,14 @@ function Dawn:GetArmorDistribution()
     }
 
     -- Count all characters (local and party members)
+    -- Track armor types already counted per player
+    local playerArmorCounted = {}
+    
     local allPlayers = Player:GetBNetOfPartyMembers()
     for _, bnet in ipairs(allPlayers) do
+        -- Initialize tracking for this player
+        playerArmorCounted[bnet] = {}
+        
         local charNames = Player:GetCharactersName(bnet)
         if charNames then
             for _, charName in ipairs(charNames) do
@@ -387,8 +419,11 @@ function Dawn:GetArmorDistribution()
                     local classId = Character:GetCharacterClassId(bnet, charName)
                     local className = Data.CLASS_ID_TO_ENGLISH_NAME[classId]
                     local armorType = Data.CLASS_TO_ARMOR_TYPE[className]
-                    if armorType then
+                    
+                    -- Only count each armor type once per player
+                    if armorType and not playerArmorCounted[bnet][armorType] then
                         armorCounts[armorType] = armorCounts[armorType] + 1
+                        playerArmorCounted[bnet][armorType] = true
                     end
                 end
             end
@@ -426,20 +461,10 @@ end
 function Dawn:GenerateNormalSignupContent(localBnet)
     -- Initialize output variables
     local output = ""
-
-    -- Add local player's info
-    local localPlayerString = self:GeneratePlayerString(localBnet, false)
-    if localPlayerString and localPlayerString ~= "" then
-        output = localPlayerString .. "\n"
-    end
-
+    local bnets = Player:GetBNetOfPartyMembers()
     -- Add group members' info if in a group
-    local tmpOutput, numberOfPlayers = "", 1
-    if IsInGroup() then
-        tmpOutput, numberOfPlayers = self:GetPartyMembersInfo(localBnet)
-        output = output .. tmpOutput
-    end
-
+    local numberOfPlayers = #bnets
+    output = output .. self:GetPartyMembersInfo(bnets, localBnet)
     -- Add header with appropriate sign based on group size
     local signText = Data.DAWN_SIGN[numberOfPlayers] or "Unknown"
     output = "### " .. signText .. " sign:\n" .. output
@@ -453,30 +478,31 @@ function Dawn:GenerateNormalSignupContent(localBnet)
 end
 
 -- Get all party members' character information
-function Dawn:GetPartyMembersInfo(localBnet)
+function Dawn:GetPartyMembersInfo(bnets, localBnet)
     local output = ""
-    local partyMembers = Player:GetBNetOfPartyMembers()
-    local numberOfPlayers = 0
     -- Process each group member
-    for _, bnet in ipairs(partyMembers) do
+    for _, bnet in ipairs(bnets) do
         -- Skip local player (already processed)
-        if bnet and bnet ~= localBnet then
+        if bnet then
             local charactersName = Player:GetCharactersName(bnet)
 
             -- Only add players with characters
             if charactersName and #charactersName > 0 then
-                local playerString = self:GeneratePlayerString(bnet, true)
+                local playerString = self:GeneratePlayerString(bnet, bnet ~= localBnet)
 
                 -- Add to output if player has valid data
                 if playerString and playerString ~= "" then
-                    output = output .. playerString .. "\n"
-                    numberOfPlayers = numberOfPlayers + 1
+                    if bnet == localBnet then
+                        output = playerString .. output
+                    else
+                        output = output .. playerString
+                    end
                 end
             end
         end
     end
 
-    return output, numberOfPlayers
+    return output
 end
 
 function Dawn:PopulateKeyListFrame(container)
@@ -526,7 +552,18 @@ function Dawn:PopulateKeyListFrame(container)
     end)
 
     for _, keyInfo in ipairs(keyDataList) do
-        outputString = outputString .. string.format("%s: +%d %s\n",
+        -- Find character's class for coloring
+        local classColor = "|cFFFFFFFF" -- Default to white
+        for _, bnet in ipairs(bnets) do
+            local classId = Character:GetCharacterClassId(bnet, keyInfo.charName)
+            if classId then
+                classColor = Utils:GetClassColorFromID(classId)
+                break
+            end
+        end
+
+        outputString = outputString .. string.format("%s%s|r: +%d %s\n",
+            classColor,
             keyInfo.charName,
             keyInfo.level,
             keyInfo.mapName
@@ -675,7 +712,6 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
                 table.insert(keyDataList, {
                     charName = charName,
                     level = keystone.level or 0,
-                    mapName = keystone.mapName or "Unknown",
                     hasKey = Character:GetCharacterHasKey(bnet, charName)
                 })
             end
@@ -694,7 +730,19 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
         -- Format the filtered list with highlight
         outputString = "|cFFFFD700Keystones for " .. Data.DUNGEON_TABLE[dungeonKey].name .. ":|r\n\n"
         for _, keyInfo in ipairs(keyDataList) do
-            outputString = outputString .. string.format("|cFF00FF00%s: +%d|r\n",
+            local classId
+            for _, bnet in ipairs(bnets) do
+                local tempClassId = Character:GetCharacterClassId(bnet, keyInfo.charName)
+                if tempClassId then
+                    classId = tempClassId
+                    break
+                end
+            end
+
+            local classColor = Utils:GetClassColorFromID(classId)
+
+            outputString = outputString .. string.format("%s%s|r: +%d\n",
+                classColor,
                 keyInfo.charName,
                 keyInfo.level
             )
