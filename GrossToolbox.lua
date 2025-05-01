@@ -38,8 +38,8 @@ function addon:OnInitialize()
         "Config",
         "Character",
         "Player",
-        "Weekly",
-        "Dawn"
+        "Dawn",
+        "Weekly"
     }
     
     -- Get Utils for debug logging

@@ -425,7 +425,6 @@ end
 -- Generate content for normal signup mode
 function Dawn:GenerateNormalSignupContent(localBnet)
     -- Initialize output variables
-    local numberOfPlayers = 1
     local output = ""
 
     -- Add local player's info
@@ -435,8 +434,10 @@ function Dawn:GenerateNormalSignupContent(localBnet)
     end
 
     -- Add group members' info if in a group
+    local tmpOutput, numberOfPlayers = "", 1
     if IsInGroup() then
-        output = output .. self:GetPartyMembersInfo(localBnet, numberOfPlayers)
+        tmpOutput, numberOfPlayers = self:GetPartyMembersInfo(localBnet)
+        output = output .. tmpOutput
     end
 
     -- Add header with appropriate sign based on group size
@@ -452,10 +453,10 @@ function Dawn:GenerateNormalSignupContent(localBnet)
 end
 
 -- Get all party members' character information
-function Dawn:GetPartyMembersInfo(localBnet, numberOfPlayers)
+function Dawn:GetPartyMembersInfo(localBnet)
     local output = ""
     local partyMembers = Player:GetBNetOfPartyMembers()
-
+    local numberOfPlayers = 0
     -- Process each group member
     for _, bnet in ipairs(partyMembers) do
         -- Skip local player (already processed)
@@ -804,7 +805,6 @@ function Dawn:RequestData()
     if IsInGroup() then
         local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
         LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
-        print(addonName, ": Requesting data from party members...")
     else
         print(addonName, ": You must be in a party to request data.")
     end
@@ -815,7 +815,6 @@ function Dawn:OnCommReceived(_, message, _, sender)
 
     if message == GT.headers.request then
         if not UnitIsUnit("player", sender) then
-            print(addonName, ": Received data request from", sender, ". Sending data.")
             self:SendCharacterData()
         end
     elseif string.sub(message, 1, 10) == GT.headers.player then
@@ -834,6 +833,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
         local localPlayerEntry = Player:GetOrCreatePlayerData(bnet)
         localPlayerEntry.discordTag = senderDiscordTag
 
+        Player:DeleteCharactersForPlayer(bnet)
         if type(incomingChars) == "table" then
             for charName, charData in pairs(incomingChars) do
                 if type(charData) == "table" then
@@ -842,11 +842,8 @@ function Dawn:OnCommReceived(_, message, _, sender)
             end
         end
 
-        print(addonName, ": Received and processed data from", sender)
-
-        local frame = Dawn.mainFrame
+        local frame = GrossFrame.mainFrame
         if frame and frame:IsVisible() then
-            print(addonName, "Repopulating visible frame...")
             self:PopulateDataFrame()
         end
     end

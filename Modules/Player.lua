@@ -17,26 +17,26 @@ function Player:Init(database)
 		print(addonName .. ": Player module initialization failed - missing database")
 		return false
 	end
-	
+
 	-- Store database reference
 	db = database
-	
+
 	-- Load Utils module
 	Utils = GT.Modules.Utils
 	if not Utils then
 		print(addonName .. ": Player module initialization failed - Utils module not found")
 		return false
 	end
-	
+
 	-- Initialize database structure if needed
 	if not db.global then
 		db.global = {}
 	end
-	
+
 	if not db.global.players then
 		db.global.players = {}
 	end
-	
+
 	-- Log successful initialization
 	Utils:DebugPrint("Player module initialized successfully")
 	return true
@@ -48,30 +48,30 @@ function Player:GetOrCreatePlayerData(bnet)
 		Utils:DebugPrint("GetOrCreatePlayerData: Missing required parameter")
 		return nil
 	end
-	
+
 	-- Validate database
 	if not db then
 		Utils:DebugPrint("GetOrCreatePlayerData: Database not initialized")
 		return nil
 	end
-	
+
 	-- Ensure global.players table exists
 	if not db.global then
 		db.global = {}
 	end
-	
+
 	if not db.global.players then
 		db.global.players = {}
 	end
-	
+
 	-- Create player entry if needed
 	if not db.global.players[bnet] then
-		db.global.players[bnet] = { 
-			discordTag = "", 
-			characters = {} 
+		db.global.players[bnet] = {
+			discordTag = "",
+			characters = {}
 		}
 	end
-	
+
 	return db.global.players[bnet]
 end
 
@@ -81,40 +81,40 @@ function Player:GetBNetTagForUnit(unit)
 		Utils:DebugPrint("GetBNetTagForUnit: Missing unit parameter")
 		return nil
 	end
-	
+
 	-- Check if unit exists
 	if not UnitExists(unit) then
 		return nil
 	end
-	
+
 	-- Get unit GUID
 	local guid = UnitGUID(unit)
 	if not guid then
 		return nil
 	end
-	
+
 	-- Get BattleNet info
 	local bnetData = C_BattleNet.GetAccountInfoByGUID(guid)
 	if not bnetData then
 		return nil
 	end
-	
+
 	return bnetData.battleTag
 end
 
 function Player:GetBNetOfPartyMembers()
 	-- Initialize results array
 	local bnetTags = {}
-	
+
 	-- Get group members' BNet tags if in a group
 	if IsInGroup() then
 		local numMembers = GetNumGroupMembers()
 		local isRaid = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo())
-		
+
 		-- Loop through group members
 		for i = 1, numMembers do
 			local unit = isRaid and ("raid" .. i) or ("party" .. i)
-			
+
 			-- Check if unit exists
 			if UnitExists(unit) then
 				local bnetTag = self:GetBNetTagForUnit(unit)
@@ -124,13 +124,13 @@ function Player:GetBNetOfPartyMembers()
 			end
 		end
 	end
-	
+
 	-- Add player's own BNet tag
 	local playerBnetTag = self:GetBNetTagForUnit("player")
 	if playerBnetTag then
 		table.insert(bnetTags, playerBnetTag)
 	end
-	
+
 	return bnetTags
 end
 
@@ -140,25 +140,25 @@ function Player:GetCharactersName(bnet)
 		Utils:DebugPrint("GetCharactersName: Missing required parameter")
 		return {}
 	end
-	
+
 	-- Validate database
 	if not db then
 		Utils:DebugPrint("GetCharactersName: Database not initialized")
 		return {}
 	end
-	
+
 	-- Get player data
 	local player = self:GetOrCreatePlayerData(bnet)
 	if not player or not player.characters then
 		return {}
 	end
-	
+
 	-- Build list of character names
 	local names = {}
 	for name, _ in pairs(player.characters) do
 		table.insert(names, name)
 	end
-	
+
 	return names
 end
 
@@ -168,24 +168,24 @@ function Player:SetDiscordTag(bnet, tag)
 		Utils:DebugPrint("SetDiscordTag: Missing required parameter")
 		return
 	end
-	
+
 	-- Validate tag parameter
 	if not tag then
 		tag = ""
 	end
-	
+
 	-- Validate database
 	if not db then
 		Utils:DebugPrint("SetDiscordTag: Database not initialized")
 		return
 	end
-	
+
 	-- Get player data and update discord tag
 	local player = self:GetOrCreatePlayerData(bnet)
 	if not player then
 		return
 	end
-	
+
 	player.discordTag = tag
 end
 
@@ -195,20 +195,42 @@ function Player:GetDiscordTag(bnet)
 		Utils:DebugPrint("GetDiscordTag: Missing required parameter")
 		return ""
 	end
-	
+
 	-- Validate database
 	if not db then
 		Utils:DebugPrint("GetDiscordTag: Database not initialized")
 		return ""
 	end
-	
+
 	-- Get player data and return discord tag
 	local player = self:GetOrCreatePlayerData(bnet)
 	if not player then
 		return ""
 	end
-	
+
 	return player.discordTag or ""
+end
+
+function Player:DeleteCharactersForPlayer(bnet)
+	-- Validate parameters
+	if not bnet then
+		Utils:DebugPrint("DeleteCharactersForPlayer: Missing required parameter")
+		return
+	end
+
+	-- Validate database
+	if not db then
+		Utils:DebugPrint("DeleteCharactersForPlayer: Database not initialized")
+		return
+	end
+
+	-- Get player data and delete characters
+	local player = self:GetOrCreatePlayerData(bnet)
+	if not player then
+		return
+	end
+
+	player.characters = {}
 end
 
 function Player:GetCharactersForPlayer(bnet)
@@ -217,19 +239,19 @@ function Player:GetCharactersForPlayer(bnet)
 		Utils:DebugPrint("GetCharactersForPlayer: Missing required parameter")
 		return {}
 	end
-	
+
 	-- Validate database
 	if not db then
 		Utils:DebugPrint("GetCharactersForPlayer: Database not initialized")
 		return {}
 	end
-	
+
 	-- Get player data
 	local player = self:GetOrCreatePlayerData(bnet)
 	if not player then
 		return {}
 	end
-	
+
 	-- Return characters table
 	return player.characters or {}
 end

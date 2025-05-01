@@ -5,7 +5,8 @@ GT.Modules.Config = Config
 
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local C_BattleNet = C_BattleNet -- For GUID lookup
+local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local Player = GT.Modules.Player
 
 local db
 function Config:SetupOptions()
@@ -13,6 +14,10 @@ function Config:SetupOptions()
         return
     end
 
+    -- Initial character list at load time
+    local characters = {}
+    local selectedChar = nil
+    local battleTag = Player:GetBNetTagForUnit("player")
     local options = {
         name = addonName,
         type = "group",
@@ -26,23 +31,23 @@ function Config:SetupOptions()
                 order = 11,
                 type = "input",
                 name = "Discord Tag",
-                desc = "Set your team or guild tag",
+                desc = "Set your discord tag",
                 width = "full",
                 get = function()
                     return db.global.config.discordTag or ""
                 end,
                 set = function(_, val)
                     db.global.config.discordTag = val
-                    local guid = C_BattleNet.GetAccountInfoByGUID(UnitGUID("player")).battleTag
-                    if guid then
+                    local bnet = Player:GetBNetTagForUnit("player")
+                    if bnet then
                         db.global.player = db.global.player or {}
-                        db.global.player[guid] = db.global.player[guid] or { name = UnitName("player"), char = {} }
-                        db.global.player[guid].discordTag = val
+                        db.global.player[bnet] = db.global.player[bnet] or { name = UnitName("player"), char = {} }
+                        db.global.player[bnet].discordTag = val
                     end
                 end
             },
             screenshotOnMPlusEnd = {
-                order = 12, -- Adjust order as needed
+                order = 12,
                 type = "toggle",
                 name = "Screenshot on M+ End",
                 desc = "Take a screenshot automatically at the end of a Mythic+ dungeon.",
@@ -52,6 +57,92 @@ function Config:SetupOptions()
                 set = function(_, val)
                     db.global.config.screenshotOnMPlusEnd = val
                 end
+            },
+
+            -- Character Management Section
+            characterHeader = {
+                order = 60,
+                type = "header",
+                name = "Character Management",
+            },
+            characterDesc = {
+                order = 61,
+                type = "description",
+                name = "Select a character to remove from the database.",
+                fontSize = "medium",
+            },
+            characterSelect = {
+                order = 62,
+                type = "select",
+                name = "Select Character",
+                desc = "Choose a character to delete",
+                values = function()
+                    -- Refresh character list each time dropdown is opened
+                    battleTag = Player:GetBNetTagForUnit("player")
+                    characters = Player:GetCharactersForPlayer(battleTag)
+
+                    -- Format list for dropdown
+                    local charDropdown = {}
+                    for charName, _ in pairs(characters) do
+                        charDropdown[charName] = charName
+                    end
+
+                    if not next(charDropdown) then
+                        charDropdown[""] = "No characters found"
+                    end
+
+                    return charDropdown
+                end,
+                get = function() return selectedChar end,
+                set = function(_, val) selectedChar = val end,
+                width = 1.5,
+            },
+            deleteChar = {
+                order = 63,
+                type = "execute",
+                name = "Delete Character",
+                desc = "Delete this character and all associated data",
+                func = function()
+                    print("|cFFFF0000Deleting character: " .. selectedChar .. "|r")
+                    if selectedChar and selectedChar ~= "" then
+                            if db.global.players and db.global.players[battleTag] and
+                                db.global.players[battleTag].characters and
+                                db.global.players[battleTag].characters[selectedChar] then
+                                -- Remove character data
+                                db.global.players[battleTag].characters[selectedChar] = nil
+
+                                -- Show confirmation message
+                                print("|cFF00FF00" .. selectedChar .. " has been deleted from GrossToolbox.|r")
+
+                                -- Reset selected character
+                                selectedChar = nil
+                            end
+                    else
+                        print("|cFFFF0000Please select a character first.|r")
+                    end
+                end,
+                width = 1.5,
+                disabled = function()
+                    return selectedChar == nil or selectedChar == ""
+                end,
+                confirm = true,
+                confirmText = "Are you sure you want to delete " ..
+                    (selectedChar or "this character") .. "? This cannot be undone!",
+            },
+            refreshCharList = {
+                order = 64,
+                type = "execute",
+                name = "Refresh Character List",
+                desc = "Refresh the list of available characters",
+                func = function()
+                    battleTag = Player:GetBNetTagForUnit("player")
+                    -- Refresh character list
+                    characters = Player:GetCharactersForPlayer(battleTag)
+                    -- Force options refresh
+                    AceConfigRegistry:NotifyChange(addonName)
+                    print("|cFF00FF00Character list refreshed.|r")
+                end,
+                width = 3,
             },
 
             -- Danger Zone Header
@@ -67,7 +158,6 @@ function Config:SetupOptions()
                 "Warning: Resetting the database will clear ALL stored player and character data for GrossToolbox.",
                 fontSize = "medium",
             },
-            -- Reset Button
             resetDB = {
                 order = 92,
                 type = "execute",
@@ -97,22 +187,22 @@ function Config:Init(database)
         print(addonName .. ": Config module initialization failed - missing database")
         return false
     end
-    
+
     -- Store database reference
     db = database
-    
+
     -- Initialize config structure if needed
     if not db.global then
         db.global = {}
     end
-    
+
     if not db.global.config then
         db.global.config = {}
     end
-    
+
     -- Setup options
     self:SetupOptions()
-    
+
     -- Load Utils module if available
     local Utils = GT.Modules.Utils
     if Utils then
@@ -120,7 +210,7 @@ function Config:Init(database)
     else
         print(addonName .. ": Config module initialized successfully")
     end
-    
+
     return true
 end
 
