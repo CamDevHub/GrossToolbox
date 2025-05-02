@@ -6,7 +6,9 @@ GT.Modules.Config = Config
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+
 local Player = GT.Modules.Player
+local addon, Utils
 
 local db
 function Config:SetupOptions()
@@ -17,7 +19,7 @@ function Config:SetupOptions()
     -- Initial character list at load time
     local characters = {}
     local selectedChar = nil
-    local battleTag = Player:GetBNetTagForUnit("player")
+    local uid = addon:GetUID()
     local options = {
         name = addonName,
         type = "group",
@@ -38,11 +40,11 @@ function Config:SetupOptions()
                 end,
                 set = function(_, val)
                     db.global.config.discordTag = val
-                    local bnet = Player:GetBNetTagForUnit("player")
-                    if bnet then
+                    local uid = addon:GetUID()
+                    if uid then
                         db.global.player = db.global.player or {}
-                        db.global.player[bnet] = db.global.player[bnet] or { name = UnitName("player"), char = {} }
-                        db.global.player[bnet].discordTag = val
+                        db.global.player[uid] = db.global.player[uid] or { name = UnitName("player"), char = {} }
+                        db.global.player[uid].discordTag = val
                     end
                 end
             },
@@ -78,8 +80,8 @@ function Config:SetupOptions()
                 desc = "Choose a character to delete",
                 values = function()
                     -- Refresh character list each time dropdown is opened
-                    battleTag = Player:GetBNetTagForUnit("player")
-                    characters = Player:GetCharactersForPlayer(battleTag)
+                    uid = addon:GetUID()
+                    characters = Player:GetCharactersForPlayer(uid)
 
                     -- Format list for dropdown
                     local charDropdown = {}
@@ -135,9 +137,9 @@ function Config:SetupOptions()
                 name = "Refresh Character List",
                 desc = "Refresh the list of available characters",
                 func = function()
-                    battleTag = Player:GetBNetTagForUnit("player")
+                    uid = addon:GetUID()
                     -- Refresh character list
-                    characters = Player:GetCharactersForPlayer(battleTag)
+                    characters = Player:GetCharactersForPlayer(uid)
                     -- Force options refresh
                     AceConfigRegistry:NotifyChange(addonName)
                     print("|cFF00FF00Character list refreshed.|r")
@@ -200,16 +202,22 @@ function Config:Init(database)
         db.global.config = {}
     end
 
-    -- Setup options
-    self:SetupOptions()
-
+    addon = GT.addon
+    if not addon then
+        print(addonName .. ": Config module initialization failed - addon not found")
+        return false
+    end
+    
     -- Load Utils module if available
-    local Utils = GT.Modules.Utils
+    Utils = GT.Modules.Utils
     if Utils then
         Utils:DebugPrint("Config module initialized successfully")
     else
         print(addonName .. ": Config module initialized successfully")
     end
+
+    -- Setup options
+    self:SetupOptions()
 
     return true
 end

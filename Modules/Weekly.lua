@@ -12,7 +12,7 @@ Weekly.moduleName = "Weekly"
 
 -- Define module dependencies
 local db
-local Data, Utils, GrossFrame, Character, Player
+local addon, Data, Utils, GrossFrame, Character, Player
 
 function Weekly:Init(database)
   -- Validate database parameter
@@ -20,41 +20,47 @@ function Weekly:Init(database)
     print(addonName .. ": Weekly module initialization failed - missing database")
     return false
   end
-  
+
   -- Store database reference
   db = database
-  
+
+  addon = GT.addon
+  if not addon then
+    print(addonName .. ": Weekly module initialization failed - addon not found")
+    return false
+  end
+
   -- Load required modules
   Data = GT.Modules.Data
   if not Data then
     print(addonName .. ": Weekly module initialization failed - Data module not found")
     return false
   end
-  
+
   Utils = GT.Modules.Utils
   if not Utils then
     print(addonName .. ": Weekly module initialization failed - Utils module not found")
     return false
   end
-  
+
   Character = GT.Modules.Character
   if not Character then
     print(addonName .. ": Weekly module initialization failed - Character module not found")
     return false
   end
-  
+
   Player = GT.Modules.Player
   if not Player then
     print(addonName .. ": Weekly module initialization failed - Player module not found")
     return false
   end
-  
+
   GrossFrame = GT.Modules.GrossFrame
   if not GrossFrame then
     print(addonName .. ": Weekly module initialization failed - GrossFrame module not found")
     return false
   end
-  
+
   -- Register UI tab
   local signupTab = {
     text = "Weekly",
@@ -63,9 +69,9 @@ function Weekly:Init(database)
     populateFunc = function(container) self:PopulateFrame(container) end,
     module = Weekly
   }
-  
+
   GrossFrame:RegisterTab(signupTab)
-  
+
   -- Log successful initialization
   Utils:DebugPrint("Weekly module initialized successfully")
   return true
@@ -74,13 +80,13 @@ end
 function Weekly:DrawFrame(container)
   if not container then return end
 
-	if not container.weekly then
-		container.weekly = {}
-	end
+  if not container.weekly then
+    container.weekly = {}
+  end
 
   local weeklyTabContainer = AceGUI:Create("ScrollFrame")
-	weeklyTabContainer:SetLayout("Flow")
-	container:AddChild(weeklyTabContainer)
+  weeklyTabContainer:SetLayout("Flow")
+  container:AddChild(weeklyTabContainer)
 
   -- Create a header row for the table
   local headerRow = AceGUI:Create("SimpleGroup")
@@ -118,10 +124,10 @@ function Weekly:PopulateFrame(container)
     return
   end
 
-  local bnet = Player:GetBNetTagForUnit("player")
-  if not bnet then return end
+  local uid = addon:GetUID()
+  if not uid then return end
 
-  local charactersName = Player:GetCharactersName(bnet)
+  local charactersName = Player:GetCharactersName(uid)
   if not charactersName then return end
 
   for _, fullName in pairs(charactersName) do
@@ -137,7 +143,7 @@ function Weekly:PopulateFrame(container)
     nameLabel:SetFontObject(GameFontNormal)
     characterFrame:AddChild(nameLabel)
 
-    local weeklies = Character:GetWeeklyData(bnet, fullName)
+    local weeklies = Character:GetWeeklyData(uid, fullName)
     local nbMissingWeekly = 0
 
     for i = 1, 8 do
@@ -169,7 +175,7 @@ function Weekly:PopulateFrame(container)
 
     container.weekly.weeklyScroll:AddChild(characterFrame)
   end
-  
+
   -- Final layout update
   container.weekly.weeklyScroll:DoLayout()
 end

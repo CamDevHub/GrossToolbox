@@ -6,7 +6,7 @@ GT.Modules.Dawn = Dawn
 local AceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 
-Dawn.data = {}
+Dawn.partyUIDs = {}
 
 -- Add these variables at the module level
 Dawn.currentHoveredDungeon = nil
@@ -17,7 +17,7 @@ Dawn.moduleName = "Dawn"
 
 -- Define module dependencies
 local db
-local Character, Player, Data, Utils, Config, GrossFrame
+local addon, Character, Player, Data, Utils, Config, GrossFrame
 
 function Dawn:Init(database, frame)
     -- Validate database parameter
@@ -28,6 +28,12 @@ function Dawn:Init(database, frame)
 
     -- Store database reference
     db = database
+
+    addon = GT.addon
+    if not addon then
+        print(addonName .. ": Dawn module initialization failed - addon reference not found")
+        return false
+    end
 
     -- Load required modules
     Utils = GT.Modules.Utils
@@ -89,6 +95,42 @@ function Dawn:Init(database, frame)
     -- Log successful initialization
     Utils:DebugPrint("Dawn module initialized successfully")
     return true
+end
+
+function Dawn:GetPartyUIDs()
+    if not self.partyUIDs then
+        self.partyUIDs = {}
+    end
+    -- Get local player's UID and add it to partyUIDs if it exists
+    local localUID = GT.addon:GetUID()
+    if localUID then
+        self:addUID(localUID)
+    end
+
+    return self.partyUIDs
+end
+
+function Dawn:addUID(uid)
+    if not self.partyUIDs then
+        self.partyUIDs = {}
+    end
+    if not Utils:TableContainsValue(self.partyUIDs, uid) then
+        table.insert(self.partyUIDs, uid)
+    end
+end
+
+function Dawn:RemoveUID(uid)
+    if not self.partyUIDs then return end
+    for i, v in ipairs(self.partyUIDs) do
+        if v == uid then
+            table.remove(self.partyUIDs, i)
+            break
+        end
+    end
+end
+
+function Dawn:ClearPartyUIDs()
+    self.partyUIDs = {}
 end
 
 function Dawn:DrawDataFrame(container)
@@ -167,8 +209,8 @@ function Dawn:PopulatePlayerEditorFrame(container)
         return
     end
 
-    local bnets = Player:GetBNetOfPartyMembers()
-    if not bnets or next(bnets) == nil then
+    local uids = self:GetPartyUIDs()
+    if not uids or next(uids) == nil then
         return
     end
 
@@ -176,22 +218,22 @@ function Dawn:PopulatePlayerEditorFrame(container)
     scroll:ReleaseChildren()
     scroll:SetScroll(0)
 
-    for _, bnet in ipairs(bnets) do
-        local discordTag = Player:GetDiscordTag(bnet)
+    for _, uid in ipairs(uids) do
+        local discordTag = Player:GetDiscordTag(uid)
         if discordTag and discordTag ~= "" then
             local playerHeader = AceGUI:Create("Heading")
             playerHeader:SetText(discordTag)
             playerHeader:SetFullWidth(true)
             scroll:AddChild(playerHeader)
 
-            local charactersName = Player:GetCharactersName(bnet)
+            local charactersName = Player:GetCharactersName(uid)
             for _, charFullName in ipairs(charactersName) do
-                local keystone = Character:GetCharacterKeystone(bnet, charFullName)
-                local rating = Character:GetCharacterRating(bnet, charFullName)
-                local classId = Character:GetCharacterClassId(bnet, charFullName)
+                local keystone = Character:GetCharacterKeystone(uid, charFullName)
+                local rating = Character:GetCharacterRating(uid, charFullName)
+                local classId = Character:GetCharacterClassId(uid, charFullName)
                 local charGroup = AceGUI:Create("SimpleGroup")
-                local hasKey = Character:GetCharacterHasKey(bnet, charFullName)
-                local isHidden = Character:GetCharacterIsHidden(bnet, charFullName)
+                local hasKey = Character:GetCharacterHasKey(uid, charFullName)
+                local isHidden = Character:GetCharacterIsHidden(uid, charFullName)
 
                 if keystone and keystone.level and keystone.level > 0 then
                     charGroup:SetLayout("Flow")
@@ -227,13 +269,13 @@ function Dawn:PopulatePlayerEditorFrame(container)
                     noKeyForBoostCheckbox:SetLabel("No Key");
                     noKeyForBoostCheckbox:SetType("checkbox");
                     noKeyForBoostCheckbox:SetWidth(100);
-                    noKeyForBoostCheckbox:SetUserData("bnet", bnet);
+                    noKeyForBoostCheckbox:SetUserData("uid", uid);
                     noKeyForBoostCheckbox:SetUserData("charFullName", charFullName);
                     noKeyForBoostCheckbox:SetValue(not hasKey)
                     noKeyForBoostCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-                        local cbBnet = widget:GetUserData("bnet")
+                        local cbUID = widget:GetUserData("uid")
                         local cbCharFullName = widget:GetUserData("charFullName")
-                        Character:SetCharacterHasKey(cbBnet, cbCharFullName, not isChecked)
+                        Character:SetCharacterHasKey(cbUID, cbCharFullName, not isChecked)
                     end)
                     charGroup:AddChild(noKeyForBoostCheckbox)
 
@@ -241,13 +283,13 @@ function Dawn:PopulatePlayerEditorFrame(container)
                     hideCharCheckbox:SetLabel("Hide");
                     hideCharCheckbox:SetType("checkbox");
                     hideCharCheckbox:SetWidth(80);
-                    hideCharCheckbox:SetUserData("bnet", bnet);
+                    hideCharCheckbox:SetUserData("uid", uid);
                     hideCharCheckbox:SetUserData("charFullName", charFullName);
                     hideCharCheckbox:SetValue(isHidden)
                     hideCharCheckbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-                        local cbBnet = widget:GetUserData("bnet")
+                        local cbUID = widget:GetUserData("uid")
                         local cbCharFullName = widget:GetUserData("charFullName")
-                        Character:SetCharacterIsHidden(cbBnet, cbCharFullName, isChecked)
+                        Character:SetCharacterIsHidden(cbUID, cbCharFullName, isChecked)
                     end)
                     charGroup:AddChild(hideCharCheckbox)
 
@@ -273,18 +315,18 @@ function Dawn:PopulatePlayerEditorFrame(container)
                         checkbox:SetType("checkbox")
                         checkbox:SetWidth(40) -- Make it more compact
 
-                        local customRoles = Character:GetCharacterCustomRoles(bnet, charFullName)
+                        local customRoles = Character:GetCharacterCustomRoles(uid, charFullName)
                         if customRoles and #customRoles > 0 then
                             checkbox:SetValue(Utils:TableContainsValue(customRoles, role))
                         end
 
-                        checkbox:SetUserData("bnet", bnet)
+                        checkbox:SetUserData("uid", uid)
                         checkbox:SetUserData("charFullName", charFullName)
                         checkbox:SetUserData("role", role)
                         checkbox:SetUserData("checkBoxes", checkBoxes)
 
                         checkbox:SetCallback("OnValueChanged", function(widget, event, isChecked)
-                            local cbBnet = widget:GetUserData("bnet")
+                            local cbUID = widget:GetUserData("uid")
                             local cbCharFullName = widget:GetUserData("charFullName")
                             local otherCheckBoxes = widget:GetUserData("checkBoxes")
                             local rolesToSet = {}
@@ -296,7 +338,7 @@ function Dawn:PopulatePlayerEditorFrame(container)
                             table.sort(rolesToSet, function(a, b)
                                 return a > b
                             end)
-                            Character:SetCharacterCustomRoles(cbBnet, cbCharFullName, rolesToSet)
+                            Character:SetCharacterCustomRoles(cbUID, cbCharFullName, rolesToSet)
                         end)
 
                         roleGroup:AddChild(checkbox)
@@ -330,10 +372,10 @@ function Dawn:PopulateSignupFrame(container)
         return
     end
 
-    -- Get local player's BNet tag
-    local localBnet = Player:GetBNetTagForUnit("player")
-    if not localBnet then
-        Utils:DebugPrint("PopulateDisplayFrame: Could not get local player's BNet tag")
+    -- Get local player's UID
+    local localUID = addon:GetUID()
+    if not localUID then
+        Utils:DebugPrint("PopulateDisplayFrame: Could not get local player's UID")
         playersEditBox:SetText("Could not get your BattleNet tag")
         return
     end
@@ -341,9 +383,9 @@ function Dawn:PopulateSignupFrame(container)
     -- Generate appropriate content based on checkbox state
     local fullOutputString = ""
     if teamTakeCheckbox:GetValue() then
-        fullOutputString = self:GenerateTeamTakeContent(localBnet)
+        fullOutputString = self:GenerateTeamTakeContent(localUID)
     else
-        fullOutputString = self:GenerateNormalSignupContent(localBnet)
+        fullOutputString = self:GenerateNormalSignupContent(localUID)
     end
 
     -- Set and highlight text in edit box
@@ -352,17 +394,17 @@ function Dawn:PopulateSignupFrame(container)
 end
 
 -- Generate content for team take mode
-function Dawn:GenerateTeamTakeContent(localBnet)
+function Dawn:GenerateTeamTakeContent(localUID)
     local output = "### Team Take\n"
 
     -- Add local player's discord tag
-    local localDiscordTag = Player:GetDiscordTag(localBnet)
+    local localDiscordTag = Player:GetDiscordTag(localUID)
     if localDiscordTag and localDiscordTag ~= "" then
         output = output .. localDiscordTag .. " "
     end
 
     -- Add group members' discord tags
-    output = output .. self:GetPartyMembersDiscordTags(localBnet)
+    output = output .. self:GetPartyMembersDiscordTags(localUID)
 
     -- Add armor type distribution
     output = output .. self:GetArmorDistribution()
@@ -371,7 +413,7 @@ function Dawn:GenerateTeamTakeContent(localBnet)
 end
 
 -- Get all party members' discord tags (excluding local player)
-function Dawn:GetPartyMembersDiscordTags(localBnet)
+function Dawn:GetPartyMembersDiscordTags(localUID)
     local output = ""
 
     -- Only process if in a group
@@ -379,11 +421,11 @@ function Dawn:GetPartyMembersDiscordTags(localBnet)
         return output
     end
 
-    local partyMembers = Player:GetBNetOfPartyMembers()
-    for _, bnet in ipairs(partyMembers) do
+    local partyMembers = self:GetPartyUIDs()
+    for _, uid in ipairs(partyMembers) do
         -- Skip local player (already processed)
-        if bnet and bnet ~= localBnet then
-            local discordTag = Player:GetDiscordTag(bnet)
+        if uid and uid ~= localUID then
+            local discordTag = Player:GetDiscordTag(uid)
             if discordTag and discordTag ~= "" then
                 output = output .. discordTag
             end
@@ -407,23 +449,23 @@ function Dawn:GetArmorDistribution()
     -- Track armor types already counted per player
     local playerArmorCounted = {}
     
-    local allPlayers = Player:GetBNetOfPartyMembers()
-    for _, bnet in ipairs(allPlayers) do
+    local allPlayers = self:GetPartyUIDs()
+    for _, uid in ipairs(allPlayers) do
         -- Initialize tracking for this player
-        playerArmorCounted[bnet] = {}
+        playerArmorCounted[uid] = {}
         
-        local charNames = Player:GetCharactersName(bnet)
+        local charNames = Player:GetCharactersName(uid)
         if charNames then
             for _, charName in ipairs(charNames) do
-                if self:IsValidCharacter(bnet, charName, true) then
-                    local classId = Character:GetCharacterClassId(bnet, charName)
+                if self:IsValidCharacter(uid, charName, true) then
+                    local classId = Character:GetCharacterClassId(uid, charName)
                     local className = Data.CLASS_ID_TO_ENGLISH_NAME[classId]
                     local armorType = Data.CLASS_TO_ARMOR_TYPE[className]
                     
                     -- Only count each armor type once per player
-                    if armorType and not playerArmorCounted[bnet][armorType] then
+                    if armorType and not playerArmorCounted[uid][armorType] then
                         armorCounts[armorType] = armorCounts[armorType] + 1
-                        playerArmorCounted[bnet][armorType] = true
+                        playerArmorCounted[uid][armorType] = true
                     end
                 end
             end
@@ -442,14 +484,14 @@ end
 
 -- Check if a character is valid for display and counting
 -- Determines if a character has a valid keystone and isn't hidden
-function Dawn:IsValidCharacter(bnet, charName, checkHasKey)
+function Dawn:IsValidCharacter(uid, charName, checkHasKey)
     -- Get character data
-    local keystone = Character:GetCharacterKeystone(bnet, charName)
-    local isHidden = Character:GetCharacterIsHidden(bnet, charName)
+    local keystone = Character:GetCharacterKeystone(uid, charName)
+    local isHidden = Character:GetCharacterIsHidden(uid, charName)
 
     -- Optionally check if character has a key for boosting
     if checkHasKey then
-        local hasKey = Character:GetCharacterHasKey(bnet, charName)
+        local hasKey = Character:GetCharacterHasKey(uid, charName)
         return keystone and keystone.level and keystone.level > 0 and hasKey and not isHidden
     end
 
@@ -458,13 +500,13 @@ function Dawn:IsValidCharacter(bnet, charName, checkHasKey)
 end
 
 -- Generate content for normal signup mode
-function Dawn:GenerateNormalSignupContent(localBnet)
+function Dawn:GenerateNormalSignupContent(localUID)
     -- Initialize output variables
     local output = ""
-    local bnets = Player:GetBNetOfPartyMembers()
+    local uids = self:GetPartyUIDs()
     -- Add group members' info if in a group
-    local numberOfPlayers = #bnets
-    output = output .. self:GetPartyMembersInfo(bnets, localBnet)
+    local numberOfPlayers = #uids
+    output = output .. self:GetPartyMembersInfo(uids, localUID)
     -- Add header with appropriate sign based on group size
     local signText = Data.DAWN_SIGN[numberOfPlayers] or "Unknown"
     output = "### " .. signText .. " sign:\n" .. output
@@ -478,21 +520,21 @@ function Dawn:GenerateNormalSignupContent(localBnet)
 end
 
 -- Get all party members' character information
-function Dawn:GetPartyMembersInfo(bnets, localBnet)
+function Dawn:GetPartyMembersInfo(uids, localUID)
     local output = ""
     -- Process each group member
-    for _, bnet in ipairs(bnets) do
+    for _, uid in ipairs(uids) do
         -- Skip local player (already processed)
-        if bnet then
-            local charactersName = Player:GetCharactersName(bnet)
+        if uid then
+            local charactersName = Player:GetCharactersName(uid)
 
             -- Only add players with characters
             if charactersName and #charactersName > 0 then
-                local playerString = self:GeneratePlayerString(bnet, bnet ~= localBnet)
+                local playerString = self:GeneratePlayerString(uid, uid ~= localUID)
 
                 -- Add to output if player has valid data
                 if playerString and playerString ~= "" then
-                    if bnet == localBnet then
+                    if uid == localUID then
                         output = playerString .. output
                     else
                         output = output .. playerString
@@ -511,20 +553,20 @@ function Dawn:PopulateKeyListFrame(container)
     end
 
     local keysEditBox = container.signup.keysEditBox
-    local bnets = Player:GetBNetOfPartyMembers()
-    if not bnets or next(bnets) == nil then
+    local uids = self:GetPartyUIDs()
+    if not uids or next(uids) == nil then
         return
     end
 
     local keyDataList = {}
-    for _, bnet in ipairs(bnets) do
-        local characters = Player:GetCharactersName(bnet)
+    for _, uid in ipairs(uids) do
+        local characters = Player:GetCharactersName(uid)
         for _, charName in ipairs(characters) do
-            local keystone = Character:GetCharacterKeystone(bnet, charName)
-            local hasKey = Character:GetCharacterHasKey(bnet, charName)
+            local keystone = Character:GetCharacterKeystone(uid, charName)
+            local hasKey = Character:GetCharacterHasKey(uid, charName)
 
             -- Use our validation method with hasKey check
-            if self:IsValidCharacter(bnet, charName, true) then
+            if self:IsValidCharacter(uid, charName, true) then
                 table.insert(keyDataList, {
                     charName = charName,
                     level = keystone.level or 0,
@@ -554,8 +596,8 @@ function Dawn:PopulateKeyListFrame(container)
     for _, keyInfo in ipairs(keyDataList) do
         -- Find character's class for coloring
         local classColor = "|cFFFFFFFF" -- Default to white
-        for _, bnet in ipairs(bnets) do
-            local classId = Character:GetCharacterClassId(bnet, keyInfo.charName)
+        for _, uid in ipairs(uids) do
+            local classId = Character:GetCharacterClassId(uid, keyInfo.charName)
             if classId then
                 classColor = Utils:GetClassColorFromID(classId)
                 break
@@ -618,14 +660,14 @@ function Dawn:PopulateDungeonFrame(container)
         local maxKeyLevel = 0
         local minKeyLevel = 99999
 
-        local partyBnets = Player:GetBNetOfPartyMembers()
-        for _, bnet in ipairs(partyBnets) do
-            local charactersName = Player:GetCharactersName(bnet)
+        local uids = self:GetPartyUIDs()
+        for _, uid in ipairs(uids) do
+            local charactersName = Player:GetCharactersName(uid)
             for _, charName in ipairs(charactersName) do
-                local keystone = Character:GetCharacterKeystone(bnet, charName)
+                local keystone = Character:GetCharacterKeystone(uid, charName)
 
                 -- Use our validation method
-                if self:IsValidCharacter(bnet, charName, true) and keystone.mapID == key then
+                if self:IsValidCharacter(uid, charName, true) and keystone.mapID == key then
                     maxKeyLevel = math.max(maxKeyLevel, keystone.level or 0)
                     minKeyLevel = math.min(minKeyLevel, keystone.level or 0)
                 end
@@ -696,23 +738,23 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
     end
 
     local keysEditBox = container.signup.keysEditBox
-    local bnets = Player:GetBNetOfPartyMembers()
-    if not bnets or next(bnets) == nil then
+    local uids = self:GetPartyUIDs()
+    if not uids or next(uids) == nil then
         return
     end
 
     local keyDataList = {}
-    for _, bnet in ipairs(bnets) do
-        local characters = Player:GetCharactersName(bnet)
+    for _, uid in ipairs(uids) do
+        local characters = Player:GetCharactersName(uid)
         for _, charName in ipairs(characters) do
-            local keystone = Character:GetCharacterKeystone(bnet, charName)
+            local keystone = Character:GetCharacterKeystone(uid, charName)
 
             -- Only include keys for the hovered dungeon
-            if self:IsValidCharacter(bnet, charName, true) and keystone.mapID == dungeonKey then
+            if self:IsValidCharacter(uid, charName, true) and keystone.mapID == dungeonKey then
                 table.insert(keyDataList, {
                     charName = charName,
                     level = keystone.level or 0,
-                    hasKey = Character:GetCharacterHasKey(bnet, charName)
+                    hasKey = Character:GetCharacterHasKey(uid, charName)
                 })
             end
         end
@@ -731,8 +773,8 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
         outputString = "|cFFFFD700Keystones for " .. Data.DUNGEON_TABLE[dungeonKey].name .. ":|r\n\n"
         for _, keyInfo in ipairs(keyDataList) do
             local classId
-            for _, bnet in ipairs(bnets) do
-                local tempClassId = Character:GetCharacterClassId(bnet, keyInfo.charName)
+            for _, uid in ipairs(uids) do
+                local tempClassId = Character:GetCharacterClassId(uid, keyInfo.charName)
                 if tempClassId then
                     classId = tempClassId
                     break
@@ -752,19 +794,19 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
     keysEditBox:SetText(outputString)
 end
 
-function Dawn:GeneratePlayerString(bnet, addDiscordTag)
+function Dawn:GeneratePlayerString(uid, addDiscordTag)
     local fullOutputString = ""
 
     local nbChar = 0
-    local characterNames = Player:GetCharactersName(bnet)
+    local characterNames = Player:GetCharactersName(uid)
     for _, name in ipairs(characterNames) do
-        local keystone = Character:GetCharacterKeystone(bnet, name)
+        local keystone = Character:GetCharacterKeystone(uid, name)
 
         -- Use our validation method, but don't require hasKey for display
-        if self:IsValidCharacter(bnet, name, false) then
+        if self:IsValidCharacter(uid, name, false) then
             local roleIndicatorStr = ""
-            local customRoles = Character:GetCharacterCustomRoles(bnet, name)
-            local mainRole = Character:GetCharacterRole(bnet, name)
+            local customRoles = Character:GetCharacterCustomRoles(uid, name)
+            local mainRole = Character:GetCharacterRole(uid, name)
             if customRoles and #customRoles > 0 then
                 for _, role in ipairs(customRoles) do
                     roleIndicatorStr = roleIndicatorStr .. Data.ROLES[role]
@@ -774,16 +816,16 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
             end
 
             local factionStr = ""
-            local faction = Character:GetCharacterFaction(bnet, name)
+            local faction = Character:GetCharacterFaction(uid, name)
             if faction and faction ~= "" then
                 factionStr = ":" .. string.lower(faction) .. ":"
             end
 
-            local classStr = Data.CLASS_ID_TO_ENGLISH_NAME[Character:GetCharacterClassId(bnet, name)] or "No Class"
-            local scoreStr = ":Raiderio: " .. Character:GetCharacterRating(bnet, name)
+            local classStr = Data.CLASS_ID_TO_ENGLISH_NAME[Character:GetCharacterClassId(uid, name)] or "No Class"
+            local scoreStr = ":Raiderio: " .. Character:GetCharacterRating(uid, name)
             local keyStr = ":Keystone: "
             if keystone.level and keystone.level > 0 then
-                if Character:GetCharacterHasKey(bnet, name) then
+                if Character:GetCharacterHasKey(uid, name) then
                     keyStr = keyStr ..
                         string.format("+%d %s", keystone.level, keystone.mapName or "Unknown")
                 else
@@ -793,7 +835,7 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
             else
                 keyStr = keyStr .. "No Key"
             end
-            local ilvlStr = string.format(":Armor: %d iLvl", Character:GetCharacterIlvl(bnet, name))
+            local ilvlStr = string.format(":Armor: %d iLvl", Character:GetCharacterIlvl(uid, name))
             local tradeStr = "Can trade all :gift:"
             local charOutput = string.format("%s %s | %s | %s | %s | %s | %s",
                 roleIndicatorStr,
@@ -810,7 +852,7 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
         end
     end
 
-    local discordTag = Player:GetDiscordTag(bnet)
+    local discordTag = Player:GetDiscordTag(uid)
     if addDiscordTag and discordTag and discordTag ~= "" and nbChar > 0 then
         fullOutputString = string.format("|cffffcc00%s|r\n", discordTag) .. fullOutputString
     end
@@ -818,14 +860,14 @@ function Dawn:GeneratePlayerString(bnet, addDiscordTag)
 end
 
 function Dawn:SendCharacterData()
-    local bnet = Player:GetBNetTagForUnit("player")
-    if not bnet then return end
+    local uid = addon:GetUID()
+    if not uid then return end
 
-    local characters = Player:GetCharactersForPlayer(bnet)
+    local characters = Player:GetCharactersForPlayer(uid)
     if not characters or not db.global.config.discordTag then return end
 
     local payload = {
-        bnet = bnet,
+        uid = uid,
         discordTag = db.global.config.discordTag,
         characters = {}
     }
@@ -849,12 +891,86 @@ function Dawn:SendCharacterData()
     end
 end
 
+function Dawn:SendUIDData()
+    local uid = addon:GetUID()
+    if not uid then return end
+
+    local payload = {
+        uid = uid,
+    }
+
+    local serialized = AceSerializer:Serialize(payload)
+    local messageToSend = GT.headers.uid .. serialized
+    if IsInGroup() then
+        local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+        LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, messageToSend, channel)
+    end
+end
+
+
 function Dawn:RequestData()
     if IsInGroup() then
         local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
         LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
     else
         print(addonName, ": You must be in a party to request data.")
+    end
+end
+
+function Dawn:RequestUIDs()
+    if IsInGroup() then
+        local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
+        LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.uids, channel)
+    else
+        print(addonName, ": You must be in a party to request UID.")
+    end
+end
+
+function Dawn:ProcessPlayerData(message, sender)
+    local success, data = AceSerializer:Deserialize(string.sub(message, 11))
+
+    if not success or type(data) ~= "table" or not data.uid or not data.characters then
+        print(addonName, ": Invalid or malformed data from", sender)
+        return
+    end
+
+    local localUID = addon:GetUID()
+    local uid = data.uid
+    local incomingChars = data.characters
+    local senderDiscordTag = data.discordTag or ""
+
+    local localPlayerEntry = Player:GetOrCreatePlayerData(uid)
+    localPlayerEntry.discordTag = senderDiscordTag
+
+    if localUID ~= uid and type(incomingChars) == "table" then
+        Player:DeleteCharactersForPlayer(uid)
+        for charName, charData in pairs(incomingChars) do
+            if type(charData) == "table" then
+                Character:SetCharacterData(uid, charName, charData)
+            end
+        end
+    end
+    local frame = GrossFrame.mainFrame
+    if frame and frame:IsVisible() then
+        self:PopulateDataFrame()
+    end
+end
+
+function Dawn:ProcessUIDData(message, sender)
+    local success, data = AceSerializer:Deserialize(string.sub(message, 4))
+
+    if not success or type(data) ~= "table" or not data.uid then
+        print(addonName, ": Invalid or malformed UID data from", sender)
+        return
+    end
+
+    local uid = data.uid
+    self:addUID(uid)
+    Player:GetOrCreatePlayerData(uid)
+
+    local frame = GrossFrame.mainFrame
+    if frame and frame:IsVisible() then
+        self:PopulateDataFrame()
     end
 end
 
@@ -865,34 +981,13 @@ function Dawn:OnCommReceived(_, message, _, sender)
         if not UnitIsUnit("player", sender) then
             self:SendCharacterData()
         end
+    elseif message == GT.headers.uids then
+        if not UnitIsUnit("player", sender) then
+            self:SendUIDData()
+        end
     elseif string.sub(message, 1, 10) == GT.headers.player then
-        local success, data = AceSerializer:Deserialize(string.sub(message, 11))
-
-        if not success or type(data) ~= "table" or not data.bnet or not data.characters then
-            print(addonName, ": Invalid or malformed data from", sender)
-            return
-        end
-
-        local bnet = data.bnet
-        local incomingChars = data.characters
-        local senderDiscordTag = data.discordTag or ""
-
-
-        local localPlayerEntry = Player:GetOrCreatePlayerData(bnet)
-        localPlayerEntry.discordTag = senderDiscordTag
-
-        Player:DeleteCharactersForPlayer(bnet)
-        if type(incomingChars) == "table" then
-            for charName, charData in pairs(incomingChars) do
-                if type(charData) == "table" then
-                    Character:SetCharacterData(bnet, charName, charData)
-                end
-            end
-        end
-
-        local frame = GrossFrame.mainFrame
-        if frame and frame:IsVisible() then
-            self:PopulateDataFrame()
-        end
+        self:ProcessPlayerData(message, sender)
+    elseif string.sub(message, 1, 10) == GT.headers.uid then
+        self:ProcessUIDData(message, sender)
     end
 end

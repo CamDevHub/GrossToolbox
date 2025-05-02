@@ -6,7 +6,9 @@ GT.Modules.Data = Data
 local factionGroup = UnitFactionGroup("player")
 GT.headers = {
     player = "CHAR_DATA:",
-    request = "REQ_DATA"
+    request = "REQ_DATA",
+    uids = "REQ_UIDS",
+    uid = "UID:"
 }
 GT.COMM_PREFIX = "GTComm"
 

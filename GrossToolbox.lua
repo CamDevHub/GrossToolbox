@@ -1,6 +1,6 @@
 -- Core.lua
 
-local addonName, GT = ... 
+local addonName, GT = ...
 if not GT then
     print("Error: GT table not found!"); return
 end
@@ -16,7 +16,7 @@ local AceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0")
 
 local addon = AceAddon:NewAddon("GrossToolbox", "AceConsole-3.0", "AceEvent-3.0")
 GT.addon = addon
-GT.debug = false
+GT.debug = true
 
 -- Define the default structure for your database
 local defaults = {
@@ -26,29 +26,30 @@ local defaults = {
             hide = false,
         },
         players = {},
-        lastTab = ""
+        lastTab = "",
+        uid=""
     }
 }
 
 function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
-    
+
     -- Define modules to initialize in the correct dependency order
     local modulesToInitialize = {
-        "Config",
         "Character",
         "Player",
+        "Config",
         "Dawn",
         "Weekly"
     }
-    
+
     -- Get Utils for debug logging
     local Utils = GT.Modules.Utils
     if not Utils then
         print(addonName .. ": Critical error - Utils module not found")
         return
     end
-    
+
     -- Now initialize the modules with proper debug logging
     for i = 1, #modulesToInitialize do
         local moduleName = modulesToInitialize[i]
@@ -66,15 +67,15 @@ function addon:OnInitialize()
             end
         end
     end
-    
+
     -- Register slash command
     self:RegisterChatCommand("gt", "SlashCommandHandler")
-    
+
     -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
-    
+
     Utils:DebugPrint("Initialization complete")
 end
 
@@ -88,6 +89,7 @@ end
 -- Called when GROUP_ROSTER_UPDATE  fires
 function addon:GROUP_ROSTER_UPDATE(event, status)
     self:UpdateData()
+    GT.Modules.Dawn:RequestUIDs()
 end
 
 -- Called when CHALLENGE_MODE_COMPLETED  fires
@@ -100,18 +102,34 @@ function addon:CHALLENGE_MODE_COMPLETED(event, status)
     end
 end
 
-local function UpdateCurrentCharacterInfo(bnet, fullName)
-	GT.Modules.Player:SetDiscordTag(bnet, GT.Modules.Config:GetDiscordTag())
-	GT.Modules.Character:BuildCurrentCharacter(bnet, fullName)
+local function UpdateCurrentCharacterInfo(uid, fullName)
+    GT.Modules.Player:SetDiscordTag(uid, GT.Modules.Config:GetDiscordTag())
+    GT.Modules.Character:BuildCurrentCharacter(uid, fullName)
 end
 
 function addon:UpdateData()
     if not self.db then return end
 
-    local bnet = GT.Modules.Player:GetBNetTagForUnit("player")
-	local fullName = GT.Modules.Character:GetFullName("player")
+    -- Check if we already have a UID, if not generate one
+    if not self.db.global.uid or self.db.global.uid == "" then
+        local playerName = UnitName("player")
+        local identifier = playerName .. "-" .. time()
+        
+        self.db.global.uid = identifier
+        GT.Modules.Utils:DebugPrint("Generated new UID: " .. self.db.global.uid)
+    end
 
-    UpdateCurrentCharacterInfo(bnet, fullName)
+    local fullName = GT.Modules.Character:GetFullName("player")
+
+    UpdateCurrentCharacterInfo(self.db.global.uid, fullName)
+end
+
+-- Function to get the unique identifier for the player
+function addon:GetUID()
+    if not self.db or not self.db.global then
+        return nil
+    end
+    return self.db.global.uid
 end
 
 function addon:OnEnable()
@@ -139,7 +157,7 @@ end
 function addon:SlashCommandHandler(input)
     local command = string.lower(input or "")
 
-    if command == ""  then
+    if command == "" then
         GT.Modules.GrossFrame:ToggleMainFrame()
     elseif command == "config" then
         LibStub("AceConfigDialog-3.0"):Open(addonName)

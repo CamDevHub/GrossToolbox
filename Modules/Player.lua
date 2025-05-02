@@ -42,9 +42,9 @@ function Player:Init(database)
 	return true
 end
 
-function Player:GetOrCreatePlayerData(bnet)
+function Player:GetOrCreatePlayerData(uid)
 	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("GetOrCreatePlayerData: Missing required parameter")
 		return nil
 	end
@@ -65,78 +65,19 @@ function Player:GetOrCreatePlayerData(bnet)
 	end
 
 	-- Create player entry if needed
-	if not db.global.players[bnet] then
-		db.global.players[bnet] = {
+	if not db.global.players[uid] then
+		db.global.players[uid] = {
 			discordTag = "",
 			characters = {}
 		}
 	end
 
-	return db.global.players[bnet]
+	return db.global.players[uid]
 end
 
-function Player:GetBNetTagForUnit(unit)
+function Player:GetCharactersName(uid)
 	-- Validate parameters
-	if not unit then
-		Utils:DebugPrint("GetBNetTagForUnit: Missing unit parameter")
-		return nil
-	end
-
-	-- Check if unit exists
-	if not UnitExists(unit) then
-		return nil
-	end
-
-	-- Get unit GUID
-	local guid = UnitGUID(unit)
-	if not guid then
-		return nil
-	end
-
-	-- Get BattleNet info
-	local bnetData = C_BattleNet.GetAccountInfoByGUID(guid)
-	if not bnetData then
-		return nil
-	end
-
-	return bnetData.battleTag
-end
-
-function Player:GetBNetOfPartyMembers()
-	-- Initialize results array
-	local bnetTags = {}
-
-	-- Get group members' BNet tags if in a group
-	if IsInGroup() then
-		local numMembers = GetNumGroupMembers()
-		local isRaid = (LE_PARTY_CATEGORY_INSTANCE == GetInstanceInfo())
-
-		-- Loop through group members
-		for i = 1, numMembers do
-			local unit = isRaid and ("raid" .. i) or ("party" .. i)
-
-			-- Check if unit exists
-			if UnitExists(unit) then
-				local bnetTag = self:GetBNetTagForUnit(unit)
-				if bnetTag then
-					table.insert(bnetTags, bnetTag)
-				end
-			end
-		end
-	end
-
-	-- Add player's own BNet tag
-	local playerBnetTag = self:GetBNetTagForUnit("player")
-	if playerBnetTag then
-		table.insert(bnetTags, playerBnetTag)
-	end
-
-	return bnetTags
-end
-
-function Player:GetCharactersName(bnet)
-	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("GetCharactersName: Missing required parameter")
 		return {}
 	end
@@ -148,7 +89,7 @@ function Player:GetCharactersName(bnet)
 	end
 
 	-- Get player data
-	local player = self:GetOrCreatePlayerData(bnet)
+	local player = self:GetOrCreatePlayerData(uid)
 	if not player or not player.characters then
 		return {}
 	end
@@ -162,9 +103,9 @@ function Player:GetCharactersName(bnet)
 	return names
 end
 
-function Player:SetDiscordTag(bnet, tag)
+function Player:SetDiscordTag(uid, tag)
 	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("SetDiscordTag: Missing required parameter")
 		return
 	end
@@ -181,7 +122,7 @@ function Player:SetDiscordTag(bnet, tag)
 	end
 
 	-- Get player data and update discord tag
-	local player = self:GetOrCreatePlayerData(bnet)
+	local player = self:GetOrCreatePlayerData(uid)
 	if not player then
 		return
 	end
@@ -189,9 +130,9 @@ function Player:SetDiscordTag(bnet, tag)
 	player.discordTag = tag
 end
 
-function Player:GetDiscordTag(bnet)
+function Player:GetDiscordTag(uid)
 	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("GetDiscordTag: Missing required parameter")
 		return ""
 	end
@@ -203,7 +144,7 @@ function Player:GetDiscordTag(bnet)
 	end
 
 	-- Get player data and return discord tag
-	local player = self:GetOrCreatePlayerData(bnet)
+	local player = self:GetOrCreatePlayerData(uid)
 	if not player then
 		return ""
 	end
@@ -211,9 +152,9 @@ function Player:GetDiscordTag(bnet)
 	return player.discordTag or ""
 end
 
-function Player:DeleteCharactersForPlayer(bnet)
+function Player:DeleteCharactersForPlayer(uid)
 	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("DeleteCharactersForPlayer: Missing required parameter")
 		return
 	end
@@ -225,7 +166,7 @@ function Player:DeleteCharactersForPlayer(bnet)
 	end
 
 	-- Get player data and delete characters
-	local player = self:GetOrCreatePlayerData(bnet)
+	local player = self:GetOrCreatePlayerData(uid)
 	if not player then
 		return
 	end
@@ -233,9 +174,9 @@ function Player:DeleteCharactersForPlayer(bnet)
 	player.characters = {}
 end
 
-function Player:GetCharactersForPlayer(bnet)
+function Player:GetCharactersForPlayer(uid)
 	-- Validate parameters
-	if not bnet then
+	if not uid then
 		Utils:DebugPrint("GetCharactersForPlayer: Missing required parameter")
 		return {}
 	end
@@ -247,7 +188,7 @@ function Player:GetCharactersForPlayer(bnet)
 	end
 
 	-- Get player data
-	local player = self:GetOrCreatePlayerData(bnet)
+	local player = self:GetOrCreatePlayerData(uid)
 	if not player then
 		return {}
 	end
