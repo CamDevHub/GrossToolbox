@@ -88,7 +88,6 @@ end
 
 -- Called when GROUP_ROSTER_UPDATE  fires
 function addon:GROUP_ROSTER_UPDATE(event, status)
-    self:UpdateData()
     GT.Modules.Dawn:RequestUIDs()
 end
 

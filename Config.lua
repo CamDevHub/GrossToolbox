@@ -40,7 +40,7 @@ function Config:SetupOptions()
                 end,
                 set = function(_, val)
                     db.global.config.discordTag = val
-                    local uid = addon:GetUID()
+                    uid = addon:GetUID()
                     if uid then
                         db.global.player = db.global.player or {}
                         db.global.player[uid] = db.global.player[uid] or { name = UnitName("player"), char = {} }
@@ -107,11 +107,11 @@ function Config:SetupOptions()
                 func = function()
                     print("|cFFFF0000Deleting character: " .. selectedChar .. "|r")
                     if selectedChar and selectedChar ~= "" then
-                            if db.global.players and db.global.players[battleTag] and
-                                db.global.players[battleTag].characters and
-                                db.global.players[battleTag].characters[selectedChar] then
+                            if db.global.players and db.global.players[uid] and
+                                db.global.players[uid].characters and
+                                db.global.players[uid].characters[selectedChar] then
                                 -- Remove character data
-                                db.global.players[battleTag].characters[selectedChar] = nil
+                                db.global.players[uid].characters[selectedChar] = nil
 
                                 -- Show confirmation message
                                 print("|cFF00FF00" .. selectedChar .. " has been deleted from GrossToolbox.|r")

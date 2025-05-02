@@ -376,7 +376,7 @@ function Dawn:PopulateSignupFrame(container)
     local localUID = addon:GetUID()
     if not localUID then
         Utils:DebugPrint("PopulateDisplayFrame: Could not get local player's UID")
-        playersEditBox:SetText("Could not get your BattleNet tag")
+        playersEditBox:SetText("Could not get your UID")
         return
     end
 
@@ -448,12 +448,12 @@ function Dawn:GetArmorDistribution()
     -- Count all characters (local and party members)
     -- Track armor types already counted per player
     local playerArmorCounted = {}
-    
+
     local allPlayers = self:GetPartyUIDs()
     for _, uid in ipairs(allPlayers) do
         -- Initialize tracking for this player
         playerArmorCounted[uid] = {}
-        
+
         local charNames = Player:GetCharactersName(uid)
         if charNames then
             for _, charName in ipairs(charNames) do
@@ -461,7 +461,7 @@ function Dawn:GetArmorDistribution()
                     local classId = Character:GetCharacterClassId(uid, charName)
                     local className = Data.CLASS_ID_TO_ENGLISH_NAME[classId]
                     local armorType = Data.CLASS_TO_ARMOR_TYPE[className]
-                    
+
                     -- Only count each armor type once per player
                     if armorType and not playerArmorCounted[uid][armorType] then
                         armorCounts[armorType] = armorCounts[armorType] + 1
@@ -907,7 +907,6 @@ function Dawn:SendUIDData()
     end
 end
 
-
 function Dawn:RequestData()
     if IsInGroup() then
         local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
@@ -937,13 +936,18 @@ function Dawn:ProcessPlayerData(message, sender)
 
     local localUID = addon:GetUID()
     local uid = data.uid
+
+    if not data.uid then
+        Utils:DebugPrint("ProcessUIDData: Missing UID in data from " .. sender)
+        return
+    end
+
     local incomingChars = data.characters
     local senderDiscordTag = data.discordTag or ""
 
     local localPlayerEntry = Player:GetOrCreatePlayerData(uid)
     localPlayerEntry.discordTag = senderDiscordTag
 
-    print(addonName, ": Received data from", uid)
     if localUID ~= uid and type(incomingChars) == "table" then
         Player:DeleteCharactersForPlayer(uid)
         for charName, charData in pairs(incomingChars) do
@@ -952,41 +956,46 @@ function Dawn:ProcessPlayerData(message, sender)
             end
         end
     end
-    local frame = GrossFrame.mainFrame
-    if frame and frame:IsVisible() then
-        self:PopulateDataFrame()
-    end
 end
 
 function Dawn:ProcessUIDData(message, sender)
-    local success, data = AceSerializer:Deserialize(string.sub(message, 4))
+    if not message or not sender then
+        Utils:DebugPrint("ProcessUIDData: Missing message or sender parameters")
+        return
+    end
 
-    if not success or type(data) ~= "table" or not data.uid then
-        print(addonName, ": Invalid or malformed UID data from", sender)
+    local success, data = AceSerializer:Deserialize(string.sub(message, 5))
+
+    if not success then
+        Utils:DebugPrint("ProcessUIDData: Failed to deserialize message from " .. sender)
+        return
+    end
+
+    if type(data) ~= "table" then
+        Utils:DebugPrint("ProcessUIDData: Data is not a table from " .. sender)
+        return
+    end
+
+    if not data.uid then
+        Utils:DebugPrint("ProcessUIDData: Missing UID in data from " .. sender)
         return
     end
 
     local uid = data.uid
+    Utils:DebugPrint("ProcessUIDData: Received UID " .. uid .. " from " .. sender)
+
     self:addUID(uid)
     Player:GetOrCreatePlayerData(uid)
-
-    local frame = GrossFrame.mainFrame
-    if frame and frame:IsVisible() then
-        self:PopulateDataFrame()
-    end
+    Utils:DebugPrint("ProcessUIDData: UID " .. uid .. " added successfully")
 end
 
 function Dawn:OnCommReceived(_, message, _, sender)
-    if type(message) ~= "string" then return end
-    Utils:DebugPrint(addonName, ": Received message:", message)
+    if type(message) ~= "string" or UnitIsUnit("player", sender) then return end
+
     if message == GT.headers.request then
-        if not UnitIsUnit("player", sender) then
-            self:SendCharacterData()
-        end
+        self:SendCharacterData()
     elseif message == GT.headers.uids then
-        if not UnitIsUnit("player", sender) then
-            self:SendUIDData()
-        end
+        self:SendUIDData()
     elseif string.sub(message, 1, 10) == GT.headers.player then
         self:ProcessPlayerData(message, sender)
     elseif string.sub(message, 1, 4) == GT.headers.uid then
