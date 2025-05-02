@@ -912,6 +912,7 @@ function Dawn:RequestData()
     if IsInGroup() then
         local channel = IsInGroup(LE_PARTY_CATEGORY_INSTANCE) and "INSTANCE_CHAT" or "PARTY"
         LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
+        print(addonName, ": Requesting data from party members...")
     else
         print(addonName, ": You must be in a party to request data.")
     end
@@ -942,6 +943,7 @@ function Dawn:ProcessPlayerData(message, sender)
     local localPlayerEntry = Player:GetOrCreatePlayerData(uid)
     localPlayerEntry.discordTag = senderDiscordTag
 
+    print(addonName, ": Received data from", uid)
     if localUID ~= uid and type(incomingChars) == "table" then
         Player:DeleteCharactersForPlayer(uid)
         for charName, charData in pairs(incomingChars) do
@@ -976,7 +978,7 @@ end
 
 function Dawn:OnCommReceived(_, message, _, sender)
     if type(message) ~= "string" then return end
-
+    Utils:DebugPrint(addonName, ": Received message:", message)
     if message == GT.headers.request then
         if not UnitIsUnit("player", sender) then
             self:SendCharacterData()
@@ -987,7 +989,7 @@ function Dawn:OnCommReceived(_, message, _, sender)
         end
     elseif string.sub(message, 1, 10) == GT.headers.player then
         self:ProcessPlayerData(message, sender)
-    elseif string.sub(message, 1, 10) == GT.headers.uid then
+    elseif string.sub(message, 1, 4) == GT.headers.uid then
         self:ProcessUIDData(message, sender)
     end
 end

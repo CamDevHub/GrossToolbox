@@ -27,7 +27,7 @@ local defaults = {
         },
         players = {},
         lastTab = "",
-        uid=""
+        uid = ""
     }
 }
 
@@ -109,12 +109,11 @@ end
 
 function addon:UpdateData()
     if not self.db then return end
-
     -- Check if we already have a UID, if not generate one
     if not self.db.global.uid or self.db.global.uid == "" then
         local playerName = UnitName("player")
         local identifier = playerName .. "-" .. time()
-        
+
         self.db.global.uid = identifier
         GT.Modules.Utils:DebugPrint("Generated new UID: " .. self.db.global.uid)
     end
