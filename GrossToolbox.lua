@@ -88,6 +88,7 @@ end
 
 -- Called when GROUP_ROSTER_UPDATE  fires
 function addon:GROUP_ROSTER_UPDATE(event, status)
+    GT.Modules.Dawn:ClearPartyUIDs()
     GT.Modules.Dawn:RequestUIDs()
 end
 

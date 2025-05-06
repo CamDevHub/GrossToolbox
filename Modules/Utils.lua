@@ -66,9 +66,7 @@ end
 
 -- Get class color code from class ID
 function Utils:GetClassColorFromID(classId)
-    -- Default to white if no valid class ID
     local classColor = "|cFFFFFFFF"
-    
     if not classId then
         return classColor
     end

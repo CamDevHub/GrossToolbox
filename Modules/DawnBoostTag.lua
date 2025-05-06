@@ -935,6 +935,7 @@ function Dawn:ProcessPlayerData(message, sender)
     end
 
     local localUID = addon:GetUID()
+    Utils:DebugPrint("localUID: " .. localUID)
     local uid = data.uid
 
     if not data.uid then
@@ -949,6 +950,7 @@ function Dawn:ProcessPlayerData(message, sender)
     localPlayerEntry.discordTag = senderDiscordTag
 
     if localUID ~= uid and type(incomingChars) == "table" then
+        self:addUID(uid)
         Player:DeleteCharactersForPlayer(uid)
         for charName, charData in pairs(incomingChars) do
             if type(charData) == "table" then
