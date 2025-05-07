@@ -77,6 +77,12 @@ function Weekly:Init(database)
   return true
 end
 
+function Weekly:GetSparkData()
+  local sparks = C_CurrencyInfo.GetCurrencyInfo(3132)
+  if not sparks then return end
+  return sparks
+end
+
 function Weekly:DrawFrame(container)
   if not container then return end
 
@@ -87,6 +93,22 @@ function Weekly:DrawFrame(container)
   local weeklyTabContainer = AceGUI:Create("ScrollFrame")
   weeklyTabContainer:SetLayout("Flow")
   container:AddChild(weeklyTabContainer)
+
+  local dungeonHeader = AceGUI:Create("Heading")
+  dungeonHeader:SetText("Currencies")
+  dungeonHeader:SetFullWidth(true)
+  weeklyTabContainer:AddChild(dungeonHeader)
+
+  local currenciesContainer = AceGUI:Create("SimpleGroup")
+  currenciesContainer:SetLayout("Flow")
+  currenciesContainer:SetFullWidth(true)
+  currenciesContainer:SetHeight(40)
+  currenciesContainer:SetAutoAdjustHeight(false)
+
+  local currenciesHeader = AceGUI:Create("Heading")
+  currenciesHeader:SetText("Dungeons")
+  currenciesHeader:SetFullWidth(true)
+  weeklyTabContainer:AddChild(currenciesHeader)
 
   -- Create a header row for the table
   local headerRow = AceGUI:Create("SimpleGroup")
@@ -115,20 +137,30 @@ function Weekly:DrawFrame(container)
   missingHeader:SetJustifyH("CENTER")
   headerRow:AddChild(missingHeader)
 
+  weeklyTabContainer:AddChild(currenciesContainer)
   weeklyTabContainer:AddChild(headerRow)
   container.weekly.weeklyScroll = weeklyTabContainer
+  container.weekly.currenciesContainer = currenciesContainer
 end
 
 function Weekly:PopulateFrame(container)
-  if not container or not container.weekly or not container.weekly.weeklyScroll then
+  if not container or not container.weekly or not container.weekly.weeklyScroll or not container.weekly.currenciesContainer then
     return
   end
+
+  local sparks = self:GetSparkData()
+  if not sparks then return end
 
   local uid = addon:GetUID()
   if not uid then return end
 
   local charactersName = Player:GetCharactersName(uid)
   if not charactersName then return end
+
+  local sparksLabel = AceGUI:Create("Label")
+  sparksLabel:SetText("Sparks: " .. sparks.quantity .. " / " .. sparks.maxQuantity)
+  sparksLabel:SetFontObject(GameFontNormal)
+  container.weekly.currenciesContainer:AddChild(sparksLabel)
 
   for _, fullName in pairs(charactersName) do
     local characterFrame = AceGUI:Create("SimpleGroup")

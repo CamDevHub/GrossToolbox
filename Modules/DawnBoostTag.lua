@@ -913,7 +913,7 @@ function Dawn:RequestData()
         LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
         print(addonName, ": Requesting data from party members...")
     else
-        print(addonName, ": You must be in a party to request data.")
+        Utils:DebugPrint(addonName, ": You must be in a party to request data.")
     end
 end
 
@@ -950,6 +950,7 @@ function Dawn:ProcessPlayerData(message, sender)
     localPlayerEntry.discordTag = senderDiscordTag
 
     if localUID ~= uid and type(incomingChars) == "table" then
+        print(addonName, ": Processing data from", sender, "for UID:", uid)
         self:addUID(uid)
         Player:DeleteCharactersForPlayer(uid)
         for charName, charData in pairs(incomingChars) do
