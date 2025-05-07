@@ -105,40 +105,40 @@ function Weekly:DrawFrame(container)
   currenciesContainer:SetHeight(40)
   currenciesContainer:SetAutoAdjustHeight(false)
 
+  -- Create a header row for the table
+  local dungeonsHeader = AceGUI:Create("SimpleGroup")
+  dungeonsHeader:SetLayout("Flow")
+  dungeonsHeader:SetFullWidth(true)
+  dungeonsHeader:SetHeight(60)
+  dungeonsHeader:SetAutoAdjustHeight(false)
+
   local currenciesHeader = AceGUI:Create("Heading")
   currenciesHeader:SetText("Dungeons")
   currenciesHeader:SetFullWidth(true)
-  weeklyTabContainer:AddChild(currenciesHeader)
-
-  -- Create a header row for the table
-  local headerRow = AceGUI:Create("SimpleGroup")
-  headerRow:SetLayout("Flow")
-  headerRow:SetFullWidth(true)
-  headerRow:SetHeight(40)
-  headerRow:SetAutoAdjustHeight(false)
+  dungeonsHeader:AddChild(currenciesHeader)
 
   local nameHeader = AceGUI:Create("Label")
-  nameHeader:SetText("Character")
+  nameHeader:SetText("Characters")
   nameHeader:SetWidth(300)
   nameHeader:SetFontObject(GameFontNormalHuge)
-  headerRow:AddChild(nameHeader)
+  dungeonsHeader:AddChild(nameHeader)
 
   local keysHeader = AceGUI:Create("Label")
   keysHeader:SetText("Keys")
   keysHeader:SetWidth(600)
   keysHeader:SetFontObject(GameFontNormalHuge)
   keysHeader:SetJustifyH("CENTER")
-  headerRow:AddChild(keysHeader)
+  dungeonsHeader:AddChild(keysHeader)
 
   local missingHeader = AceGUI:Create("Label")
   missingHeader:SetText("Missing")
   missingHeader:SetWidth(100)
   missingHeader:SetFontObject(GameFontNormalHuge)
   missingHeader:SetJustifyH("CENTER")
-  headerRow:AddChild(missingHeader)
+  dungeonsHeader:AddChild(missingHeader)
 
   weeklyTabContainer:AddChild(currenciesContainer)
-  weeklyTabContainer:AddChild(headerRow)
+  weeklyTabContainer:AddChild(dungeonsHeader)
   container.weekly.weeklyScroll = weeklyTabContainer
   container.weekly.currenciesContainer = currenciesContainer
 end
