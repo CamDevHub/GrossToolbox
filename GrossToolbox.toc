@@ -24,7 +24,6 @@ AceGUIWidget-DungeonIcon.lua
 init.lua
 Modules\Data.lua
 Modules\Utils.lua
-Modules\DawnBoostTag.lua
 Modules\Player.lua
 Modules\Character.lua
 Modules\Weekly.lua
@@ -32,3 +31,7 @@ Config.lua
 Localization.lua
 GrossFrame.lua
 GrossToolbox.lua
+Modules\Dawn\DawnBoostTag.lua
+Modules\Dawn\DawnBoostTag_Comm.lua
+Modules\Dawn\DawnBoostTag_SignupTab.lua
+Modules\Dawn\DawnBoostTag_PlayerEditorTab.lua

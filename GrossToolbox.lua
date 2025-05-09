@@ -16,7 +16,7 @@ local AceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0")
 
 local addon = AceAddon:NewAddon("GrossToolbox", "AceConsole-3.0", "AceEvent-3.0")
 GT.addon = addon
-GT.debug = false
+GT.debug = true
 
 -- Define the default structure for your database
 local defaults = {
@@ -79,17 +79,28 @@ function addon:OnInitialize()
     Utils:DebugPrint("Initialization complete")
 end
 
+function addon:UpdateParty()
+    GT.Modules.Dawn:ClearPartyUIDs()
+    GT.Modules.Dawn:RequestUIDs()
+end
+
 -- Called when PLAYER_ENTERING_WORLD  fires
 function addon:PLAYER_ENTERING_WORLD(event, status)
     C_Timer.After(3, function()
         self:UpdateData()
+        self:UpdateParty()
     end)
 end
 
 -- Called when GROUP_ROSTER_UPDATE  fires
 function addon:GROUP_ROSTER_UPDATE(event, status)
-    GT.Modules.Dawn:ClearPartyUIDs()
-    GT.Modules.Dawn:RequestUIDs()
+    -- Skip processing if player is in a raid
+    if IsInRaid() then
+        GT.Modules.Utils:DebugPrint("GROUP_ROSTER_UPDATE skipped - player is in a raid")
+        return
+    end
+
+    self:UpdateParty()
 end
 
 -- Called when CHALLENGE_MODE_COMPLETED  fires

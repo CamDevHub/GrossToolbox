@@ -196,3 +196,36 @@ function Player:GetCharactersForPlayer(uid)
 	-- Return characters table
 	return player.characters or {}
 end
+
+-- Delete a player and all associated data from the database
+function Player:DeletePlayer(uid)
+	if not uid then
+		Utils:DebugPrint("DeletePlayer: No UID provided")
+		return false
+	end
+
+	if not db or not db.global or not db.global.player then
+		Utils:DebugPrint("DeletePlayer: Database not properly initialized")
+		return false
+	end
+
+	-- Check if the player exists in database
+	if not db.global.players[uid] then
+		Utils:DebugPrint("DeletePlayer: Player with UID " .. uid .. " not found in database")
+		return false
+	end
+
+	-- Delete the player and all associated data
+	db.global.players[uid] = nil
+
+	-- Log deletion
+	Utils:DebugPrint(string.format("Deleted player: %s",
+		uid))
+
+	-- Remove from any modules that might be tracking this player
+	if GT.Modules.Dawn and GT.Modules.Dawn.RemoveUID then
+		GT.Modules.Dawn:RemoveUID(uid)
+	end
+
+	return true
+end

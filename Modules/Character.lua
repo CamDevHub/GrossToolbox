@@ -49,55 +49,47 @@ function Character:Init(database)
     return true
 end
 
-local function GetOrCreateCharacterData(bnet, fullName)
+local function GetCharacterData(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
-        Utils:DebugPrint("GetOrCreateCharacterData: Missing required parameters")
+    if not uid or not fullName then
+        Utils:DebugPrint("GetCharacterData: Missing required parameters")
         return nil
     end
-
-    -- Validate database
-    if not db then
-        Utils:DebugPrint("GetOrCreateCharacterData: Database not initialized")
+    if not db or not db.global or not db.global.players then
         return nil
     end
-
-    -- Ensure global.players table exists
-    if not db.global then
-        db.global = {}
+    if not db.global.players[uid] or not db.global.players[uid].characters then
+        return nil
     end
-
-    if not db.global.players then
-        db.global.players = {}
-    end
-
-    -- Create bnet entry if needed
-    if not db.global.players[bnet] then
-        db.global.players[bnet] = {}
-    end
-
-    -- Create characters table if needed
-    if not db.global.players[bnet].characters then
-        db.global.players[bnet].characters = {}
-    end
-
-    -- Create or return character data
-    if not db.global.players[bnet].characters[fullName] then
-        db.global.players[bnet].characters[fullName] = {}
-    end
-
-    return db.global.players[bnet].characters[fullName]
+    return db.global.players[uid].characters[fullName]
 end
 
-local function GetOrCreateCharacterCustomData(bnet, charFullName)
+local function CreateCharacterData(uid, fullName)
     -- Validate parameters
-    if not bnet or not charFullName then
+    if not uid or not fullName then
+        Utils:DebugPrint("CreateCharacterData: Missing required parameters")
+        return nil
+    end
+    -- Ensure global tables
+    if not db.global then db.global = {} end
+    if not db.global.players then db.global.players = {} end
+    if not db.global.players[uid] then db.global.players[uid] = {} end
+    if not db.global.players[uid].characters then db.global.players[uid].characters = {} end
+    if not db.global.players[uid].characters[fullName] then
+        db.global.players[uid].characters[fullName] = {}
+    end
+    return db.global.players[uid].characters[fullName]
+end
+
+local function GetOrCreateCharacterCustomData(uid, charFullName)
+    -- Validate parameters
+    if not uid or not charFullName then
         Utils:DebugPrint("GetOrCreateCharacterCustomData: Missing required parameters")
         return nil
     end
 
     -- Get character data
-    local charData = GetOrCreateCharacterData(bnet, charFullName)
+    local charData = GetCharacterData(uid, charFullName)
     if not charData then
         return nil
     end
@@ -188,8 +180,8 @@ function Character:GetFullName(unit)
     return name .. "-" .. realm
 end
 
-function Character:BuildCurrentCharacter(bnet, fullName)
-    if not bnet or not fullName then
+function Character:BuildCurrentCharacter(uid, fullName)
+    if not uid or not fullName then
         Utils:DebugPrint("BuildCurrentCharacter: Missing required parameters")
         return
     end
@@ -242,13 +234,13 @@ function Character:BuildCurrentCharacter(bnet, fullName)
     end
 
     -- Save character data and keystone information
-    self:SetCharacterData(bnet, fullName, charData)
-    self:SetCharacterKeystone(bnet, fullName, GetKeystone())
+    self:SetCharacterData(uid, fullName, charData, true)
+    self:SetCharacterKeystone(uid, fullName, GetKeystone())
 end
 
-function Character:GetWeeklyData(bnet, fullName)
+function Character:GetWeeklyData(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetWeeklyData: Missing required parameters")
         return {}
     end
@@ -262,7 +254,7 @@ function Character:GetWeeklyData(bnet, fullName)
     local weeklies = {}
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character or not character.weeklies then
         return weeklies
     end
@@ -275,9 +267,9 @@ function Character:GetWeeklyData(bnet, fullName)
     return weeklies
 end
 
-function Character:SetCharacterData(bnet, fullName, dataTable)
+function Character:SetCharacterData(uid, fullName, dataTable)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterData: Missing required parameters")
         return
     end
@@ -295,7 +287,7 @@ function Character:SetCharacterData(bnet, fullName, dataTable)
     end
 
     -- Get character data and update fields
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = CreateCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -306,9 +298,9 @@ function Character:SetCharacterData(bnet, fullName, dataTable)
     end
 end
 
-function Character:GetCharacterCustomRoles(bnet, fullName)
+function Character:GetCharacterCustomRoles(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterCustomRoles: Missing required parameters")
         return {}
     end
@@ -322,7 +314,7 @@ function Character:GetCharacterCustomRoles(bnet, fullName)
     local roles = {}
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData or not customData.roles then
         return roles
     end
@@ -333,9 +325,9 @@ function Character:GetCharacterCustomRoles(bnet, fullName)
     return roles
 end
 
-function Character:SetCharacterCustomRoles(bnet, fullName, roles)
+function Character:SetCharacterCustomRoles(uid, fullName, roles)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterCustomRoles: Missing required parameters")
         return
     end
@@ -353,7 +345,7 @@ function Character:SetCharacterCustomRoles(bnet, fullName, roles)
     end
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData then
         return
     end
@@ -362,9 +354,9 @@ function Character:SetCharacterCustomRoles(bnet, fullName, roles)
     customData.roles = roles
 end
 
-function Character:SetCharacterHasKey(bnet, fullName, hasKey)
+function Character:SetCharacterHasKey(uid, fullName, hasKey)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterHasKey: Missing required parameters")
         return
     end
@@ -382,7 +374,7 @@ function Character:SetCharacterHasKey(bnet, fullName, hasKey)
     end
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData then
         return
     end
@@ -391,9 +383,9 @@ function Character:SetCharacterHasKey(bnet, fullName, hasKey)
     customData.hasKey = hasKey
 end
 
-function Character:GetCharacterHasKey(bnet, fullName)
+function Character:GetCharacterHasKey(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterHasKey: Missing required parameters")
         return false
     end
@@ -404,7 +396,7 @@ function Character:GetCharacterHasKey(bnet, fullName)
     end
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData then
         return false
     end
@@ -413,9 +405,9 @@ function Character:GetCharacterHasKey(bnet, fullName)
     return customData.hasKey or false
 end
 
-function Character:SetCharacterIsHidden(bnet, fullName, isHidden)
+function Character:SetCharacterIsHidden(uid, fullName, isHidden)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterIsHidden: Missing required parameters")
         return
     end
@@ -433,7 +425,7 @@ function Character:SetCharacterIsHidden(bnet, fullName, isHidden)
     end
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData then
         return
     end
@@ -442,9 +434,9 @@ function Character:SetCharacterIsHidden(bnet, fullName, isHidden)
     customData.isHidden = isHidden
 end
 
-function Character:GetCharacterIsHidden(bnet, fullName)
+function Character:GetCharacterIsHidden(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterIsHidden: Missing required parameters")
         return false
     end
@@ -455,7 +447,7 @@ function Character:GetCharacterIsHidden(bnet, fullName)
     end
 
     -- Get custom data
-    local customData = GetOrCreateCharacterCustomData(bnet, fullName)
+    local customData = GetOrCreateCharacterCustomData(uid, fullName)
     if not customData then
         return false
     end
@@ -464,9 +456,9 @@ function Character:GetCharacterIsHidden(bnet, fullName)
     return customData.isHidden or false
 end
 
-function Character:GetCharacterKeystone(bnet, fullName)
+function Character:GetCharacterKeystone(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterKeystone: Missing required parameters")
         return nil
     end
@@ -477,7 +469,7 @@ function Character:GetCharacterKeystone(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character or not character.keystone then
         return nil
     end
@@ -491,9 +483,9 @@ function Character:GetCharacterKeystone(bnet, fullName)
     return keystone
 end
 
-function Character:SetCharacterKeystone(bnet, fullName, keystone)
+function Character:SetCharacterKeystone(uid, fullName, keystone)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterKeystone: Missing required parameters")
         return
     end
@@ -511,7 +503,7 @@ function Character:SetCharacterKeystone(bnet, fullName, keystone)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -524,9 +516,9 @@ function Character:SetCharacterKeystone(bnet, fullName, keystone)
     }
 end
 
-function Character:GetCharacterRating(bnet, fullName)
+function Character:GetCharacterRating(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterRating: Missing required parameters")
         return 0
     end
@@ -537,7 +529,7 @@ function Character:GetCharacterRating(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return 0
     end
@@ -546,9 +538,9 @@ function Character:GetCharacterRating(bnet, fullName)
     return character.rating or 0
 end
 
-function Character:SetCharacterRating(bnet, fullName, rating)
+function Character:SetCharacterRating(uid, fullName, rating)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterRating: Missing required parameters")
         return
     end
@@ -566,7 +558,7 @@ function Character:SetCharacterRating(bnet, fullName, rating)
     end
 
     -- Get character data and update rating
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if character then
         character.rating = rating
     end
@@ -585,7 +577,7 @@ function Character:GetCharacterClassId(uid, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(uid, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return 0
     end
@@ -594,9 +586,9 @@ function Character:GetCharacterClassId(uid, fullName)
     return character.classId or 0
 end
 
-function Character:SetCharacterClassId(bnet, fullName, classId)
+function Character:SetCharacterClassId(uid, fullName, classId)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterClassId: Missing required parameters")
         return
     end
@@ -614,7 +606,7 @@ function Character:SetCharacterClassId(bnet, fullName, classId)
     end
 
     -- Get character data and update classId
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -623,9 +615,9 @@ function Character:SetCharacterClassId(bnet, fullName, classId)
     character.classId = classId
 end
 
-function Character:GetCharacterSpecId(bnet, fullName)
+function Character:GetCharacterSpecId(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterSpecId: Missing required parameters")
         return 0
     end
@@ -636,7 +628,7 @@ function Character:GetCharacterSpecId(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return 0
     end
@@ -645,9 +637,9 @@ function Character:GetCharacterSpecId(bnet, fullName)
     return character.specId or 0
 end
 
-function Character:SetCharacterSpecId(bnet, fullName, specId)
+function Character:SetCharacterSpecId(uid, fullName, specId)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterSpecId: Missing required parameters")
         return
     end
@@ -665,7 +657,7 @@ function Character:SetCharacterSpecId(bnet, fullName, specId)
     end
 
     -- Get character data and update specId
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -674,9 +666,9 @@ function Character:SetCharacterSpecId(bnet, fullName, specId)
     character.specId = specId
 end
 
-function Character:GetCharacterRole(bnet, fullName)
+function Character:GetCharacterRole(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterRole: Missing required parameters")
         return nil
     end
@@ -687,7 +679,7 @@ function Character:GetCharacterRole(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return nil
     end
@@ -696,9 +688,9 @@ function Character:GetCharacterRole(bnet, fullName)
     return character.role
 end
 
-function Character:SetCharacterRole(bnet, fullName, role)
+function Character:SetCharacterRole(uid, fullName, role)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterRole: Missing required parameters")
         return
     end
@@ -710,7 +702,7 @@ function Character:SetCharacterRole(bnet, fullName, role)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -719,9 +711,9 @@ function Character:SetCharacterRole(bnet, fullName, role)
     character.role = role
 end
 
-function Character:GetCharacterFaction(bnet, fullName)
+function Character:GetCharacterFaction(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterFaction: Missing required parameters")
         return nil
     end
@@ -732,7 +724,7 @@ function Character:GetCharacterFaction(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return nil
     end
@@ -741,9 +733,9 @@ function Character:GetCharacterFaction(bnet, fullName)
     return character.faction
 end
 
-function Character:SetCharacterFaction(bnet, fullName, faction)
+function Character:SetCharacterFaction(uid, fullName, faction)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterFaction: Missing required parameters")
         return
     end
@@ -761,7 +753,7 @@ function Character:SetCharacterFaction(bnet, fullName, faction)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
@@ -770,9 +762,9 @@ function Character:SetCharacterFaction(bnet, fullName, faction)
     character.faction = faction
 end
 
-function Character:GetCharacterIlvl(bnet, fullName)
+function Character:GetCharacterIlvl(uid, fullName)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("GetCharacterIlvl: Missing required parameters")
         return 0
     end
@@ -783,7 +775,7 @@ function Character:GetCharacterIlvl(bnet, fullName)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return 0
     end
@@ -792,9 +784,9 @@ function Character:GetCharacterIlvl(bnet, fullName)
     return character.iLvl or 0
 end
 
-function Character:SetCharacterIlvl(bnet, fullName, ilvl)
+function Character:SetCharacterIlvl(uid, fullName, ilvl)
     -- Validate parameters
-    if not bnet or not fullName then
+    if not uid or not fullName then
         Utils:DebugPrint("SetCharacterIlvl: Missing required parameters")
         return
     end
@@ -812,7 +804,7 @@ function Character:SetCharacterIlvl(bnet, fullName, ilvl)
     end
 
     -- Get character data
-    local character = GetOrCreateCharacterData(bnet, fullName)
+    local character = GetCharacterData(uid, fullName)
     if not character then
         return
     end
