@@ -180,6 +180,19 @@ function Character:GetFullName(unit)
     return name .. "-" .. realm
 end
 
+function Character:GetSparksData(uid, fullName)
+    -- Validate parameters
+    if not uid or not fullName then
+        Utils:DebugPrint("GetCharacterSparks: Missing required parameters")
+        return 0
+    end
+    local character = GetCharacterData(uid, fullName)
+    if not character or character.sparks == nil then
+        return 0
+    end
+    return character.sparks
+end
+
 function Character:BuildCurrentCharacter(uid, fullName)
     if not uid or not fullName then
         Utils:DebugPrint("BuildCurrentCharacter: Missing required parameters")
@@ -233,8 +246,14 @@ function Character:BuildCurrentCharacter(uid, fullName)
         charData.weeklies = {}
     end
 
+    -- Save spark data
+    local sparks = C_CurrencyInfo.GetCurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(3132)
+    if sparks then
+        charData.sparks = sparks.quantity
+    end
+
     -- Save character data and keystone information
-    self:SetCharacterData(uid, fullName, charData, true)
+    self:SetCharacterData(uid, fullName, charData)
     self:SetCharacterKeystone(uid, fullName, GetKeystone())
 end
 
