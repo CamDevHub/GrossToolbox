@@ -9,15 +9,13 @@ Dawn.currentHoveredDungeon = nil
 Dawn.originalKeysText = nil
 Dawn.moduleName = "Dawn"
 
-local db
 local addon, Character, Player, Data, Utils, Config, GrossFrame
 
-function Dawn:Init(database, frame)
+function Dawn:Init(database)
     if not database then
         print(addonName .. ": Dawn module initialization failed - missing database")
         return false
     end
-    db = database
     addon = GT.addon
     if not addon then
         print(addonName .. ": Dawn module initialization failed - addon reference not found")

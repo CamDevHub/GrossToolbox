@@ -1,9 +1,9 @@
 local GT = _G.GT
 local Dawn = GT.Modules.Dawn
 local addon = GT.addon
-local db = addon and addon.db
 local Player = GT.Modules.Player
 local Character = GT.Modules.Character
+local Config = GT.Config
 local Utils = GT.Modules.Utils
 local AceSerializer = LibStub("AceSerializer-3.0")
 local addonName = GT.addonName or "GrossToolbox"
@@ -12,10 +12,11 @@ function Dawn:SendCharacterData()
     local uid = addon:GetUID()
     if not uid then return end
     local characters = Player:GetCharactersForPlayer(uid)
-    if not characters or not db.global.config.discordTag then return end
+    local discordTag = Config:GetDiscordTag()
+    if not characters or not discordTag then return end
     local payload = {
         uid = uid,
-        discordTag = db.global.config.discordTag,
+        discordTag = discordTag,
         characters = {}
     }
     for charName, charData in pairs(characters) do
