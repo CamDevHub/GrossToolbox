@@ -22,7 +22,7 @@ function Dawn:SendCharacterData()
         if type(charData) == "table" then
             payload.characters[charName] = {}
             for key, value in pairs(charData) do
-                if key ~= "custom" and key ~= "weeklies" then
+                if key ~= "custom" and key ~= "weekly" then
                     payload.characters[charName][key] = value
                 end
             end

@@ -226,25 +226,40 @@ function Character:BuildCurrentCharacter(uid, fullName)
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-    -- Get Mythic+ run history
+    -- Get Mythic+ run history (Dungeons)
     C_MythicPlus.RequestMapInfo()
     local runs = C_MythicPlus.GetRunHistory(false, true)
-
-    -- Process run history data
+    local dungeonWeeklies = {}
     if runs and #runs > 0 then
         table.sort(runs, function(a, b)
             return a.level > b.level
         end)
-
-        -- Store top runs (up to 8)
-        local topRuns = {}
         for i = 1, math.min(8, #runs) do
-            topRuns[i] = runs[i]
+            dungeonWeeklies[i] = runs[i]
         end
-        charData.weeklies = topRuns
-    else
-        charData.weeklies = {}
     end
+
+    -- Get Raid weekly progress
+    local raidWeeklies = {}
+    if C_WeeklyRewards and C_WeeklyRewards.GetActivities then
+        local activities = C_WeeklyRewards.GetActivities(3) -- 3 = Raid
+        if activities then
+            for _, activity in ipairs(activities) do
+                table.insert(raidWeeklies, {
+                    threshold = activity.threshold,
+                    progress = activity.progress,
+                    level = activity.level, -- 14=Normal, 15=Heroic, 16=Mythic
+                    unlocked = activity.progress >= activity.threshold,
+                })
+            end
+        end
+    end
+
+    -- Save new weekly structure
+    charData.weekly = {
+        dungeons = dungeonWeeklies,
+        raid = raidWeeklies
+    }
 
     -- Save spark data
     local sparks = C_CurrencyInfo.GetCurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(3132)
@@ -270,20 +285,55 @@ function Character:GetWeeklyData(uid, fullName)
     end
 
     -- Initialize results
-    local weeklies = {}
+    local weekly = {
+        dungeons = {},
+        raid = {}
+    }
 
     -- Get character data
     local character = GetCharacterData(uid, fullName)
-    if not character or not character.weeklies then
-        return weeklies
+    if not character or not character.weekly then
+        return weekly
     end
-
     -- Copy weekly data with fallback values
-    for i = 1, 8 do
-        weeklies[i] = character.weeklies[i] or { level = 0 }
+    if character.weekly.dungeons then
+        for i = 1, #character.weekly.dungeons do
+            weekly.dungeons[i] = character.weekly.dungeons[i] or {}
+        end
     end
 
-    return weeklies
+    -- Copy raid data with fallback values
+    if character.weekly.raid then
+        for i = 1, #character.weekly.raid do
+            weekly.raid[i] = character.weekly.raid[i] or { threshold = 0, progress = 0 }
+        end
+    end
+
+    return weekly
+end
+
+function Character:GetWeeklyDungeons(uid, fullName)
+    if not uid or not fullName then
+        Utils:DebugPrint("GetWeeklyDungeons: Missing required parameters")
+        return {}
+    end
+    local character = GetCharacterData(uid, fullName)
+    if not character or not character.weekly or not character.weekly.dungeons then
+        return {}
+    end
+    return character.weekly.dungeons
+end
+
+function Character:GetWeeklyRaid(uid, fullName)
+    if not uid or not fullName then
+        Utils:DebugPrint("GetWeeklyRaid: Missing required parameters")
+        return {}
+    end
+    local character = GetCharacterData(uid, fullName)
+    if not character or not character.weekly or not character.weekly.raid then
+        return {}
+    end
+    return character.weekly.raid
 end
 
 function Character:SetCharacterData(uid, fullName, dataTable)
