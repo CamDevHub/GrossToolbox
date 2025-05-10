@@ -110,20 +110,89 @@ function Weekly:DrawFrame(container)
 
   local keysHeader = AceGUI:Create("Label")
   keysHeader:SetText("Keys")
-  keysHeader:SetWidth(100)
+  keysHeader:SetWidth(120)
   keysHeader:SetFontObject(GameFontNormalHuge)
   keysHeader:SetJustifyH("CENTER")
   weeklyTable:AddChild(keysHeader)
 
   local sparksHeader = AceGUI:Create("Label")
   sparksHeader:SetText("Sparks")
-  sparksHeader:SetWidth(100)
+  sparksHeader:SetWidth(120)
   sparksHeader:SetFontObject(GameFontNormalHuge)
   sparksHeader:SetJustifyH("CENTER")
   weeklyTable:AddChild(sparksHeader)
 
   weeklyTabContainer:AddChild(weeklyTable)
   container.weekly.weeklyScroll = weeklyTabContainer
+end
+
+local function CreateSparksLabel(nbSparks, maxSparks)
+  local label = AceGUI:Create("Label")
+  label:SetWidth(120)
+  label:SetFontObject(GameFontNormal)
+  label:SetJustifyH("CENTER")
+  label:SetText(tostring(nbSparks) .. "/" .. tostring(maxSparks))
+  return label
+end
+
+local function CreateVaultLabel(count, threshold, weeklies)
+  local vaultLabel = AceGUI:Create("InteractiveLabel")
+  vaultLabel:SetWidth(40)
+  vaultLabel:SetFontObject(GameFontNormal)
+  vaultLabel:SetJustifyH("CENTER")
+  vaultLabel:SetText(string.format("%d/%d", count, threshold))
+  if count < threshold then
+    vaultLabel:SetColor(1, 0, 0) -- Red
+  else
+    vaultLabel:SetColor(0, 1, 0) -- Green
+  end
+  vaultLabel:SetCallback("OnEnter", function(widget)
+    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+    GameTooltip:ClearLines()
+    GameTooltip:AddLine("Weekly Key Levels:")
+    for k = 1, 8 do
+      local level = weeklies[k].level or 0
+      GameTooltip:AddLine(string.format("Key %d: %d", k, level), 1, 1, 1)
+    end
+    GameTooltip:Show()
+  end)
+  vaultLabel:SetCallback("OnLeave", function(widget)
+    GameTooltip:Hide()
+  end)
+  return vaultLabel
+end
+
+local function AddCharacterWeeklyRow(container, uid, fullName)
+  local characterFrame = AceGUI:Create("SimpleGroup")
+  characterFrame:SetLayout("Flow")
+  characterFrame:SetFullWidth(true)
+  characterFrame:SetHeight(40)
+  characterFrame:SetAutoAdjustHeight(false)
+
+  local nameLabel = AceGUI:Create("Label")
+  nameLabel:SetText(fullName)
+  nameLabel:SetWidth(200)
+  nameLabel:SetFontObject(GameFontNormal)
+  characterFrame:AddChild(nameLabel)
+
+  local weeklies = Character:GetWeeklyData(uid, fullName)
+  local nbSparks = Character:GetSparksData(uid, fullName)
+
+  -- Vault thresholds: 1, 4, 8
+  for i, threshold in ipairs({1, 4, 8}) do
+    local count = 0
+    for j = 1, threshold do
+      local level = weeklies[j] and weeklies[j].level or 0
+      if level >= 10 then count = count + 1 end
+    end
+    local vaultLabel = CreateVaultLabel(count, threshold, weeklies)
+    characterFrame:AddChild(vaultLabel)
+  end
+
+  local sparksLabel = CreateSparksLabel(nbSparks, Weekly:GetSparkData())
+  characterFrame:AddChild(sparksLabel)
+
+  container.weekly.weeklyScroll:AddChild(characterFrame)
 end
 
 function Weekly:PopulateFrame(container)
@@ -138,74 +207,7 @@ function Weekly:PopulateFrame(container)
   if not charactersName then return end
 
   for _, fullName in pairs(charactersName) do
-    local characterFrame = AceGUI:Create("SimpleGroup")
-    characterFrame:SetLayout("Flow")
-    characterFrame:SetFullWidth(true)
-    characterFrame:SetHeight(40)
-    characterFrame:SetAutoAdjustHeight(false)
-
-    local nameLabel = AceGUI:Create("Label")
-    nameLabel:SetText(fullName)
-    nameLabel:SetWidth(200)
-    nameLabel:SetFontObject(GameFontNormal)
-    characterFrame:AddChild(nameLabel)
-
-    local weeklies = Character:GetWeeklyData(uid, fullName)
-    local nbSparks = Character:GetSparksData(uid, fullName)
-    -- Calculate weekly summary
-    local weeklyDone = 0
-    local hasBelow8 = false
-    local allAtLeast10 = true
-    for i = 1, 8 do
-      local level = weeklies[i].level or 0
-      if level >= 10 then
-        weeklyDone = weeklyDone + 1
-      end
-      if level < 8 then
-        hasBelow8 = true
-      end
-      if level < 10 then
-        allAtLeast10 = false
-      end
-    end
-
-    local weeklyLabel = AceGUI:Create("InteractiveLabel")
-    weeklyLabel:SetWidth(100)
-    weeklyLabel:SetFontObject(GameFontNormal)
-    weeklyLabel:SetJustifyH("CENTER")
-    weeklyLabel:SetText(string.format("%d / 8", weeklyDone))
-    if weeklyDone < 8 then
-      weeklyLabel:SetColor(1, 0, 0) -- Red
-    elseif hasBelow8 then
-      weeklyLabel:SetColor(1, 0.5, 0) -- Orange
-    elseif allAtLeast10 then
-      weeklyLabel:SetColor(0, 1, 0) -- Green
-    end
-    -- Tooltip for weekly levels
-    weeklyLabel:SetCallback("OnEnter", function(widget)
-      GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-      GameTooltip:ClearLines()
-      GameTooltip:AddLine("Weekly Key Levels:")
-      for i = 1, 8 do
-        local level = weeklies[i].level or 0
-        GameTooltip:AddLine(string.format("Key %d: %d", i, level), 1, 1, 1)
-      end
-      GameTooltip:Show()
-    end)
-    weeklyLabel:SetCallback("OnLeave", function(widget)
-      GameTooltip:Hide()
-    end)
-    characterFrame:AddChild(weeklyLabel)
-
-    -- Add sparks label (no coloring)
-    local sparksLabel = AceGUI:Create("Label")
-    sparksLabel:SetWidth(100)
-    sparksLabel:SetFontObject(GameFontNormal)
-    sparksLabel:SetJustifyH("CENTER")
-    sparksLabel:SetText(tostring(nbSparks) .. "/" .. self:GetSparkData())
-    characterFrame:AddChild(sparksLabel)
-
-    container.weekly.weeklyScroll:AddChild(characterFrame)
+    AddCharacterWeeklyRow(container, uid, fullName)
   end
 
   -- Final layout update
