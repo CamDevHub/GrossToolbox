@@ -75,7 +75,7 @@ function Utils:GetClassColorFromID(classId)
     local className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
     if className then
         -- Get class color from WoW's built-in color table
-        local colorInfo = RAID_CLASS_COLORS[className:upper()]
+        local colorInfo = RAID_CLASS_COLORS[className:upper():gsub("%s+", "")]
         if colorInfo then
             classColor = string.format("|cFF%02x%02x%02x",
                 colorInfo.r * 255,
