@@ -8,6 +8,7 @@ local Data = GT.Modules.Data
 local Config = GT.Modules.Config
 local AceGUI = LibStub("AceGUI-3.0")
 
+local dawnContainer
 function Dawn:PopulateDawnFrame(container)
     self:PopulateSignupFrame(container)
     self:PopulateKeyListFrame(container)
@@ -20,6 +21,7 @@ function Dawn:DrawSignupFrame(container)
     if not container.signup then
         container.signup = {}
     end
+    self.dawnContainer = container
     -- === Tab 1: Data (Players) ===
     local dataTabContainer = AceGUI:Create("SimpleGroup")
     dataTabContainer:SetLayout("Flow")
@@ -55,9 +57,6 @@ function Dawn:DrawSignupFrame(container)
     requestButton:SetWidth(200)
     requestButton:SetCallback("OnClick", function ()
         Dawn:RequestData()
-        C_Timer.After(3, function()
-            Dawn:PopulateDawnFrame(container)
-        end)
     end)
     dataTabContainer:AddChild(requestButton)
 
