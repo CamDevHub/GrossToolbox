@@ -11,25 +11,27 @@ local AceGUI = LibStub("AceGUI-3.0")
 function Dawn:DrawPlayerEditorFrame(container)
     if not container then return end
 
-    if not container.signup then
-        container.signup = {}
+    if not container.editor then
+        container.editor = {}
     end
     -- === Tab 2: Player Editor ===
     local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
+    playerEditorTabContainer:SetFullWidth(true)
     playerEditorTabContainer:SetLayout("Flow")
     container:AddChild(playerEditorTabContainer)
-    container.signup.playerEditorScroll = playerEditorTabContainer
+    container.editor.playerEditorScroll = playerEditorTabContainer
 end
 
 function Dawn:PopulatePlayerEditorFrame(container)
-    if not container or not container.signup or not container.signup.playerEditorScroll then
+    if not container or not container.editor or not container.editor.playerEditorScroll then
         return
     end
     local uids = self:GetPartyUIDs()
     if not uids or next(uids) == nil then
         return
     end
-    local scroll = container.signup.playerEditorScroll
+    
+    local scroll = container.editor.playerEditorScroll
     scroll:ReleaseChildren()
     scroll:SetScroll(0)
     for _, uid in ipairs(uids) do

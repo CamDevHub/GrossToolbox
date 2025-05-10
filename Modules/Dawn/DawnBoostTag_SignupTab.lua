@@ -23,6 +23,7 @@ function Dawn:DrawSignupFrame(container)
     -- === Tab 1: Data (Players) ===
     local dataTabContainer = AceGUI:Create("SimpleGroup")
     dataTabContainer:SetLayout("Flow")
+    dataTabContainer:SetFullWidth(true)
     dataTabContainer:SetAutoAdjustHeight(false)
     container:AddChild(dataTabContainer)
 
@@ -69,19 +70,6 @@ function Dawn:DrawSignupFrame(container)
     dataTabContainer:AddChild(teamTakeCheckbox)
     dataTabContainer:DoLayout()
     container.signup.teamTakeCheckbox = teamTakeCheckbox
-end
-
-function Dawn:DrawPlayerEditorFrame(container)
-    if not container then return end
-
-    if not container.signup then
-        container.signup = {}
-    end
-    -- === Tab 2: Player Editor ===
-    local playerEditorTabContainer = AceGUI:Create("ScrollFrame")
-    playerEditorTabContainer:SetLayout("Flow")
-    container:AddChild(playerEditorTabContainer)
-    container.signup.playerEditorScroll = playerEditorTabContainer
 end
 
 function Dawn:PopulateSignupFrame(container)

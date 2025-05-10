@@ -53,25 +53,41 @@ function Dawn:Init(database, frame)
         print(addonName .. ": Dawn module initialization failed - GrossFrame module not found")
         return false
     end
-    -- Register UI tabs (draw/populate logic is in tab modules)
-    local signupTab = {
-        text = "Signup",
-        value = "signup",
-        drawFunc = function(container) Dawn:DrawSignupFrame(container) end,
-        populateFunc = function(container) Dawn:PopulateDawnFrame(container) end,
+    -- Register only one main tab container for Dawn
+    local dawnTab = {
+        text = "Dawn",
+        value = "dawn",
+        drawFunc = function(container) Dawn:DrawTabContainer(container) end,
+        populateFunc = function(container) end,
         module = Dawn
     }
-    local playerEditorTab = {
-        text = "Player Editor",
-        value = "playerEditor",
-        drawFunc = function(container) Dawn:DrawPlayerEditorFrame(container) end,
-        populateFunc = function(container) Dawn:PopulatePlayerEditorFrame(container) end,
-        module = Dawn
-    }
-    GrossFrame:RegisterTab(playerEditorTab)
-    GrossFrame:RegisterTab(signupTab)
+    GrossFrame:RegisterTab(dawnTab)
     Utils:DebugPrint("Dawn module initialized successfully")
     return true
+end
+
+function Dawn:DrawTabContainer(container)
+    -- This will create a TabGroup and add the Signup and Player Editor tabs inside it
+    local AceGUI = LibStub("AceGUI-3.0")
+    container:ReleaseChildren()
+    local tabGroup = AceGUI:Create("TabGroup")
+    tabGroup:SetFullWidth(true)
+    tabGroup:SetTabs({
+        { text = "Signup", value = "signup" },
+        { text = "Player Editor", value = "playerEditor" },
+    })
+    tabGroup:SetCallback("OnGroupSelected", function(widget, event, group)
+        widget:ReleaseChildren()
+        if group == "signup" then
+            Dawn:DrawSignupFrame(widget)
+            Dawn:PopulateDawnFrame(widget)
+        elseif group == "playerEditor" then
+            Dawn:DrawPlayerEditorFrame(widget)
+            Dawn:PopulatePlayerEditorFrame(widget)
+        end
+    end)
+    tabGroup:SelectTab("signup")
+    container:AddChild(tabGroup)
 end
 
 function Dawn:GetPartyUIDs()
