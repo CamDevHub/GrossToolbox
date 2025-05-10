@@ -1,18 +1,13 @@
 local GT = _G.GT
 local Dawn = GT.Modules.Dawn
-local addon = GT.addon
-local Player = GT.Modules.Player
-local Character = GT.Modules.Character
-local Config = GT.Config
-local Utils = GT.Modules.Utils
 local AceSerializer = LibStub("AceSerializer-3.0")
 local addonName = GT.addonName or "GrossToolbox"
 
 function Dawn:SendCharacterData()
-    local uid = addon:GetUID()
+    local uid = GT.addon:GetUID()
     if not uid then return end
-    local characters = Player:GetCharactersForPlayer(uid)
-    local discordTag = Config:GetDiscordTag()
+    local characters = GT.Modules.Player:GetCharactersForPlayer(uid)
+    local discordTag = GT.Modules.Config:GetDiscordTag()
     if not characters or not discordTag then return end
     local payload = {
         uid = uid,
@@ -44,7 +39,7 @@ function Dawn:RequestData()
         LibStub("AceComm-3.0"):SendCommMessage(GT.COMM_PREFIX, GT.headers.request, channel)
         print(addonName, ": Requesting data from party members...")
     else
-        Utils:DebugPrint(addonName, ": You must be in a party to request data.")
+        GT.Modules.Utils:DebugPrint(addonName, ": You must be in a party to request data.")
     end
 end
 
@@ -54,24 +49,24 @@ function Dawn:ProcessPlayerData(message, sender)
         print(addonName, ": Invalid or malformed data from", sender)
         return
     end
-    local localUID = addon:GetUID()
-    Utils:DebugPrint("localUID: " .. localUID)
+    local localUID = GT.addon:GetUID()
+    GT.Modules.Utils:DebugPrint("localUID: " .. localUID)
     local uid = data.uid
     if not data.uid then
-        Utils:DebugPrint("ProcessUIDData: Missing UID in data from " .. sender)
+        GT.Modules.Utils:DebugPrint("ProcessUIDData: Missing UID in data from " .. sender)
         return
     end
     local incomingChars = data.characters
     local senderDiscordTag = data.discordTag or ""
-    local localPlayerEntry = Player:GetOrCreatePlayerData(uid)
+    local localPlayerEntry = GT.Modules.Player:GetOrCreatePlayerData(uid)
     localPlayerEntry.discordTag = senderDiscordTag
     if localUID ~= uid and type(incomingChars) == "table" then
         print(addonName, ": Processing data from", sender, "for UID:", uid)
         self:addUID(uid)
-        Player:DeleteCharactersForPlayer(uid)
+        GT.Modules.Player:DeleteCharactersForPlayer(uid)
         for charName, charData in pairs(incomingChars) do
             if type(charData) == "table" then
-                Character:SetCharacterData(uid, charName, charData)
+                GT.Modules.Character:SetCharacterData(uid, charName, charData)
             end
         end
     end
@@ -82,7 +77,7 @@ end
 
 function Dawn:OnCommReceived(_, message, _, sender)
     if type(message) ~= "string" or UnitIsUnit("player", sender) then return end
-    Utils:DebugPrint("OnCommReceived: Received message from " .. sender)
+    GT.Modules.Utils:DebugPrint("OnCommReceived: Received message from " .. sender)
     if message == GT.headers.request then
         self:SendCharacterData()
     elseif string.sub(message, 1, 10) == GT.headers.player then
