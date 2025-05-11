@@ -2,9 +2,10 @@
 ## Title: Gross Toolbox
 ## Notes: Toolbox for personnal use
 ## Author: Grosstartine
-## Version: 3.3.6
+## Version: 3.7.0
 ## SavedVariables: GrossToolboxDB
 
+## Libraries
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\AceAddon-3.0\AceAddon-3.0.xml
@@ -21,6 +22,7 @@ Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
 AceGUIWidget-DungeonIcon.lua
 
+## Core
 init.lua
 Core\Data.lua
 Core\Utils.lua
@@ -29,8 +31,12 @@ Core\Character.lua
 Core\Config.lua
 Localization.lua
 GrossToolbox.lua
+
+## Modules
 Modules\GrossFrame.lua
 Modules\Weekly.lua
+
+## Dawn Module
 Modules\Dawn\DawnBoostTag.lua
 Modules\Dawn\DawnBoostTag_Comm.lua
 Modules\Dawn\DawnBoostTag_SignupTab.lua
