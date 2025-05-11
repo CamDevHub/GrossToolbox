@@ -1,11 +1,11 @@
 ## Interface: 110100, 110105
 ## Title: Gross Toolbox
-## Notes: Toolbox for personnal use
+## Notes: Toolbox for personal use
 ## Author: Grosstartine
 ## Version: 3.7.0
 ## SavedVariables: GrossToolboxDB
 
-## Libraries
+# --- Libraries ---
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\AceAddon-3.0\AceAddon-3.0.xml
@@ -20,23 +20,28 @@ Libs\AceHook-3.0\AceHook-3.0.xml
 Libs\AceSerializer-3.0\AceSerializer-3.0.xml
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
+# --- Custom AceGUI Widgets ---
 AceGUIWidget-DungeonIcon.lua
 
-## Core
+# --- Core ---
 init.lua
 Core\Data.lua
 Core\Utils.lua
 Core\Player.lua
 Core\Character.lua
 Core\Config.lua
+
+# --- Localization ---
 Localization.lua
+
+# --- Main Addon Logic ---
 GrossToolbox.lua
 
-## Modules
+# --- Modules ---
 Modules\GrossFrame.lua
 Modules\Weekly.lua
 
-## Dawn Module
+# --- Dawn Module ---
 Modules\Dawn\DawnBoostTag.lua
 Modules\Dawn\DawnBoostTag_Comm.lua
 Modules\Dawn\DawnBoostTag_SignupTab.lua
