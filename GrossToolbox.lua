@@ -31,13 +31,13 @@ function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
     -- Get Utils for debug logging
-    Utils = GT.Modules.Utils
+    Utils = GT.Core.Utils
     if not Utils then
         print(addonName .. ": Critical error - Utils module not found")
         return
     end
 
-    Config = GT.Modules.Config
+    Config = GT.Core.Config
     if not Config then
         print(addonName .. ": Critical error - Config module not found")
         return
@@ -46,7 +46,7 @@ function addon:OnInitialize()
         LibStub("AceConfigDialog-3.0"):SetDefaultSize(addonName, 600, 500)
     end
 
-    Character = GT.Modules.Character
+    Character = GT.Core.Character
     if not Character then
         print(addonName .. ": Critical error - Character module not found")
         return
@@ -54,7 +54,7 @@ function addon:OnInitialize()
         Character:Init(self.db)
     end
 
-    Player = GT.Modules.Player
+    Player = GT.Core.Player
     if not Player then
         print(addonName .. ": Critical error - Player module not found")
         return

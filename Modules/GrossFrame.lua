@@ -11,8 +11,8 @@ local mainFrame = nil
 
 local Utils, Config
 function GrossFrame:Init()
-    Utils = GT.Modules.Utils
-    Config = GT.Modules.Config
+    Utils = GT.Core.Utils
+    Config = GT.Core.Config
 
     Utils:DebugPrint("GrossFrame module initialized successfully")
     return true

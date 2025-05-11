@@ -6,10 +6,10 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 local Player, Character, Utils, Data
 function Dawn:InitPlayerEditorTab()
-    Player = GT.Modules.Player
-    Character = GT.Modules.Character
-    Utils = GT.Modules.Utils
-    Data = GT.Modules.Data
+    Player = GT.Core.Player
+    Character = GT.Core.Character
+    Utils = GT.Core.Utils
+    Data = GT.Core.Data
 end
 
 function Dawn:DrawPlayerEditorFrame(container)

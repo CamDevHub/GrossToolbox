@@ -12,8 +12,8 @@ local addon, Utils, Player, GrossFrame
 function Dawn:Init()
 
     addon = GT.addon
-    Utils = GT.Modules.Utils
-    Player = GT.Modules.Player
+    Utils = GT.Core.Utils
+    Player = GT.Core.Player
     GrossFrame = GT.Modules.GrossFrame
     -- Register only one main tab container for Dawn
     local dawnTab = {

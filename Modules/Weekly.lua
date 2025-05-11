@@ -14,9 +14,9 @@ local addon, Utils, GrossFrame, Character, Player
 function Weekly:Init()
 
   addon = GT.addon
-  Utils = GT.Modules.Utils
-  Character = GT.Modules.Character
-  Player = GT.Modules.Player
+  Utils = GT.Core.Utils
+  Character = GT.Core.Character
+  Player = GT.Core.Player
   GrossFrame = GT.Modules.GrossFrame
 
   -- Register UI tab

@@ -1,7 +1,7 @@
 local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 local Utils = {}
-GT.Modules.Utils = Utils
+GT.Core.Utils = Utils
 
 -- Define module name for initialization logging
 Utils.moduleName = "Utils"
@@ -72,7 +72,7 @@ function Utils:GetClassColorFromID(classId)
     end
     
     -- Get class name from ID
-    local className = GT.Modules.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
+    local className = GT.Core.Data.CLASS_ID_TO_ENGLISH_NAME[classId]
     if className then
         -- Get class color from WoW's built-in color table
         local colorInfo = RAID_CLASS_COLORS[className:upper():gsub("%s+", "")]

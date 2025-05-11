@@ -5,11 +5,11 @@ local AceGUI = LibStub("AceGUI-3.0")
 local addon, Utils, Player, Character, Data, Config
 function Dawn:InitSignupTab()
     addon = GT.addon
-    Utils = GT.Modules.Utils
-    Player = GT.Modules.Player
-    Character = GT.Modules.Character
-    Data = GT.Modules.Data
-    Config = GT.Modules.Config
+    Utils = GT.Core.Utils
+    Player = GT.Core.Player
+    Character = GT.Core.Character
+    Data = GT.Core.Data
+    Config = GT.Core.Config
 end
 
 function Dawn:PopulateDawnFrame(container)

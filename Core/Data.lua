@@ -1,7 +1,7 @@
 local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 local Data = {}
-GT.Modules.Data = Data
+GT.Core.Data = Data
 
 local factionGroup = UnitFactionGroup("player")
 GT.headers = {

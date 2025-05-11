@@ -1,7 +1,7 @@
 local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 local Config = {}
-GT.Modules.Config = Config
+GT.Core.Config = Config
 
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
@@ -35,14 +35,14 @@ function Config:Init(database)
         return false
     end
     
-    Utils = GT.Modules.Utils
+    Utils = GT.Core.Utils
     if not Utils then
         print(addonName .. ": Config module initialization failed - Utils module not found")
         return false
     end
 
     -- Load Utils module if available
-    Player = GT.Modules.Player
+    Player = GT.Core.Player
     if not Player then
         print(addonName .. ": Config module initialization failed - Player module not found")
         return false
@@ -276,7 +276,7 @@ function Config:SetupOptions()
                 desc = "Completely wipes all stored GrossToolbox data.",
                 func = function()
                     db:ResetDB(true)
-                    local CharInfo = GT.Modules and GT.Modules.CharacterInfo
+                    local CharInfo = GT.Modules and GT.Core.CharacterInfo
                     if CharInfo and CharInfo.displayFrame and CharInfo.displayFrame:IsShown() then
                         CharInfo:PopulateDisplayFrame()
                     end

@@ -5,10 +5,10 @@ local addonName = GT.addonName or "GrossToolbox"
 
 local Config, Utils, Player, Character
 function Dawn:InitComm()
-    Config = GT.Modules.Config
-    Utils = GT.Modules.Utils
-    Player = GT.Modules.Player
-    Character = GT.Modules.Character
+    Config = GT.Core.Config
+    Utils = GT.Core.Utils
+    Player = GT.Core.Player
+    Character = GT.Core.Character
 end
 
 function Dawn:SendCharacterData()

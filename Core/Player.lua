@@ -2,7 +2,7 @@ local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 
 local Player = {}
-GT.Modules.Player = Player
+GT.Core.Player = Player
 
 -- Define module name for initialization logging
 Player.moduleName = "Player"
@@ -21,7 +21,7 @@ function Player:Init(database)
 	db = database
 
 	-- Load Utils module
-	Utils = GT.Modules.Utils
+	Utils = GT.Core.Utils
 
 	-- Initialize database structure if needed
 	if not db.global then

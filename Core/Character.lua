@@ -2,7 +2,7 @@ local GT = _G.GT
 local addonName = GT.addonName or "GrossToolbox"
 
 local Character = {}
-GT.Modules.Character = Character
+GT.Core.Character = Character
 
 -- Define module name for initialization logging
 Character.moduleName = "Character"
@@ -20,8 +20,8 @@ function Character:Init(database)
 
     -- Store database reference
     db = database
-    Data = GT.Modules.Data
-    Utils = GT.Modules.Utils
+    Data = GT.Core.Data
+    Utils = GT.Core.Utils
 
     -- Initialize database structure if needed
     if not db.global then
