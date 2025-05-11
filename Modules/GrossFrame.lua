@@ -48,9 +48,22 @@ function GrossFrame:GetOrCreateMainFrame()
 
     local tabs = {}
     local firstTabValue = Config:GetLastOpenedTabValue()
+    -- Sort tabs by 'order' field if present, otherwise by insertion order
+    local sortedTabDefs = {}
     for value, definition in pairs(registeredTabs) do
-        table.insert(tabs, { text = definition.text, value = value })
-        if not firstTabValue or firstTabValue == "" then firstTabValue = value end
+        table.insert(sortedTabDefs, { value = value, definition = definition })
+    end
+    table.sort(sortedTabDefs, function(a, b)
+        local orderA = a.definition.order or 9999
+        local orderB = b.definition.order or 9999
+        if orderA == orderB then
+            return a.value < b.value
+        end
+        return orderA < orderB
+    end)
+    for _, tab in ipairs(sortedTabDefs) do
+        table.insert(tabs, { text = tab.definition.text, value = tab.value })
+        if not firstTabValue or firstTabValue == "" then firstTabValue = tab.value end
     end
 
     tabGroup:SetTabs(tabs)
@@ -66,6 +79,7 @@ function GrossFrame:GetOrCreateMainFrame()
 
             widget:AddChild(containerWidget)
 
+            Utils:DebugPrint("Selected tab: " .. groupValue)
             definition.drawFunc(containerWidget)
             definition.populateFunc(containerWidget)
 

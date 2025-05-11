@@ -26,7 +26,7 @@ local defaults = {
     }
 }
 
-local Utils, Player, Character, GrossFrame, Dawn, Weekly
+local Utils, Player, Character, GrossFrame, Dawn, Weekly, Reminders
 function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
@@ -84,6 +84,14 @@ function addon:OnInitialize()
         return
     else
         Weekly:Init()
+    end
+
+    Reminders = GT.Modules.Reminders
+    if not Reminders then
+        print(addonName .. ": Critical error - Reminders module not found")
+        return
+    else
+        Reminders:Init()
     end
 
     -- Register slash command

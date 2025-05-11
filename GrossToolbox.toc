@@ -46,3 +46,6 @@ Modules\Dawn\DawnBoostTag.lua
 Modules\Dawn\DawnBoostTag_Comm.lua
 Modules\Dawn\DawnBoostTag_SignupTab.lua
 Modules\Dawn\DawnBoostTag_PlayerEditorTab.lua
+
+# --- Reminders Module ---
+Modules\Reminders.lua

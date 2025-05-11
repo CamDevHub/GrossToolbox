@@ -25,7 +25,8 @@ function Weekly:Init()
     value = "weeklyTab",
     drawFunc = function(container) self:DrawFrame(container) end,
     populateFunc = function(container) self:PopulateFrame(container) end,
-    module = Weekly
+    module = Weekly,
+    order = 2
   }
 
   GrossFrame:RegisterTab(signupTab)

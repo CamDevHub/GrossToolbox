@@ -21,7 +21,8 @@ function Dawn:Init()
         value = "dawn",
         drawFunc = function(container) Dawn:DrawTabContainer(container) end,
         populateFunc = function(container) end,
-        module = Dawn
+        module = Dawn,
+        order = 1
     }
     GrossFrame:RegisterTab(dawnTab)
 
