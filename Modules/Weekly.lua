@@ -5,61 +5,19 @@ local Weekly = {}
 GT.Modules.Weekly = Weekly
 
 local AceGUI = LibStub("AceGUI-3.0")
-local AceHook = LibStub("AceHook-3.0")
 
 -- Define module name for initialization logging
 Weekly.moduleName = "Weekly"
 
 -- Define module dependencies
-local db
-local addon, Data, Utils, GrossFrame, Character, Player
-
-function Weekly:Init(database)
-  -- Validate database parameter
-  if not database then
-    print(addonName .. ": Weekly module initialization failed - missing database")
-    return false
-  end
-
-  -- Store database reference
-  db = database
+local addon, Utils, GrossFrame, Character, Player
+function Weekly:Init()
 
   addon = GT.addon
-  if not addon then
-    print(addonName .. ": Weekly module initialization failed - addon not found")
-    return false
-  end
-
-  -- Load required modules
-  Data = GT.Modules.Data
-  if not Data then
-    print(addonName .. ": Weekly module initialization failed - Data module not found")
-    return false
-  end
-
   Utils = GT.Modules.Utils
-  if not Utils then
-    print(addonName .. ": Weekly module initialization failed - Utils module not found")
-    return false
-  end
-
   Character = GT.Modules.Character
-  if not Character then
-    print(addonName .. ": Weekly module initialization failed - Character module not found")
-    return false
-  end
-
   Player = GT.Modules.Player
-  if not Player then
-    print(addonName .. ": Weekly module initialization failed - Player module not found")
-    return false
-  end
-
   GrossFrame = GT.Modules.GrossFrame
-  if not GrossFrame then
-    print(addonName .. ": Weekly module initialization failed - GrossFrame module not found")
-    return false
-  end
 
   -- Register UI tab
   local signupTab = {

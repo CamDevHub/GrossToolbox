@@ -1,12 +1,16 @@
 local GT = _G.GT
 local Dawn = GT.Modules.Dawn
-local Player = GT.Modules.Player
-local Character = GT.Modules.Character
-local Utils = GT.Modules.Utils
-local Data = GT.Modules.Data
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- Player editor tab drawing and logic for DawnBoostTag
+
+local Player, Character, Utils, Data
+function Dawn:InitPlayerEditorTab()
+    Player = GT.Modules.Player
+    Character = GT.Modules.Character
+    Utils = GT.Modules.Utils
+    Data = GT.Modules.Data
+end
 
 function Dawn:DrawPlayerEditorFrame(container)
     if not container then return end

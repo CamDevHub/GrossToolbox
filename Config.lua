@@ -7,10 +7,54 @@ local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
-local Player = GT.Modules.Player
-local addon, Utils
-
 local db
+
+local addon, Utils, Player
+function Config:Init(database)
+    -- Validate database parameter
+    if not database then
+        print(addonName .. ": Config module initialization failed - missing database")
+        return false
+    end
+
+    -- Store database reference
+    db = database
+
+    -- Initialize config structure if needed
+    if not db.global then
+        db.global = {}
+    end
+
+    if not db.global.config then
+        db.global.config = {}
+    end
+
+    addon = GT.addon
+    if not addon then
+        print(addonName .. ": Config module initialization failed - addon not found")
+        return false
+    end
+    
+    Utils = GT.Modules.Utils
+    if not Utils then
+        print(addonName .. ": Config module initialization failed - Utils module not found")
+        return false
+    end
+
+    -- Load Utils module if available
+    Player = GT.Modules.Player
+    if not Player then
+        print(addonName .. ": Config module initialization failed - Player module not found")
+        return false
+    end
+
+    -- Setup options
+    self:SetupOptions()
+
+    Utils:DebugPrint(addonName .. ": Config module initialized successfully")
+    return true
+end
+
 function Config:SetupOptions()
     if not db then
         return
@@ -19,9 +63,11 @@ function Config:SetupOptions()
     -- Initial character list at load time
     local characters = {}
     local selectedChar = nil
+    local selectedPlayer = nil
     local uid = addon:GetUID()
     local options = {
         name = addonName,
+        handler = Config,
         type = "group",
         args = {
             keystoneHeader = {
@@ -146,6 +192,69 @@ function Config:SetupOptions()
                 end,
                 width = 3,
             },
+            -- Player Management Section
+            playerSelect = {
+                order = 65,
+                type = "select",
+                name = "Select Player",
+                desc = "Choose a player (account) to delete",
+                values = function()
+                    local playerDropdown = {}
+                    if db.global.players then
+                        for playerUID, playerData in pairs(db.global.players) do
+                            local displayName = playerUID
+                            if playerData.characters then
+                                local charCount = 0
+                                for _ in pairs(playerData.characters) do charCount = charCount + 1 end
+                                displayName = playerUID .. " (" .. charCount .. " chars)"
+                            end
+                            playerDropdown[playerUID] = displayName
+                        end
+                    end
+                    if not next(playerDropdown) then
+                        playerDropdown[""] = "No players found"
+                    end
+                    return playerDropdown
+                end,
+                get = function() return selectedPlayer end,
+                set = function(_, val) selectedPlayer = val end,
+                width = 1.5,
+            },
+            deletePlayer = {
+                order = 66,
+                type = "execute",
+                name = "Delete Player (All Characters)",
+                desc = "Delete the selected player and all associated characters from the database.",
+                func = function()
+                    if selectedPlayer and selectedPlayer ~= "" then
+                        if db.global.players and db.global.players[selectedPlayer] then
+                            db.global.players[selectedPlayer] = nil
+                            print("|cFFFF0000Player and all characters deleted from GrossToolbox.|r")
+                            selectedPlayer = nil
+                            AceConfigRegistry:NotifyChange(addonName)
+                        end
+                    else
+                        print("|cFFFF0000Please select a player first.|r")
+                    end
+                end,
+                width = 1.5,
+                disabled = function()
+                    return selectedPlayer == nil or selectedPlayer == ""
+                end,
+                confirm = true,
+                confirmText = "Are you sure you want to delete player '" .. (selectedPlayer or "this player") .. "' and ALL their characters? This cannot be undone!"
+            },
+            refreshPlayerList = {
+                order = 67,
+                type = "execute",
+                name = "Refresh Player List",
+                desc = "Refresh the list of available players",
+                func = function()
+                    AceConfigRegistry:NotifyChange(addonName)
+                    print("|cFF00FF00Player list refreshed.|r")
+                end,
+                width = 3,
+            },
 
             -- Danger Zone Header
             resetHeader = {
@@ -174,52 +283,28 @@ function Config:SetupOptions()
                 end,
                 confirm = true,
                 confirmText = "Are you absolutely sure you want to wipe ALL GrossToolbox data? This cannot be undone!"
-            }
+            },
+
+            -- Debug Option (after Danger Zone)
+            debugHeader = {
+                order = 100,
+                type = "header",
+                name = "Debug Options",
+            },
+            debug = {
+                order = 101,
+                name = "Enable Debug Logging",
+                desc = "Toggle debug output in chat.",
+                type = "toggle",
+                get = function() return GT.debug end,
+                set = function(_, val) GT.debug = val end,
+            },
         }
     }
 
     -- Register the options within this module
     AceConfig:RegisterOptionsTable(addonName, options)
     AceConfigDialog:AddToBlizOptions(addonName, addonName)
-end
-
-function Config:Init(database)
-    -- Validate database parameter
-    if not database then
-        print(addonName .. ": Config module initialization failed - missing database")
-        return false
-    end
-
-    -- Store database reference
-    db = database
-
-    -- Initialize config structure if needed
-    if not db.global then
-        db.global = {}
-    end
-
-    if not db.global.config then
-        db.global.config = {}
-    end
-
-    addon = GT.addon
-    if not addon then
-        print(addonName .. ": Config module initialization failed - addon not found")
-        return false
-    end
-    
-    -- Load Utils module if available
-    Utils = GT.Modules.Utils
-    if Utils then
-        Utils:DebugPrint("Config module initialized successfully")
-    else
-        print(addonName .. ": Config module initialized successfully")
-    end
-
-    -- Setup options
-    self:SetupOptions()
-
-    return true
 end
 
 function Config:GetDiscordTag()

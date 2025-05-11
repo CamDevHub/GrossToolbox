@@ -4,12 +4,19 @@ local GrossFrame = {}
 GT.Modules.GrossFrame = GrossFrame
 
 local AceGUI = LibStub("AceGUI-3.0")
-local Utils = GT.Modules.Utils
-local Config = GT.Modules.Config
 
 -- Internal state
 local registeredTabs = {} -- Table to hold tab definitions: { [value] = { text, value, drawFunc, populateFunc, module } }
 local mainFrame = nil
+
+local Utils, Config
+function GrossFrame:Init()
+    Utils = GT.Modules.Utils
+    Config = GT.Modules.Config
+
+    Utils:DebugPrint("GrossFrame module initialized successfully")
+    return true
+end
 
 function GrossFrame:RegisterTab(tabDefinition)
     if type(tabDefinition) == "table" and tabDefinition.value and tabDefinition.text and tabDefinition.drawFunc and type(tabDefinition.drawFunc) == 'function' and tabDefinition.populateFunc and type(tabDefinition.populateFunc) == 'function' then

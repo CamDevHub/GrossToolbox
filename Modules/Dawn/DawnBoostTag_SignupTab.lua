@@ -1,14 +1,17 @@
 local GT = _G.GT
-local addon = GT.addon
 local Dawn = GT.Modules.Dawn
-local Player = GT.Modules.Player
-local Character = GT.Modules.Character
-local Utils = GT.Modules.Utils
-local Data = GT.Modules.Data
-local Config = GT.Modules.Config
 local AceGUI = LibStub("AceGUI-3.0")
 
-local dawnContainer
+local addon, Utils, Player, Character, Data, Config
+function Dawn:InitSignupTab()
+    addon = GT.addon
+    Utils = GT.Modules.Utils
+    Player = GT.Modules.Player
+    Character = GT.Modules.Character
+    Data = GT.Modules.Data
+    Config = GT.Modules.Config
+end
+
 function Dawn:PopulateDawnFrame(container)
     self:PopulateSignupFrame(container)
     self:PopulateKeyListFrame(container)

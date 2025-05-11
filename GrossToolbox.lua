@@ -8,11 +8,6 @@ end
 -- Get Ace libraries using LibStub
 local AceAddon = LibStub:GetLibrary("AceAddon-3.0")
 local AceDB = LibStub:GetLibrary("AceDB-3.0")
-local AceEvent = LibStub:GetLibrary("AceEvent-3.0")
-local AceConsole = LibStub:GetLibrary("AceConsole-3.0")
-local AceComm = LibStub:GetLibrary("AceComm-3.0")
-local AceConfig = LibStub:GetLibrary("AceConfig-3.0")
-local AceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0")
 
 local addon = AceAddon:NewAddon("GrossToolbox", "AceConsole-3.0", "AceEvent-3.0")
 GT.addon = addon
@@ -31,41 +26,64 @@ local defaults = {
     }
 }
 
+local Utils, Player, Character, GrossFrame, Dawn, Weekly
 function addon:OnInitialize()
     self.db = AceDB:New("GrossToolboxDB", defaults)
 
-    -- Define modules to initialize in the correct dependency order
-    local modulesToInitialize = {
-        "Character",
-        "Player",
-        "Config",
-        "Dawn",
-        "Weekly"
-    }
-
     -- Get Utils for debug logging
-    local Utils = GT.Modules.Utils
+    Utils = GT.Modules.Utils
     if not Utils then
         print(addonName .. ": Critical error - Utils module not found")
         return
     end
 
-    -- Now initialize the modules with proper debug logging
-    for i = 1, #modulesToInitialize do
-        local moduleName = modulesToInitialize[i]
-        local module = GT.Modules[moduleName]
-        if module and type(module.Init) == "function" then
-            local success = module:Init(self.db)
-            if not success then
-                Utils:DebugPrint("Warning - " .. moduleName .. " module initialization failed")
-            end
-        else
-            if not module then
-                Utils:DebugPrint("Warning - " .. moduleName .. " module not found")
-            elseif type(module.Init) ~= "function" then
-                Utils:DebugPrint("Warning - " .. moduleName .. " module missing Init function")
-            end
-        end
+    Config = GT.Modules.Config
+    if not Config then
+        print(addonName .. ": Critical error - Config module not found")
+        return
+    else
+        Config:Init(self.db)
+        LibStub("AceConfigDialog-3.0"):SetDefaultSize(addonName, 600, 600)
+    end
+
+    Character = GT.Modules.Character
+    if not Character then
+        print(addonName .. ": Critical error - Character module not found")
+        return
+    else
+        Character:Init(self.db)
+    end
+
+    Player = GT.Modules.Player
+    if not Player then
+        print(addonName .. ": Critical error - Player module not found")
+        return
+    else
+        Player:Init(self.db)
+    end
+
+    GrossFrame = GT.Modules.GrossFrame
+    if not GrossFrame then
+        print(addonName .. ": Critical error - GrossFrame module not found")
+        return
+    else
+        GrossFrame:Init()
+    end
+
+    Dawn = GT.Modules.Dawn
+    if not Dawn then
+        print(addonName .. ": Critical error - Dawn module not found")
+        return
+    else
+        Dawn:Init()
+    end
+
+    Weekly = GT.Modules.Weekly
+    if not Weekly then
+        print(addonName .. ": Critical error - Weekly module not found")
+        return
+    else
+        Weekly:Init()
     end
 
     -- Register slash command
@@ -74,7 +92,6 @@ function addon:OnInitialize()
     -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
-    self:RegisterEvent("GROUP_ROSTER_UPDATE")
 
     Utils:DebugPrint("Initialization complete")
 end
@@ -86,17 +103,9 @@ function addon:PLAYER_ENTERING_WORLD(event, status)
     end)
 end
 
--- Called when GROUP_ROSTER_UPDATE  fires
-function addon:GROUP_ROSTER_UPDATE(event, status)
-    -- Skip processing if player is in a raid
-    if IsInRaid() then
-        return
-    end
-end
-
 -- Called when CHALLENGE_MODE_COMPLETED  fires
 function addon:CHALLENGE_MODE_COMPLETED(event, status)
-    if GT.Modules.Config:GetScreenshotOnMPlusEnd() then
+    if Config:GetScreenshotOnMPlusEnd() then
         C_Timer.After(2, function()
             Screenshot()
             self:UpdateData()
@@ -105,8 +114,8 @@ function addon:CHALLENGE_MODE_COMPLETED(event, status)
 end
 
 local function UpdateCurrentCharacterInfo(uid, fullName)
-    GT.Modules.Player:SetDiscordTag(uid, GT.Modules.Config:GetDiscordTag())
-    GT.Modules.Character:BuildCurrentCharacter(uid, fullName)
+    Player:SetDiscordTag(uid, Config:GetDiscordTag())
+    Character:BuildCurrentCharacter(uid, fullName)
 end
 
 function addon:UpdateData()
@@ -117,10 +126,10 @@ function addon:UpdateData()
         local identifier = playerName .. "-" .. time()
 
         self.db.global.uid = identifier
-        GT.Modules.Utils:DebugPrint("Generated new UID: " .. self.db.global.uid)
+        Utils:DebugPrint("Generated new UID: " .. self.db.global.uid)
     end
 
-    local fullName = GT.Modules.Character:GetFullName("player")
+    local fullName = Character:GetFullName("player")
 
     UpdateCurrentCharacterInfo(self.db.global.uid, fullName)
 end
@@ -144,7 +153,7 @@ function addon:OnEnable()
             tooltip = "GrossToolbox",
             OnClick = function(frame, button)
                 if button == "LeftButton" then
-                    GT.Modules.GrossFrame:ToggleMainFrame()
+                    GrossFrame:ToggleMainFrame()
                 elseif button == "RightButton" then
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
                 end
@@ -165,7 +174,3 @@ function addon:SlashCommandHandler(input)
         self:Print("Unknown command '" .. command .. "'. Use '/gt' or '/gt config'.")
     end
 end
-
-AceComm:RegisterComm(GT.COMM_PREFIX, function(prefix, message, distribution, sender)
-    GT.Modules.Dawn:OnCommReceived(prefix, message, distribution, sender)
-end)

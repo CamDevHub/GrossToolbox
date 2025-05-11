@@ -20,20 +20,8 @@ function Character:Init(database)
 
     -- Store database reference
     db = database
-
-    -- Load Data module
     Data = GT.Modules.Data
-    if not Data then
-        print(addonName .. ": Character module initialization failed - Data module not found")
-        return false
-    end
-
-    -- Load Utils module
     Utils = GT.Modules.Utils
-    if not Utils then
-        print(addonName .. ": Character module initialization failed - Utils module not found")
-        return false
-    end
 
     -- Initialize database structure if needed
     if not db.global then

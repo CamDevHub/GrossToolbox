@@ -10,7 +10,6 @@ Player.moduleName = "Player"
 -- Define module dependencies
 local db
 local Utils
-
 function Player:Init(database)
 	-- Validate database parameter
 	if not database then
@@ -23,10 +22,6 @@ function Player:Init(database)
 
 	-- Load Utils module
 	Utils = GT.Modules.Utils
-	if not Utils then
-		print(addonName .. ": Player module initialization failed - Utils module not found")
-		return false
-	end
 
 	-- Initialize database structure if needed
 	if not db.global then
