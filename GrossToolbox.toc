@@ -22,15 +22,15 @@ Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 AceGUIWidget-DungeonIcon.lua
 
 init.lua
-Modules\Data.lua
-Modules\Utils.lua
-Modules\Player.lua
-Modules\Character.lua
-Modules\Weekly.lua
-Config.lua
+Core\Data.lua
+Core\Utils.lua
+Core\Player.lua
+Core\Character.lua
+Core\Config.lua
 Localization.lua
-GrossFrame.lua
 GrossToolbox.lua
+Modules\GrossFrame.lua
+Modules\Weekly.lua
 Modules\Dawn\DawnBoostTag.lua
 Modules\Dawn\DawnBoostTag_Comm.lua
 Modules\Dawn\DawnBoostTag_SignupTab.lua

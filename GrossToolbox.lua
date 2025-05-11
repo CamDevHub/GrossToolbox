@@ -43,7 +43,7 @@ function addon:OnInitialize()
         return
     else
         Config:Init(self.db)
-        LibStub("AceConfigDialog-3.0"):SetDefaultSize(addonName, 600, 600)
+        LibStub("AceConfigDialog-3.0"):SetDefaultSize(addonName, 600, 500)
     end
 
     Character = GT.Modules.Character
