@@ -324,10 +324,7 @@ function Reminders:GROSSTOOLBOX_OPENED()
 end
 
 function Reminders:GROSSTOOLBOX_CLOSED()
-    local exhaustionID = GetRestState()
-    if exhaustionID and exhaustionID == 1 then
-        ShowReminderIcons()
-    end
+    ShowReminderIcons()
 end
 
 -- Event handlers for ready check
