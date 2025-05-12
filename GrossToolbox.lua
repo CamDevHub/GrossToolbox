@@ -21,6 +21,7 @@ local defaults = {
             hide = false,
         },
         players = {},
+        reminders = {},
         lastTab = "",
         uid = ""
     }
@@ -91,7 +92,7 @@ function addon:OnInitialize()
         print(addonName .. ": Critical error - Reminders module not found")
         return
     else
-        Reminders:Init()
+        Reminders:Init(self.db)
     end
 
     -- Register slash command

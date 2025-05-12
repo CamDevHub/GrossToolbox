@@ -12,26 +12,16 @@ local db
 local Utils
 function Player:Init(database)
 	-- Validate database parameter
-	if not database then
+	if not database or not database.global or not database.global.players then
 		print(addonName .. ": Player module initialization failed - missing database")
 		return false
 	end
 
 	-- Store database reference
-	db = database
+	db = database.global.players
 
 	-- Load Utils module
 	Utils = GT.Core.Utils
-
-	-- Initialize database structure if needed
-	if not db.global then
-		db.global = {}
-	end
-
-	if not db.global.players then
-		db.global.players = {}
-	end
-
 	-- Log successful initialization
 	Utils:DebugPrint("Player module initialized successfully")
 	return true
@@ -50,24 +40,15 @@ function Player:GetOrCreatePlayerData(uid)
 		return nil
 	end
 
-	-- Ensure global.players table exists
-	if not db.global then
-		db.global = {}
-	end
-
-	if not db.global.players then
-		db.global.players = {}
-	end
-
 	-- Create player entry if needed
-	if not db.global.players[uid] then
-		db.global.players[uid] = {
+	if not db[uid] then
+		db[uid] = {
 			discordTag = "",
 			characters = {}
 		}
 	end
 
-	return db.global.players[uid]
+	return db[uid]
 end
 
 function Player:GetCharactersName(uid)
@@ -199,28 +180,18 @@ function Player:DeletePlayer(uid)
 		return false
 	end
 
-	if not db or not db.global or not db.global.player then
-		Utils:DebugPrint("DeletePlayer: Database not properly initialized")
-		return false
-	end
-
 	-- Check if the player exists in database
-	if not db.global.players[uid] then
+	if not db[uid] then
 		Utils:DebugPrint("DeletePlayer: Player with UID " .. uid .. " not found in database")
 		return false
 	end
 
 	-- Delete the player and all associated data
-	db.global.players[uid] = nil
+	db[uid] = nil
 
 	-- Log deletion
 	Utils:DebugPrint(string.format("Deleted player: %s",
 		uid))
-
-	-- Remove from any modules that might be tracking this player
-	if GT.Modules.Dawn and GT.Modules.Dawn.RemoveUID then
-		GT.Modules.Dawn:RemoveUID(uid)
-	end
 
 	return true
 end
