@@ -9,10 +9,11 @@ local AceGUI = LibStub("AceGUI-3.0")
 local registeredTabs = {} -- Table to hold tab definitions: { [value] = { text, value, drawFunc, populateFunc, module } }
 local mainFrame = nil
 
-local Utils, Config
+local addon, Utils, Config
 function GrossFrame:Init()
     Utils = GT.Core.Utils
     Config = GT.Core.Config
+    addon = GT.addon
 
     Utils:DebugPrint("GrossFrame module initialized successfully")
     return true
@@ -41,7 +42,10 @@ function GrossFrame:GetOrCreateMainFrame()
         AceGUI:Release(widget)
         mainFrame = nil
     end
-    frame:SetCallback("OnClose", function(widget) CloseFrame(widget) end)
+    frame:SetCallback("OnClose", function(widget)
+        CloseFrame(widget)
+        addon:SendMessage("GROSSTOOLBOX_CLOSED")
+    end)
 
     local tabGroup = AceGUI:Create("TabGroup")
     tabGroup:SetLayout("Fill")

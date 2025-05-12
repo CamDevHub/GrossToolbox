@@ -26,7 +26,7 @@ function Reminders:Init(database)
         database.global.anchors.reminder = iconFrameAnchor
     end
     self.reminderAnchor = database.global.anchors.reminder
-    
+
     Utils = GT.Core.Utils
 
     -- Register the Reminders tab
@@ -131,6 +131,7 @@ local function ShowReminderIcons()
 
     if readyCheckFrame then
         readyCheckFrame:ReleaseChildren()
+        Utils:DebugPrint("Reminders", "Ready Check Icons already displayed")
     else
         readyCheckFrame = AceGUI:Create("SimpleGroup")
         readyCheckFrame:SetWidth(32 * #db + 32)
@@ -138,13 +139,16 @@ local function ShowReminderIcons()
 
         -- Set position from saved anchor
         local point, x, y = LoadIconFramePosition()
+        Utils:DebugPrint("Reminders", "Ready Check Icons position:", point, x, y)
         readyCheckFrame:ClearAllPoints()
         readyCheckFrame:SetPoint(point or "CENTER", UIParent, point or "CENTER", x or 0, y or 200)
         MakeDraggable(readyCheckFrame)
+        Utils:DebugPrint("Reminders", "Ready Check Icons frame created")
     end
 
     for _, entry in ipairs(db) do
         if entry.icon and entry.quantity <= entry.threshold then
+            Utils:DebugPrint("Reminders", "Ready Check Icon:", entry.icon, "Item ID:", entry.itemID, "Quantity:", entry.quantity)
             local iconWidget = AceGUI:Create("Label")
             iconWidget:SetImage(entry.icon)
             iconWidget:SetImageSize(32, 32)
@@ -342,12 +346,10 @@ function Reminders:PLAYER_ENTERING_WORLD()
 end
 
 function Reminders:BAG_UPDATE_DELAYED()
-    if readyCheckFrame then
-        if not self:MustShowReminders() then
-            HideReminderIcons()
-        else
-            ShowReminderIcons()
-        end
+    if not self:MustShowReminders() then
+        HideReminderIcons()
+    else
+        ShowReminderIcons()
     end
 end
 
