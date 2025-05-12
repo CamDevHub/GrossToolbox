@@ -125,26 +125,23 @@ local function ItemFieldEnterPressed(widget, event, text)
 end
 
 local function ShowReminderIcons()
-    if readyCheckFrame then
-        readyCheckFrame:ReleaseChildren()
-        readyCheckFrame = nil
-    end
-
     if not Reminders:MustShowReminders() then
         return
     end
 
-    readyCheckFrame = AceGUI:Create("SimpleGroup")
-    readyCheckFrame:SetWidth(32 * #db + 40)
-    readyCheckFrame:SetHeight(110)
-    readyCheckFrame:SetLayout("Flow")
-    readyCheckFrame.type = "reminderReadyCheck"
+    if readyCheckFrame then
+        readyCheckFrame:ReleaseChildren()
+    else
+        readyCheckFrame = AceGUI:Create("SimpleGroup")
+        readyCheckFrame:SetWidth(32 * #db + 32)
+        readyCheckFrame:SetLayout("Flow")
 
-    -- Set position from saved anchor
-    local point, x, y = LoadIconFramePosition()
-    readyCheckFrame:ClearAllPoints()
-    readyCheckFrame:SetPoint(point or "CENTER", UIParent, point or "CENTER", x or 0, y or 200)
-    MakeDraggable(readyCheckFrame)
+        -- Set position from saved anchor
+        local point, x, y = LoadIconFramePosition()
+        readyCheckFrame:ClearAllPoints()
+        readyCheckFrame:SetPoint(point or "CENTER", UIParent, point or "CENTER", x or 0, y or 200)
+        MakeDraggable(readyCheckFrame)
+    end
 
     for _, entry in ipairs(db) do
         if entry.icon and entry.quantity <= entry.threshold then
@@ -154,6 +151,8 @@ local function ShowReminderIcons()
             iconWidget:SetWidth(32)
             iconWidget:SetHeight(32)
             iconWidget:SetFontObject(GameFontNormal)
+            iconWidget:SetJustifyH("CENTER")
+            iconWidget:SetJustifyV("TOP")
 
             local qty = Reminders:GetItemCountInBags(entry.itemID)
             iconWidget:SetText("|cffffffff"..qty.."|r")
@@ -168,7 +167,6 @@ local function HideReminderIcons()
     if readyCheckFrame then
         SaveIconFramePosition()
         readyCheckFrame:ReleaseChildren()
-        readyCheckFrame = nil
     end
 end
 
@@ -319,7 +317,10 @@ function Reminders:GROSSTOOLBOX_OPENED()
 end
 
 function Reminders:GROSSTOOLBOX_CLOSED()
-    ShowReminderIcons()
+    local exhaustionID = GetRestState()
+    if exhaustionID and exhaustionID == 1 then
+        ShowReminderIcons()
+    end
 end
 
 -- Event handlers for ready check
@@ -335,6 +336,8 @@ function Reminders:PLAYER_ENTERING_WORLD()
     local exhaustionID = GetRestState()
     if exhaustionID and exhaustionID == 1 then
         ShowReminderIcons()
+    else
+        HideReminderIcons()
     end
 end
 
