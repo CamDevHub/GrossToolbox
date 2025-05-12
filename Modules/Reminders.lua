@@ -125,7 +125,10 @@ local function ItemFieldEnterPressed(widget, event, text)
 end
 
 local function ShowReminderIcons()
-    if not Reminders:MustShowReminders() then
+    Utils:DebugPrint("Reminders", "ShowReminderIcons called")
+    -- Return early if in combat or in any instance
+    if not Reminders:MustShowReminders() or InCombatLockdown() or IsInInstance() then
+        Utils:DebugPrint("Reminders", "Not showing icons: In combat or in instance")
         return
     end
 
@@ -336,12 +339,11 @@ function Reminders:READY_CHECK_FINISHED()
     HideReminderIcons()
 end
 
-function Reminders:PLAYER_ENTERING_WORLD()
-    local exhaustionID = GetRestState()
-    if exhaustionID and exhaustionID == 1 then
-        ShowReminderIcons()
-    else
+function Reminders:PLAYER_UPDATE_RESTING()
+    if not self:MustShowReminders() then
         HideReminderIcons()
+    else
+        ShowReminderIcons()
     end
 end
 

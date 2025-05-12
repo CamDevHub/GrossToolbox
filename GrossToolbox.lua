@@ -105,12 +105,24 @@ function addon:OnInitialize()
     self:RegisterEvent("READY_CHECK")
     self:RegisterEvent("READY_CHECK_FINISHED")
     self:RegisterEvent("BAG_UPDATE_DELAYED")
+    self:RegisterEvent("PLAYER_UPDATE_RESTING")
 
     -- Register messages for modules to listen to
     self:RegisterMessage("GROSSTOOLBOX_OPENED")
     self:RegisterMessage("GROSSTOOLBOX_CLOSED")
 
     Utils:DebugPrint("Initialization complete")
+end
+
+function addon:PLAYER_UPDATE_RESTING(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.PLAYER_UPDATE_RESTING) == "function" then
+                mod:PLAYER_UPDATE_RESTING(event, ...)
+            end
+        end
+    end
 end
 
 function addon:GROSSTOOLBOX_OPENED(event, ...)
