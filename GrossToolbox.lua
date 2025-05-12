@@ -23,7 +23,8 @@ local defaults = {
         players = {},
         reminders = {},
         lastTab = "",
-        uid = ""
+        uid = "",
+        anchors = {}
     }
 }
 
@@ -98,27 +99,105 @@ function addon:OnInitialize()
     -- Register slash command
     self:RegisterChatCommand("gt", "SlashCommandHandler")
 
-    -- Register events
+    -- Register events using AceEvent, modules can register their own handlers
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+    self:RegisterEvent("READY_CHECK")
+    self:RegisterEvent("READY_CHECK_FINISHED")
+    self:RegisterEvent("BAG_UPDATE_DELAYED")
+
+    -- Register messages for modules to listen to
+    self:RegisterMessage("GROSSTOOLBOX_OPENED")
+    self:RegisterMessage("GROSSTOOLBOX_CLOSED")
 
     Utils:DebugPrint("Initialization complete")
 end
 
--- Called when PLAYER_ENTERING_WORLD  fires
-function addon:PLAYER_ENTERING_WORLD(event, status)
+function addon:GROSSTOOLBOX_OPENED(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.GROSSTOOLBOX_OPENED) == "function" then
+                mod:GROSSTOOLBOX_OPENED(event, ...)
+            end
+        end
+    end
+end
+
+function addon:GROSSTOOLBOX_CLOSED(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.GROSSTOOLBOX_CLOSED) == "function" then
+                mod:GROSSTOOLBOX_CLOSED(event, ...)
+            end
+        end
+    end
+end
+
+function addon:BAG_UPDATE_DELAYED(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.BAG_UPDATE_DELAYED) == "function" then
+                mod:BAG_UPDATE_DELAYED(event, ...)
+            end
+        end
+    end
+end
+
+-- Called when PLAYER_ENTERING_WORLD fires
+function addon:PLAYER_ENTERING_WORLD(event, ...)
     C_Timer.After(3, function()
         self:UpdateData()
     end)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.PLAYER_ENTERING_WORLD) == "function" then
+                mod:PLAYER_ENTERING_WORLD(event, ...)
+            end
+        end
+    end
 end
 
--- Called when CHALLENGE_MODE_COMPLETED  fires
-function addon:CHALLENGE_MODE_COMPLETED(event, status)
+-- Called when CHALLENGE_MODE_COMPLETED fires
+function addon:CHALLENGE_MODE_COMPLETED(event, ...)
     if Config:GetScreenshotOnMPlusEnd() then
         C_Timer.After(2, function()
             Screenshot()
             self:UpdateData()
         end)
+    end
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.CHALLENGE_MODE_COMPLETED) == "function" then
+                mod:CHALLENGE_MODE_COMPLETED(event, ...)
+            end
+        end
+    end
+end
+
+function addon:READY_CHECK(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.READY_CHECK) == "function" then
+                mod:READY_CHECK(event, ...)
+            end
+        end
+    end
+end
+
+function addon:READY_CHECK_FINISHED(event, ...)
+    -- Dispatch to modules that registered for this event
+    if GT.Modules then
+        for _, mod in pairs(GT.Modules) do
+            if type(mod.READY_CHECK_FINISHED) == "function" then
+                mod:READY_CHECK_FINISHED(event, ...)
+            end
+        end
     end
 end
 
@@ -163,6 +242,12 @@ function addon:OnEnable()
             OnClick = function(frame, button)
                 if button == "LeftButton" then
                     GrossFrame:ToggleMainFrame()
+                    local grossFrame = GrossFrame:GetMainFrame()
+                    if grossFrame and grossFrame:IsVisible() then
+                        self:SendMessage("GROSSTOOLBOX_OPENED")
+                    else
+                        self:SendMessage("GROSSTOOLBOX_CLOSED")
+                    end
                 elseif button == "RightButton" then
                     LibStub("AceConfigDialog-3.0"):Open(addonName)
                 end

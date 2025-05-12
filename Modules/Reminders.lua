@@ -7,7 +7,9 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 GetItemInfo = C_Item.GetItemInfo
 local Utils
-local db -- reference to the addon database
+local db
+local iconFrameAnchor = { point = "CENTER", x = 0, y = 200 }
+
 function Reminders:Init(database)
     local GrossFrame = GT.Modules.GrossFrame
     if not GrossFrame then
@@ -20,7 +22,13 @@ function Reminders:Init(database)
     end
     db = database.global.reminders
 
+    if not database.global.anchors.reminder then
+        database.global.anchors.reminder = iconFrameAnchor
+    end
+    self.reminderAnchor = database.global.anchors.reminder
+    
     Utils = GT.Core.Utils
+
     -- Register the Reminders tab
     local remindersTab = {
         text = "Reminders",
@@ -32,6 +40,43 @@ function Reminders:Init(database)
     }
     GrossFrame:RegisterTab(remindersTab)
     return true
+end
+
+-- Ready Check Icon Display
+local readyCheckFrame
+local function SaveIconFramePosition()
+    if readyCheckFrame then
+        local point, _, _, x, y = readyCheckFrame:GetPoint()
+        Reminders.reminderAnchor.point = point
+        Reminders.reminderAnchor.x = x
+        Reminders.reminderAnchor.y = y
+    end
+end
+
+local function LoadIconFramePosition()
+    local anchor = Reminders.reminderAnchor
+    return anchor.point, anchor.x, anchor.y
+end
+
+local function MakeDraggable(frame)
+    frame.frame:SetMovable(true)
+    frame.frame:EnableMouse(true)
+    frame.frame:RegisterForDrag("LeftButton")
+    frame.frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame.frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        SaveIconFramePosition()
+    end)
+end
+
+function Reminders:MustShowReminders()
+    for _, entry in ipairs(db) do
+        local qty = Reminders:GetItemCountInBags(entry.itemID)
+        if entry.icon and qty <= (entry.threshold or 1) then
+            return true -- Still missing something
+        end
+    end
+    return false
 end
 
 local function ItemFieldEnterPressed(widget, event, text)
@@ -79,6 +124,54 @@ local function ItemFieldEnterPressed(widget, event, text)
     Reminders:DrawReminderList()
 end
 
+local function ShowReminderIcons()
+    if readyCheckFrame then
+        readyCheckFrame:ReleaseChildren()
+        readyCheckFrame = nil
+    end
+
+    if not Reminders:MustShowReminders() then
+        return
+    end
+
+    readyCheckFrame = AceGUI:Create("SimpleGroup")
+    readyCheckFrame:SetWidth(32 * #db + 40)
+    readyCheckFrame:SetHeight(110)
+    readyCheckFrame:SetLayout("Flow")
+    readyCheckFrame.type = "reminderReadyCheck"
+
+    -- Set position from saved anchor
+    local point, x, y = LoadIconFramePosition()
+    readyCheckFrame:ClearAllPoints()
+    readyCheckFrame:SetPoint(point or "CENTER", UIParent, point or "CENTER", x or 0, y or 200)
+    MakeDraggable(readyCheckFrame)
+
+    for _, entry in ipairs(db) do
+        if entry.icon and entry.quantity <= entry.threshold then
+            local iconWidget = AceGUI:Create("Label")
+            iconWidget:SetImage(entry.icon)
+            iconWidget:SetImageSize(32, 32)
+            iconWidget:SetWidth(32)
+            iconWidget:SetHeight(32)
+            iconWidget:SetFontObject(GameFontNormal)
+
+            local qty = Reminders:GetItemCountInBags(entry.itemID)
+            iconWidget:SetText("|cffffffff"..qty.."|r")
+
+            readyCheckFrame:AddChild(iconWidget)
+        end
+    end
+    Utils:DebugPrint("Reminders", "Ready Check Icons displayed")
+end
+
+local function HideReminderIcons()
+    if readyCheckFrame then
+        SaveIconFramePosition()
+        readyCheckFrame:ReleaseChildren()
+        readyCheckFrame = nil
+    end
+end
+
 local listFrame -- forward declaration for the list container
 function Reminders:DrawFrame(container)
     container:ReleaseChildren() -- Clear previous widgets to prevent stacking
@@ -120,6 +213,20 @@ function Reminders:DrawFrame(container)
 
     parentGroup:DoLayout()
     self:DrawReminderList()
+
+    if GT.debug then
+        local debugButton = AceGUI:Create("Button")
+        debugButton:SetText("Debug")
+        debugButton:SetWidth(100)
+        debugButton:SetCallback("OnClick", function()
+            ShowReminderIcons()
+            C_Timer.After(5, function()
+                HideReminderIcons()
+            end)
+        end)
+        parentGroup:AddChild(debugButton)
+    end
+
     Utils:DebugPrint("Reminders: DrawFrame called")
 end
 
@@ -207,60 +314,43 @@ function Reminders:GetItemCountInBags(itemID)
     return count
 end
 
--- Ready Check Icon Display
-local readyCheckFrame
+function Reminders:GROSSTOOLBOX_OPENED()
+    HideReminderIcons()
+end
 
-local function ShowReminderIcons()
-    if readyCheckFrame then
-        readyCheckFrame:Hide()
-        readyCheckFrame:SetParent(nil)
+function Reminders:GROSSTOOLBOX_CLOSED()
+    ShowReminderIcons()
+end
+
+-- Event handlers for ready check
+function Reminders:READY_CHECK()
+    ShowReminderIcons()
+end
+
+function Reminders:READY_CHECK_FINISHED()
+    HideReminderIcons()
+end
+
+function Reminders:PLAYER_ENTERING_WORLD()
+    local exhaustionID = GetRestState()
+    if exhaustionID and exhaustionID == 1 then
+        ShowReminderIcons()
     end
+end
 
-    readyCheckFrame = CreateFrame("Frame", "GrossToolbox_ReminderIcons", UIParent)
-    readyCheckFrame:SetSize(60 * #db, 60)
-    readyCheckFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200)
-    readyCheckFrame:Show()
-    readyCheckFrame.icons = {}
-    readyCheckFrame.labels = {}
-
-    local x = 0
-    for _, entry in ipairs(db) do
-        if entry.icon then
-            local icon = readyCheckFrame:CreateTexture(nil, "OVERLAY")
-            icon:SetSize(48, 48)
-            icon:SetPoint("LEFT", readyCheckFrame, "LEFT", x, 0)
-            icon:SetTexture(entry.icon)
-            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            readyCheckFrame.icons[#readyCheckFrame.icons+1] = icon
-
-            -- Quantity label below the icon
-            local qty = Reminders:GetItemCountInBags(entry.itemID)
-            local label = readyCheckFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-            label:SetPoint("TOP", icon, "BOTTOM", 0, -2)
-            label:SetText(tostring(qty))
-            readyCheckFrame.labels[#readyCheckFrame.labels+1] = label
-
-            x = x + 52
+function Reminders:BAG_UPDATE_DELAYED()
+    if readyCheckFrame then
+        if not self:MustShowReminders() then
+            HideReminderIcons()
+        else
+            ShowReminderIcons()
         end
     end
 end
 
-local function HideReminderIcons()
-    if readyCheckFrame then
-        readyCheckFrame:Hide()
-        readyCheckFrame:SetParent(nil)
-        readyCheckFrame = nil
+function Reminders:PLAYER_LOGOUT()
+    -- Save anchor to db
+    if self.reminderAnchor and self.db then
+        self.db.global.anchors.reminder = self.reminderAnchor
     end
 end
-
--- Register for ready check events
-local f = CreateFrame("Frame")
-f:RegisterEvent("READY_CHECK")
-f:RegisterEvent("READY_CHECK_FINISHED")
-f:SetScript("OnEvent", function(self, event)
-    if event == "READY_CHECK" then
-        ShowReminderIcons()
-    elseif event == "READY_CHECK_FINISHED" then
-        HideReminderIcons()
-    end
-end)

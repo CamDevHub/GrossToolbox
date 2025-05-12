@@ -293,8 +293,8 @@ function Config:SetupOptions()
             },
             debug = {
                 order = 101,
-                name = "Enable Debug Logging",
-                desc = "Toggle debug output in chat.",
+                name = "Enable Debug Mode",
+                desc = "Toggle debug mode.",
                 type = "toggle",
                 get = function() return GT.debug end,
                 set = function(_, val) GT.debug = val end,
