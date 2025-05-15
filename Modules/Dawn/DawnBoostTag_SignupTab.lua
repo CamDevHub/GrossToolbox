@@ -93,6 +93,8 @@ function Dawn:PopulateSignupFrame(container)
         playersEditBox:SetText("Could not get your UID")
         return
     end
+
+    Character:BuildCurrentCharacter(localUID)
     local fullOutputString = ""
     if teamTakeCheckbox:GetValue() then
         fullOutputString = self:GenerateTeamTakeContent(localUID)

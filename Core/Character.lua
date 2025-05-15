@@ -181,12 +181,14 @@ function Character:GetSparksData(uid, fullName)
     return character.sparks
 end
 
-function Character:BuildCurrentCharacter(uid, fullName)
+function Character:BuildCurrentCharacter()
+    -- Get UID and full name
+    local uid = GT.addon:GetUID()
+    local fullName = self:GetFullName("player")
     if not uid or not fullName then
-        Utils:DebugPrint("BuildCurrentCharacter: Missing required parameters")
+        Utils:DebugPrint("BuildCurrentCharacter: Missing UID or full name")
         return
     end
-
     -- Initialize character data object
     local charData = {}
 

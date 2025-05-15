@@ -14,6 +14,8 @@ end
 function Dawn:SendCharacterData()
     local uid = GT.addon:GetUID()
     if not uid then return end
+    
+    Character:BuildCurrentCharacter(uid)
     local characters = Player:GetCharactersForPlayer(uid)
     local discordTag = Config:GetDiscordTag()
     if not characters or not discordTag then return end
@@ -78,7 +80,8 @@ function Dawn:ProcessPlayerData(message, sender)
             end
         end
     end
-    if self.dawnContainer then
+    -- Only populate the signup tab if the AceGUI container is visible (prevents AceGUI errors)
+    if self.dawnContainer and self.dawnContainer:IsShown() then
         Dawn:PopulateDawnFrame(self.dawnContainer)
     end
 end

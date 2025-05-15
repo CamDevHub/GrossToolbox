@@ -8,12 +8,13 @@ Dawn.currentHoveredDungeon = nil
 Dawn.originalKeysText = nil
 Dawn.moduleName = "Dawn"
 
-local addon, Utils, Player, GrossFrame
+local addon, Utils, Player, Character, GrossFrame
 function Dawn:Init()
 
     addon = GT.addon
     Utils = GT.Core.Utils
     Player = GT.Core.Player
+    Character = GT.Core.Character
     GrossFrame = GT.Modules.GrossFrame
     -- Register only one main tab container for Dawn
     local dawnTab = {
@@ -87,4 +88,12 @@ function Dawn:ClearPartyUIDs()
         end
     end
     self.partyUIDs = {}
+end
+
+function Dawn:PLAYER_ENTERING_WORLD()
+    C_Timer.After(3, function()
+        local uid = GT.addon:GetUID()
+        Player:SetDiscordTag(uid, Config:GetDiscordTag())
+        Character:BuildCurrentCharacter(uid)
+    end)
 end

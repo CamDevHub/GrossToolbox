@@ -160,9 +160,6 @@ end
 
 -- Called when PLAYER_ENTERING_WORLD fires
 function addon:PLAYER_ENTERING_WORLD(event, ...)
-    C_Timer.After(3, function()
-        self:UpdateData()
-    end)
     -- Dispatch to modules that registered for this event
     if GT.Modules then
         for _, mod in pairs(GT.Modules) do
@@ -178,7 +175,6 @@ function addon:CHALLENGE_MODE_COMPLETED(event, ...)
     if Config:GetScreenshotOnMPlusEnd() then
         C_Timer.After(2, function()
             Screenshot()
-            self:UpdateData()
         end)
     end
     -- Dispatch to modules that registered for this event
@@ -213,12 +209,7 @@ function addon:READY_CHECK_FINISHED(event, ...)
     end
 end
 
-local function UpdateCurrentCharacterInfo(uid, fullName)
-    Player:SetDiscordTag(uid, Config:GetDiscordTag())
-    Character:BuildCurrentCharacter(uid, fullName)
-end
-
-function addon:UpdateData()
+function addon:GetOrCreateUID()
     if not self.db then return end
     -- Check if we already have a UID, if not generate one
     if not self.db.global.uid or self.db.global.uid == "" then
@@ -228,10 +219,6 @@ function addon:UpdateData()
         self.db.global.uid = identifier
         Utils:DebugPrint("Generated new UID: " .. self.db.global.uid)
     end
-
-    local fullName = Character:GetFullName("player")
-
-    UpdateCurrentCharacterInfo(self.db.global.uid, fullName)
 end
 
 -- Function to get the unique identifier for the player
