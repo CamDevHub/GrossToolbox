@@ -76,7 +76,6 @@ function Dawn:RemoveUID(uid)
     for i, v in ipairs(self.partyUIDs) do
         if v == uid then
             table.remove(self.partyUIDs, i)
-            Player:DeletePlayer(v)
             break
         end
     end

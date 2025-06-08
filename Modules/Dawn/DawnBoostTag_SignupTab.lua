@@ -50,7 +50,7 @@ function Dawn:DrawSignupFrame(container)
 
     local dungeonsContainer = AceGUI:Create("SimpleGroup")
     dungeonsContainer:SetLayout("Flow")
-    dungeonsContainer:SetWidth(160)
+    dungeonsContainer:SetWidth(200)
     dungeonsContainer:SetHeight(500)
     dataTabContainer:AddChild(dungeonsContainer)
     container.signup.dungeonsContainer = dungeonsContainer
