@@ -150,6 +150,28 @@ function Player:DeleteCharactersForPlayer(uid)
 	player.characters = {}
 end
 
+function Player:DeleteCharacterForPlayerByName(uid, name)
+	-- Validate parameters
+	if not uid then
+		Utils:DebugPrint("DeleteCharactersForPlayer: Missing required parameter")
+		return
+	end
+
+	-- Validate database
+	if not db then
+		Utils:DebugPrint("DeleteCharactersForPlayer: Database not initialized")
+		return
+	end
+
+	-- Get player data and delete characters
+	local player = self:GetOrCreatePlayerData(uid)
+	if not player then
+		return
+	end
+
+	player.characters[name] = nil
+end
+
 function Player:GetCharactersForPlayer(uid)
 	-- Validate parameters
 	if not uid then

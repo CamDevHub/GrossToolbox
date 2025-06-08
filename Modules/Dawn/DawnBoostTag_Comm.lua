@@ -69,14 +69,29 @@ function Dawn:ProcessPlayerData(message, sender)
     local incomingChars = data.characters
     local senderDiscordTag = data.discordTag or ""
     local localPlayerEntry = Player:GetOrCreatePlayerData(uid)
+    local addedCharNames = {}
     localPlayerEntry.discordTag = senderDiscordTag
     if localUID ~= uid and type(incomingChars) == "table" then
         print(addonName, ": Processing data from", sender, "for UID:", uid)
         self:addUID(uid)
-        Player:DeleteCharactersForPlayer(uid)
+        
         for charName, charData in pairs(incomingChars) do
             if type(charData) == "table" then
+                table.insert(addedCharNames, charName)
                 Character:SetCharacterData(uid, charName, charData)
+            end
+        end
+
+        local localCharactersNameFromIncomingPlayer = Player:GetCharactersName(uid)
+        for _, charName in ipairs(localCharactersNameFromIncomingPlayer) do
+            local found = false
+            for _, addedCharName in ipairs(addedCharNames) do
+                if charName == addedCharName then
+                    found = true
+                end
+            end
+            if not found then
+                Player:DeleteCharacterForPlayerByName(uid, charName)
             end
         end
     end
