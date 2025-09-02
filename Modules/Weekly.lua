@@ -36,12 +36,6 @@ function Weekly:Init()
   return true
 end
 
-function Weekly:GetSparkData()
-  local sparks = C_CurrencyInfo.GetCurrencyInfo(3132)
-  if not sparks then return end
-  return sparks.maxQuantity
-end
-
 local function CreateRaidVaultLabel(raidProgress)
   local group = AceGUI:Create("SimpleGroup")
   group:SetLayout("Flow")
@@ -68,10 +62,10 @@ local function CreateRaidVaultLabel(raidProgress)
     local diffName = (info.level == 14 and "N") or (info.level == 15 and "H") or (info.level == 16 and "M") or tostring(info.level)
     if info.unlocked then
       label:SetText(diffName)
-      label:SetColor(0, 1, 0) -- Green
+      label:SetColor(0, 1, 0)
     else
       label:SetText("-")
-      label:SetColor(1, 0, 0) -- Red
+      label:SetColor(1, 0, 0)
     end
     
     label:SetCallback("OnEnter", function(widget)
@@ -117,21 +111,14 @@ function Weekly:DrawFrame(container)
 
   local keysHeader = AceGUI:Create("Label")
   keysHeader:SetText("Keys")
-  keysHeader:SetWidth(120)
+  keysHeader:SetWidth(200)
   keysHeader:SetFontObject(GameFontNormalHuge)
   keysHeader:SetJustifyH("CENTER")
   weeklyTable:AddChild(keysHeader)
 
-  local sparksHeader = AceGUI:Create("Label")
-  sparksHeader:SetText("Raid")
-  sparksHeader:SetWidth(180)
-  sparksHeader:SetFontObject(GameFontNormalHuge)
-  sparksHeader:SetJustifyH("CENTER")
-  weeklyTable:AddChild(sparksHeader)
-
   local raidHeader = AceGUI:Create("Label")
-  raidHeader:SetText("Sparks")
-  raidHeader:SetWidth(120)
+  raidHeader:SetText("Raid")
+  raidHeader:SetWidth(180)
   raidHeader:SetFontObject(GameFontNormalHuge)
   raidHeader:SetJustifyH("CENTER")
   weeklyTable:AddChild(raidHeader)
@@ -140,18 +127,23 @@ function Weekly:DrawFrame(container)
   container.weekly.weeklyScroll = weeklyTabContainer
 end
 
-local function CreateSparksLabel(nbSparks, maxSparks)
-  local label = AceGUI:Create("Label")
-  label:SetWidth(120)
-  label:SetFontObject(GameFontNormal)
-  label:SetJustifyH("CENTER")
-  label:SetText(tostring(nbSparks) .. "/" .. tostring(maxSparks))
-  return label
+local function extractDungeonVaultFromWeeklies(dungeons)
+  local runs = {}
+    if dungeons and #dungeons > 0 then
+        table.sort(dungeons, function(a, b)
+            return a.level > b.level
+        end)
+        for i = 1, math.min(8, #dungeons) do
+            runs[i] = dungeons[i]
+        end
+    end
+  return runs
 end
 
 local function CreateDungeonVaultLabel(count, threshold, weeklies)
+
   local vaultLabel = AceGUI:Create("InteractiveLabel")
-  vaultLabel:SetWidth(40)
+  vaultLabel:SetWidth(50)
   vaultLabel:SetFontObject(GameFontNormal)
   vaultLabel:SetJustifyH("CENTER")
   vaultLabel:SetText(string.format("%d/%d", count, threshold))
@@ -173,6 +165,7 @@ local function CreateDungeonVaultLabel(count, threshold, weeklies)
   vaultLabel:SetCallback("OnLeave", function(widget)
     GameTooltip:Hide()
   end)
+
   return vaultLabel
 end
 
@@ -192,25 +185,28 @@ local function AddCharacterWeeklyRow(container, uid, fullName)
   -- Use new weekly structure from Character.lua
   local dungeons = Character:GetWeeklyDungeons(uid, fullName) or {}
   local raid = Character:GetWeeklyRaid(uid, fullName) or {}
-  local nbSparks = Character:GetSparksData(uid, fullName)
 
+  local runs = extractDungeonVaultFromWeeklies(dungeons)
   -- Vault thresholds: 1, 4, 8
   for i, threshold in ipairs({1, 4, 8}) do
     local count = 0
     for j = 1, threshold do
-      local level = dungeons[j] and dungeons[j].level or 0
+      local level = runs[j] and runs[j].level or 0
       if level >= 10 then count = count + 1 end
     end
     local vaultLabel = CreateDungeonVaultLabel(count, threshold, dungeons)
     characterFrame:AddChild(vaultLabel)
   end
+  local nbDungeonLabel = AceGUI:Create("Label")
+  nbDungeonLabel:SetWidth(50)
+  nbDungeonLabel:SetFontObject(GameFontNormal)
+  nbDungeonLabel:SetJustifyH("CENTER")
+  nbDungeonLabel:SetText(string.format("(%d)", #dungeons or 0))
+  characterFrame:AddChild(nbDungeonLabel)
 
   -- Raid weekly reward
   local raidLabel = CreateRaidVaultLabel(raid)
   characterFrame:AddChild(raidLabel)
-
-  local sparksLabel = CreateSparksLabel(nbSparks, Weekly:GetSparkData())
-  characterFrame:AddChild(sparksLabel)
 
   container.weekly.weeklyScroll:AddChild(characterFrame)
 

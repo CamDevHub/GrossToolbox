@@ -107,19 +107,28 @@ Data.SPEC_ID_TO_ENGLISH_NAME = {
 }
 
 Data.DUNGEON_TABLE = {
-    [2651] = { name = "DFC", icon = "Interface\\Icons\\inv_achievement_dungeon_darkflamecleft", spellId = 445441 },
-    [2661] = { name = "Brew", icon = "Interface\\Icons\\inv_achievement_dungeon_cinderbrewmeadery", spellId = 445440 },
-    [2773] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks", spellId = 1216786 },
-    [2649] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame", spellId = 445444 },
-    [2648] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery", spellId = 445443 },
-    [1594] = {
+    [504] = { name = "DFC", icon = "Interface\\Icons\\inv_achievement_dungeon_darkflamecleft", spellId = 445441, mapId = 2651 },
+    [506] = { name = "Brew", icon = "Interface\\Icons\\inv_achievement_dungeon_cinderbrewmeadery", spellId = 445440, mapId = 2661 },
+    [525] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks", spellId = 1216786, mapId = 2773 },
+    [499] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame", spellId = 445444, mapId = 2649 },
+    [500] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery", spellId = 445443, mapId = 2648 },
+    [247] = {
         name = "ML",
         icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk",
-        spellId = (factionGroup == "Horde") and 467555 or 467553
+        spellId = (factionGroup == "Horde") and 467555 or 467553,
+        mapId = 1594
     },
-    [2293] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain", spellId = 354467 },
-    [2097] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon", spellId = 373274 }
+    [382] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain", spellId = 354467, mapId = 2293 },
+    [369] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon", spellId = 373274, mapId = 2097 },
+    [503] = { name = "AK", icon = "Interface\\Icons\\inv_achievement_dungeon_arak-ara", spellId = 445417, mapId = 2660 },
+    [505] = { name = "DB", icon = "Interface\\Icons\\inv_achievement_dungeon_dawnbreaker", spellId = 445414, mapId = 2662 },
+    [542] = { name = "Dome", icon = "Interface\\Icons\\inv_112_achievement_dungeon_ecodome", spellId = 1237215, mapId = 2830 },
+    [378] = { name = "HoA", icon = "Interface\\Icons\\achievement_dungeon_hallsofattonement", spellId = 354465, mapId = 2287 },
+    [391] = { name = "Market", icon = "Interface\\Icons\\achievement_dungeon_brokerdungeon", spellId = 367416, mapId = 2441 },
+    [392] = { name = "GB", icon = "Interface\\Icons\\achievement_dungeon_brokerdungeon", spellId = 367416, mapId = 2441 },
 }
+
+Data.CURRENT_SEASONAL_DUNGEONS = {525, 499, 503, 505, 542, 378, 391, 392}
 
 Data.DAWN_SIGN = {
     [1] = "Solo",

@@ -111,7 +111,7 @@ local function GetKeystone()
     -- Create keystone table with default values
     local keystone = {
         level = nil,
-        mapID = nil,
+        challengeMapID = nil,
         mapName = nil
     }
 
@@ -124,16 +124,16 @@ local function GetKeystone()
     keystone.level = keystoneLevel
 
     -- Get keystone map ID
-    local mapID = C_MythicPlus.GetOwnedKeystoneMapID()
-    if not mapID then
+    local challengeMapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
+    if not challengeMapID then
         return keystone
     end
 
-    keystone.mapID = mapID
+    keystone.challengeMapID = challengeMapID
 
     -- Get map name from dungeon data
-    if Data and Data.DUNGEON_TABLE and Data.DUNGEON_TABLE[mapID] then
-        keystone.mapName = Data.DUNGEON_TABLE[mapID].name
+    if Data and Data.DUNGEON_TABLE and Data.DUNGEON_TABLE[challengeMapID] then
+        keystone.mapName = Data.DUNGEON_TABLE[challengeMapID].name
     else
         keystone.mapName = "Unknown"
     end
@@ -166,19 +166,6 @@ function Character:GetFullName(unit)
 
     -- Format full name as Name-Realm
     return name .. "-" .. realm
-end
-
-function Character:GetSparksData(uid, fullName)
-    -- Validate parameters
-    if not uid or not fullName then
-        Utils:DebugPrint("GetCharacterSparks: Missing required parameters")
-        return 0
-    end
-    local character = GetCharacterData(uid, fullName)
-    if not character or character.sparks == nil then
-        return 0
-    end
-    return character.sparks
 end
 
 function Character:BuildCurrentCharacter()
@@ -216,18 +203,8 @@ function Character:BuildCurrentCharacter()
     local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
     charData.rating = (ratingSummary and ratingSummary.currentSeasonScore) or 0
 
-    -- Get Mythic+ run history (Dungeons)
     C_MythicPlus.RequestMapInfo()
-    local runs = C_MythicPlus.GetRunHistory(false, true)
-    local dungeonWeeklies = {}
-    if runs and #runs > 0 then
-        table.sort(runs, function(a, b)
-            return a.level > b.level
-        end)
-        for i = 1, math.min(8, #runs) do
-            dungeonWeeklies[i] = runs[i]
-        end
-    end
+    local dungeonWeeklies = C_MythicPlus.GetRunHistory(false, true)
 
     -- Get Raid weekly progress
     local raidWeeklies = {}
@@ -248,14 +225,8 @@ function Character:BuildCurrentCharacter()
     -- Save new weekly structure
     charData.weekly = {
         dungeons = dungeonWeeklies,
-        raid = raidWeeklies
+        raid = raidWeeklies,
     }
-
-    -- Save spark data
-    local sparks = C_CurrencyInfo.GetCurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(3132)
-    if sparks then
-        charData.sparks = sparks.quantity
-    end
 
     -- Save character data and keystone information
     self:SetCharacterData(uid, fullName, charData)
@@ -277,7 +248,7 @@ function Character:GetWeeklyData(uid, fullName)
     -- Initialize results
     local weekly = {
         dungeons = {},
-        raid = {}
+        raid = {},
     }
 
     -- Get character data
@@ -536,7 +507,7 @@ function Character:GetCharacterKeystone(uid, fullName)
     -- Create a deep copy of keystone data to prevent modification of the original
     local keystone = {}
     keystone.level = character.keystone.level
-    keystone.mapID = character.keystone.mapID
+    keystone.challengeMapID = character.keystone.challengeMapID
     keystone.mapName = character.keystone.mapName
 
     return keystone
@@ -570,7 +541,7 @@ function Character:SetCharacterKeystone(uid, fullName, keystone)
     -- Create a deep copy of keystone data
     character.keystone = {
         level = keystone.level,
-        mapID = keystone.mapID,
+        challengeMapID = keystone.challengeMapID,
         mapName = keystone.mapName
     }
 end

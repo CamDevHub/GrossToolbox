@@ -181,7 +181,7 @@ function Dawn:FilterKeystoneList(container, dungeonKey)
             local keystone = Character:GetCharacterKeystone(uid, charName)
 
             -- Only include keys for the hovered dungeon
-            if self:IsValidCharacter(uid, charName, true) and keystone.mapID == dungeonKey then
+            if self:IsValidCharacter(uid, charName, true) and keystone.challengeMapID == dungeonKey then
                 table.insert(keyDataList, {
                     charName = charName,
                     classId = Character:GetCharacterClassId(uid, charName),
@@ -417,7 +417,8 @@ function Dawn:PopulateDungeonFrame(container)
     cooldownContainer:AddChild(cooldownLabel)
     dungeonsContainer:AddChild(cooldownContainer)
 
-    for key, dungeon in pairs(Data.DUNGEON_TABLE) do
+    for _, challengeMapId in ipairs(Data.CURRENT_SEASONAL_DUNGEONS) do
+        local dungeon = Data.DUNGEON_TABLE[challengeMapId]
         local maxKeyLevel = 0
         local minKeyLevel = 99999
 
@@ -428,7 +429,7 @@ function Dawn:PopulateDungeonFrame(container)
                 local keystone = Character:GetCharacterKeystone(uid, charName)
 
                 -- Use our validation method
-                if self:IsValidCharacter(uid, charName, true) and keystone.mapID == key then
+                if self:IsValidCharacter(uid, charName, true) and keystone.challengeMapID == challengeMapId then
                     maxKeyLevel = math.max(maxKeyLevel, keystone.level or 0)
                     minKeyLevel = math.min(minKeyLevel, keystone.level or 0)
                 end
@@ -447,20 +448,20 @@ function Dawn:PopulateDungeonFrame(container)
         icon:SetSecureAction("spell", dungeon.spellId, "player")
 
         -- Store dungeon info in the icon's user data
-        icon:SetUserData("dungeonKey", key)
+        icon:SetUserData("dungeonKey", challengeMapId)
         icon:SetUserData("dungeonName", dungeon.name)
 
         -- Add hover functionality to filter keystone list
         icon:SetCallback("OnEnter", function()
             -- Save current dungeon key for filtering
-            self.currentHoveredDungeon = key
+            self.currentHoveredDungeon = challengeMapId
             -- Store original text if we haven't already
             if not self.originalKeysText and container.signup.keysEditBox then
                 self.originalKeysText = container.signup.keysEditBox:GetText()
             end
 
             -- Filter the keystone list to show only this dungeon's keys
-            self:FilterKeystoneList(container, key)
+            self:FilterKeystoneList(container, challengeMapId)
         end)
 
         icon:SetCallback("OnLeave", function()
