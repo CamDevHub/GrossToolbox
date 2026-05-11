@@ -1,139 +1,160 @@
-local GT = _G.GT
-local addonName = GT.addonName or "GrossToolbox"
-local Data = {}
-GT.Core.Data = Data
+local AddonName, GT = ...
 
-local factionGroup = UnitFactionGroup("player")
-GT.headers = {
-    player = "CHAR_DATA:",
-    request = "REQ_DATA",
-}
-GT.COMM_PREFIX = "GTComm"
-
-Data.ROLES = {
-    TANK = ":Tank:",
-    HEALER = ":healer:",
-    DAMAGER = ":DPS:"
+GT.Data.ROLES = {
+    TANK    = ":Tank:",
+    HEALER  = ":healer:",
+    DAMAGER = ":DPS:",
 }
 
-Data.CLASS_ID_TO_ENGLISH_NAME = {
-    [1] = "Warrior",
-    [2] = "Paladin",
-    [3] = "Hunter",
-    [4] = "Rogue",
-    [5] = "Priest",
-    [6] = "Death Knight",
-    [7] = "Shaman",
-    [8] = "Mage",
-    [9] = "Warlock",
-    [10] = "Monk",
-    [11] = "Druid",
-    [12] = "Demon Hunter",
-    [13] = "Evoker",
-    ["Unknown"] = "Unknown Class"
+GT.Data.CLASS_NAMES = {
+    warrior     = "Warrior",
+    paladin     = "Paladin",
+    hunter      = "Hunter",
+    rogue       = "Rogue",
+    priest      = "Priest",
+    deathknight = "Death Knight",
+    shaman      = "Shaman",
+    mage        = "Mage",
+    warlock     = "Warlock",
+    monk        = "Monk",
+    druid       = "Druid",
+    demonhunter = "Demon Hunter",
+    evoker      = "Evoker",
 }
 
-Data.CLASS_TO_ARMOR_TYPE = {
-    ["Warrior"] = "Plate",
-    ["Paladin"] = "Plate",
-    ["Death Knight"] = "Plate",
-    ["Priest"] = "Cloth",
-    ["Mage"] = "Cloth",
-    ["Warlock"] = "Cloth",
-    ["Rogue"] = "Leather",
-    ["Monk"] = "Leather",
-    ["Druid"] = "Leather",
-    ["Demon Hunter"] = "Leather",
-    ["Hunter"] = "Mail",
-    ["Shaman"] = "Mail",
-    ["Evoker"] = "Mail"
-}
-
-Data.SPEC_ID_TO_ENGLISH_NAME = {
-    -- Death Knight
-    [250] = "Blood",
-    [251] = "Frost",
-    [252] = "UH",
-    -- Demon Hunter
-    [577] = "Havoc",
-    [581] = "Veng",
-    -- Druid
-    [102] = "Balance",
-    [103] = "Feral",
-    [104] = "Guardian",
-    [105] = "Resto",
-    -- Evoker
-    [1467] = "Deva",
-    [1468] = "Pres",
-    [1473] = "Aug",
-    -- Hunter
-    [253] = "BM",
-    [254] = "MM",
-    [255] = "Surv",
-    -- Mage
-    [62] = "Arcane",
-    [63] = "Fire",
-    [64] = "Frost",
-    -- Monk
-    [268] = "Brew",
-    [270] = "Mist",
-    [269] = "WW",
-    -- Paladin
-    [65] = "Holy",
-    [66] = "Prot",
-    [70] = "Ret",
-    -- Priest
-    [256] = "Disc",
-    [257] = "Holy",
-    [258] = "Shadow",
-    -- Rogue
-    [259] = "Assa",
-    [260] = "Outlaw",
-    [261] = "Sub",
-    -- Shaman
-    [262] = "Elem",
-    [263] = "EH",
-    [264] = "Resto",
-    -- Warlock
-    [265] = "Affli",
-    [266] = "Demono",
-    [267] = "Destru",
-    -- Warrior
-    [71] = "Arms",
-    [72] = "Fury",
-    [73] = "Protect",
-    -- Default / Unknown
-    ["Unknown"] = "Unknown Spec"
-}
-
-Data.DUNGEON_TABLE = {
-    [504] = { name = "DFC", icon = "Interface\\Icons\\inv_achievement_dungeon_darkflamecleft", spellId = 445441, mapId = 2651 },
-    [506] = { name = "Brew", icon = "Interface\\Icons\\inv_achievement_dungeon_cinderbrewmeadery", spellId = 445440, mapId = 2661 },
-    [525] = { name = "Flood", icon = "Interface\\Icons\\inv_achievement_dungeon_waterworks", spellId = 1216786, mapId = 2773 },
-    [499] = { name = "PSF", icon = "Interface\\Icons\\inv_achievement_dungeon_prioryofthesacredflame", spellId = 445444, mapId = 2649 },
-    [500] = { name = "Rook", icon = "Interface\\Icons\\inv_achievement_dungeon_rookery", spellId = 445443, mapId = 2648 },
-    [247] = {
-        name = "ML",
-        icon = "Interface\\Icons\\achievement_dungeon_mogulrazdunk",
-        spellId = (factionGroup == "Horde") and 467555 or 467553,
-        mapId = 1594
-    },
-    [382] = { name = "TOP", icon = "Interface\\Icons\\achievement_dungeon_theatreofpain", spellId = 354467, mapId = 2293 },
-    [369] = { name = "WS", icon = "Interface\\Icons\\achievement_boss_mechagon", spellId = 373274, mapId = 2097 },
-    [503] = { name = "AK", icon = "Interface\\Icons\\inv_achievement_dungeon_arak-ara", spellId = 445417, mapId = 2660 },
-    [505] = { name = "DB", icon = "Interface\\Icons\\inv_achievement_dungeon_dawnbreaker", spellId = 445414, mapId = 2662 },
-    [542] = { name = "Dome", icon = "Interface\\Icons\\inv_112_achievement_dungeon_ecodome", spellId = 1237215, mapId = 2830 },
-    [378] = { name = "HoA", icon = "Interface\\Icons\\achievement_dungeon_hallsofattonement", spellId = 354465, mapId = 2287 },
-    [391] = { name = "Market", icon = "Interface\\Icons\\achievement_dungeon_brokerdungeon", spellId = 367416, mapId = 2441 },
-    [392] = { name = "GB", icon = "Interface\\Icons\\achievement_dungeon_brokerdungeon", spellId = 367416, mapId = 2441 },
-}
-
-Data.CURRENT_SEASONAL_DUNGEONS = {525, 499, 503, 505, 542, 378, 391, 392}
-
-Data.DAWN_SIGN = {
+GT.Data.NUMBER_SIGN = {
     [1] = "Solo",
     [2] = "Duo",
     [3] = "Trio",
     [4] = "Quad",
     [5] = "Penta",
 }
+
+GT.Data.DUNGEONS = {
+    -- Midnight Season 1
+    [239]  = { spellId = 1254551, short = "Seat", name="Seat of the Triumvirat" },
+    [556]  = { spellId = 1254555, short = "PoS", name="Pit of Saron"  },
+    [161]  = { spellId = 159898,  short = "Sky", name="Skyreach"  },
+    [557]  = { spellId = 1254400, short = "WS", name="Windrunner Spire"   },
+    [558]  = { spellId = 1254572, short = "MT", name="Magisters' Terrace"   },
+    [559]  = { spellId = 1254563, short = "NPX", name="Nexus Point Arena"  },
+    [560]  = { spellId = 1254559, short = "MC", name="Maisara Cavern"   },
+    [402]  = { spellId = 393273,  short = "AA", name="Algethar Academy"   },
+}
+
+-- Reads WoW API values and writes the current character into GT.DB.players.
+local function UpdateCurrentCharacter()
+    local uniqueID = GT.DB.uniqueID
+    if not uniqueID then return end
+
+    local charNameDisplay = UnitName("player")
+    local charName        = charNameDisplay:lower()
+    local server          = GetRealmName() or ""
+
+    local _, race    = UnitRace("player")
+    local _, class   = UnitClass("player")
+    local _, faction = UnitFactionGroup("player")
+
+    local specName = ""
+    local specRole = ""
+    local specIndex = GetSpecialization()
+    if specIndex and specIndex > 0 then
+        local _, name, _, _, role = GetSpecializationInfo(specIndex)
+        specName = name and name:lower() or ""
+        specRole = role or ""
+    end
+
+    local _, ilvlEquipped = GetAverageItemLevel()
+
+    local mpRating = 0
+    if C_PlayerInfo and C_PlayerInfo.GetPlayerMythicPlusRatingSummary then
+        local mpInfo = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
+        mpRating = mpInfo and math.floor(mpInfo.currentSeasonScore or 0) or 0
+    end
+
+    if mpRating == 0 then return end
+
+    local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel() or 0
+    local mapID         = C_MythicPlus.GetOwnedKeystoneChallengeMapID() or 0
+
+    GT.DB.players[uniqueID]          = GT.DB.players[uniqueID]          or {}
+    GT.DB.players[uniqueID].chars    = GT.DB.players[uniqueID].chars    or {}
+    GT.DB.players[uniqueID].lastSeen = time()
+
+    -- Preserve user-edited fields; only build defaults on first write
+    local existing = GT.DB.players[uniqueID].chars[charName]
+    local roles = (existing and existing.roles) or {
+        tank = (specRole == "TANK"),
+        heal = (specRole == "HEALER"),
+        dps  = (specRole == "DAMAGER"),
+    }
+
+    GT.DB.players[uniqueID].chars[charName] = {
+        name           = charNameDisplay,
+        server         = server,
+        ilvl           = math.floor(ilvlEquipped or 0),
+        faction        = faction and faction:lower() or "",
+        race           = race    and race:lower()    or "",
+        class          = class   and class:lower()   or "",
+        specialisation = specName,
+        mpRating       = mpRating,
+        keystone       = { level = keystoneLevel, challengeId = mapID },
+        roles          = roles,
+        hideFromTag    = existing and existing.hideFromTag or false,
+        forceNoKey     = existing and existing.forceNoKey  or false,
+    }
+end
+
+local PRUNE_DAYS = 30
+
+local function PruneStaleEntries()
+    local cutoff = time() - PRUNE_DAYS * 86400
+    local myID   = GT.DB.uniqueID
+    for uid, entry in pairs(GT.DB.players or {}) do
+        if uid ~= myID and (entry.lastSeen or 0) < cutoff then
+            GT.DB.players[uid] = nil
+        end
+    end
+end
+
+local function UpdateVaultData()
+    local uniqueID = GT.DB.uniqueID
+    if not uniqueID then return end
+
+    local charName = UnitName("player"):lower()
+    local entry = GT.DB.players[uniqueID]
+    if not entry or not entry.chars or not entry.chars[charName] then return end
+
+    local function extractSlots(actType)
+        local slots = {}
+        for _, act in ipairs(C_WeeklyRewards.GetActivities(actType) or {}) do
+            table.insert(slots, { threshold = act.threshold, progress = act.progress })
+        end
+        return slots
+    end
+
+    entry.chars[charName].vault = {
+        dungeons = extractSlots(Enum.WeeklyRewardChestThresholdType.Activities),
+        raid     = extractSlots(Enum.WeeklyRewardChestThresholdType.Raid),
+    }
+end
+
+local dataFrame = CreateFrame("Frame")
+dataFrame:RegisterEvent("PLAYER_LOGIN")
+dataFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+dataFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+dataFrame:RegisterEvent("WEEKLY_REWARDS_UPDATE")
+dataFrame:SetScript("OnEvent", function(_, event)
+    GT.Core:DebugPrint("Data: event fired:", event)
+    if event == "PLAYER_LOGIN" then
+        PruneStaleEntries()
+        C_Timer.After(1, function()
+            UpdateCurrentCharacter()
+            UpdateVaultData()
+        end)
+    elseif event == "WEEKLY_REWARDS_UPDATE" then
+        UpdateVaultData()
+    else
+        UpdateCurrentCharacter()
+    end
+end)
