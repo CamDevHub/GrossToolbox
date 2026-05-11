@@ -234,7 +234,20 @@ end
 
 local function BuildTeamTakeText()
     local players = GT.DB.players or {}
+    local myID    = GT.DB.uniqueID
     local used    = {}
+
+    -- Discord mentions line for all party members (excluding self)
+    local mentions = {}
+    for uid in pairs(cachedPartyUIDs) do
+        if uid ~= myID then
+            local data = players[uid]
+            local handle = data and data.discordHandle or ""
+            if handle ~= "" then
+                table.insert(mentions, "<@" .. handle .. ">")
+            end
+        end
+    end
 
     -- Collect eligible characters grouped by armor type
     local byArmor = {}
@@ -305,6 +318,10 @@ local function BuildTeamTakeText()
 
         if tank or heal or dps1 then
             if #lines > 0 then table.insert(lines, "") end
+            table.insert(lines, "### Team take")
+            if #mentions > 0 then
+                table.insert(lines, table.concat(mentions, " "))
+            end
             table.insert(lines, "== " .. armor .. " ==")
             if tank then table.insert(lines, formatChar(tank, ROLES.TANK))    end
             if heal then table.insert(lines, formatChar(heal, ROLES.HEALER))  end
