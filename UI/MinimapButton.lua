@@ -48,7 +48,9 @@ end)
 
 btn:SetScript("OnDragStop", function(self)
     self:SetScript("OnUpdate", nil)
-    GT.DB.minimapAngle = angle
+    if GT.loaded then
+        GT.DB.minimapAngle = angle
+    end
 end)
 
 -- Restore saved angle on login

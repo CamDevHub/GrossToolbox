@@ -2,100 +2,6 @@ local AddonName, GT = ...
 
 local UI = GT.UI
 
--- Default font; overridden from GT.DB.fontPath on ADDON_LOADED
-GT.Config.FONT_PATH = "Fonts\\FRIZQT__.TTF"
-UI.fontRegistry = {}
-
-function UI:SetFont(fontString, size, flags)
-    flags = flags or ""
-    fontString:SetFont(GT.Config.FONT_PATH, size, flags)
-    table.insert(self.fontRegistry, { fs = fontString, size = size, flags = flags })
-end
-
-function UI:RefreshFonts()
-    for _, entry in ipairs(self.fontRegistry) do
-        entry.fs:SetFont(GT.Config.FONT_PATH, entry.size, entry.flags)
-    end
-end
-
-function UI:CreateButton(parent, label, width, height)
-    local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
-    btn:SetSize(width, height)
-
-    btn.text = btn:CreateFontString(nil, "OVERLAY")
-    self:SetFont(btn.text, 21, "")
-    btn.text:SetPoint("LEFT", btn, "LEFT", 15, 0)
-    btn.text:SetText(label)
-    btn.text:SetTextColor(0.8, 0.8, 0.8)
-
-    return btn
-end
-
-function UI:CreateSidebarButton(parent, label)
-    local btn = self:CreateButton(parent, label, parent:GetWidth(), 50)
-
-    btn.bg = btn:CreateTexture(nil, "BACKGROUND")
-    btn.bg:SetAllPoints()
-    btn.bg:SetColorTexture(1, 1, 1, 0.05)
-    btn.bg:Hide()
-
-    btn:SetScript("OnEnter", function(self)
-        if not self.isActive then
-            self.bg:Show()
-            self.text:SetTextColor(1, 1, 1)
-        end
-    end)
-    btn:SetScript("OnLeave", function(self)
-        if not self.isActive then
-            self.bg:Hide()
-            self.text:SetTextColor(0.8, 0.8, 0.8)
-        end
-    end)
-
-    return btn
-end
-
-function UI:CreateTabButton(parent, label)
-    local btn = CreateFrame("Button", nil, parent)
-
-    btn.bg = btn:CreateTexture(nil, "BACKGROUND")
-    btn.bg:SetAllPoints()
-    btn.bg:SetColorTexture(1, 1, 1, 0.06)
-    btn.bg:Hide()
-
-    btn.text = btn:CreateFontString(nil, "OVERLAY")
-    self:SetFont(btn.text, 18, "")
-    btn.text:SetPoint("CENTER")
-    btn.text:SetText(label)
-    btn.text:SetTextColor(0.8, 0.8, 0.8)
-
-    btn.activeLine = btn:CreateTexture(nil, "OVERLAY")
-    btn.activeLine:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
-    btn.activeLine:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
-    btn.activeLine:SetHeight(2)
-    btn.activeLine:SetColorTexture(0, 0.5, 1, 1)
-    btn.activeLine:Hide()
-
-    btn:SetScript("OnEnter", function(self)
-        if not self.isActive then
-            self.bg:Show()
-            self.text:SetTextColor(1, 1, 1)
-        end
-    end)
-    btn:SetScript("OnLeave", function(self)
-        if not self.isActive then
-            self.bg:Hide()
-            self.text:SetTextColor(0.8, 0.8, 0.8)
-        end
-    end)
-
-    return btn
-end
-
--- ============================================================
--- Popup helpers
--- ============================================================
-
 -- Creates a styled modal popup with a title bar, content area, and close button.
 -- Returns the popup frame plus the inner content frame for callers to populate.
 --
@@ -103,9 +9,8 @@ end
 --   local popup, content = GT.UI:CreatePopup("My Title", 400, 300)
 --   popup:Show()
 function UI:CreatePopup(title, width, height)
-    local TITLE_H  = 28
-    local CLOSE_W  = TITLE_H
-    local PAD      = 1   -- border width
+    local TITLE_H = 28
+    local CLOSE_W = TITLE_H
 
     local popup = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     popup:SetSize(width, height)
@@ -252,34 +157,46 @@ function UI:CreateConfirmPopup(message, onConfirm, onCancel)
     return popup
 end
 
-function UI:RebuildTabBar(moduleName)
-    local tabBar = self.tabBar
+-- Creates an informational popup with a message and a single OK button.
+-- Use this for one-way notices where no action is needed from the user.
+--
+-- Usage:
+--   local alert = GT.UI:CreateAlertPopup("Missing Discord Handle", "Please fill in your handle.")
+--   alert:Show()
+function UI:CreateAlertPopup(title, message)
+    local BTN_H = 28
+    local BTN_W = 80
+    local PAD   = 16
 
-    for _, module in pairs(GT.Modules) do
-        if module.tabButtons then
-            for _, btn in pairs(module.tabButtons) do
-                btn:Hide()
-            end
-        end
-    end
+    local popup, content = self:CreatePopup(title, 340, 120)
 
-    local module = GT.Modules[moduleName]
-    if not module or not module.categoryOrder or #module.categoryOrder == 0 then
-        return
-    end
+    local msgLabel = content:CreateFontString(nil, "OVERLAY")
+    self:SetFont(msgLabel, 13, "")
+    msgLabel:SetPoint("TOPLEFT",  content, "TOPLEFT",  PAD, -PAD)
+    msgLabel:SetPoint("TOPRIGHT", content, "TOPRIGHT", -PAD, -PAD)
+    msgLabel:SetJustifyH("LEFT")
+    msgLabel:SetText(message)
+    msgLabel:SetTextColor(0.9, 0.9, 0.9)
 
-    local TAB_WIDTH = 150
-    local TAB_GAP   = 2
-    local x         = 8
+    local okBtn = CreateFrame("Button", nil, content, "BackdropTemplate")
+    okBtn:SetSize(BTN_W, BTN_H)
+    okBtn:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", PAD, PAD)
+    okBtn:SetBackdrop({
+        bgFile   = GT.Config.WHITE8X8,
+        edgeFile = GT.Config.WHITE8X8,
+        edgeSize = 1,
+    })
+    okBtn:SetBackdropColor(0.25, 0.25, 0.25, 1)
+    okBtn:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    okBtn:SetScript("OnEnter", function(self) self:SetBackdropColor(0.35, 0.35, 0.35, 1) end)
+    okBtn:SetScript("OnLeave", function(self) self:SetBackdropColor(0.25, 0.25, 0.25, 1) end)
+    okBtn:SetScript("OnClick", function() popup:Hide() end)
 
-    for _, catName in ipairs(module.categoryOrder) do
-        local btn = module.tabButtons[catName]
-        if btn then
-            btn:ClearAllPoints()
-            btn:SetSize(TAB_WIDTH, tabBar:GetHeight())
-            btn:SetPoint("LEFT", tabBar, "LEFT", x, 0)
-            btn:Show()
-            x = x + TAB_WIDTH + TAB_GAP
-        end
-    end
+    local okText = okBtn:CreateFontString(nil, "OVERLAY")
+    self:SetFont(okText, 13, "")
+    okText:SetPoint("CENTER")
+    okText:SetText("OK")
+    okText:SetTextColor(1, 1, 1)
+
+    return popup
 end

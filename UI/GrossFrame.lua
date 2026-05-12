@@ -131,11 +131,10 @@ ContentArea:SetPoint("TOPLEFT",     TabBar,          "BOTTOMLEFT",  0, -1)  -- -
 ContentArea:SetPoint("BOTTOMRIGHT", ContentWrapper,  "BOTTOMRIGHT")
 UI.contentArea = ContentArea
 
--- Create modules now that contentArea exists
-local moduleOrder = { "Dawn", "Weekly", "Settings" }
-for _, name in ipairs(moduleOrder) do
-    Core:CreateModule(name)
-end
+-- Create modules now that contentArea exists (order here defines GT.Core.moduleOrder)
+Core:CreateModule("Dawn")
+Core:CreateModule("Weekly")
+Core:CreateModule("Settings")
 
 -- Sidebar buttons
 local sidebarBtns = {}
@@ -152,7 +151,7 @@ local function activateSidebarBtn(btn)
     btn.text:SetTextColor(1, 1, 1)
 end
 
-for i, moduleName in ipairs(moduleOrder) do
+for i, moduleName in ipairs(Core.moduleOrder) do
     local btn = UI:CreateSidebarButton(Sidebar, moduleName)
 
     if i == 1 then
@@ -174,13 +173,13 @@ end
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
-        GT.Core:DebugPrint("GrossFrame: PLAYER_LOGIN, activating module =", moduleOrder[1])
+        GT.Core:DebugPrint("GrossFrame: PLAYER_LOGIN, activating module =", Core.moduleOrder[1])
         activateSidebarBtn(sidebarBtns[1])
-        Core:SetModule(moduleOrder[1])
+        Core:SetModule(Core.moduleOrder[1])
     end
 end)
 
 frame:SetScript("OnShow", function()
     activateSidebarBtn(sidebarBtns[1])
-    Core:SetModule(moduleOrder[1])
+    Core:SetModule(Core.moduleOrder[1])
 end)

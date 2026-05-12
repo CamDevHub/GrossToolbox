@@ -8,7 +8,6 @@ local PLAYER_LIST_W  = 360
 local CHAR_LIST_W    = 180
 local LIST_H         = 220
 local ROW_H    = 26
-local BTN_H    = 28
 local DATA_H   = 160
 
 -- ============================================================
@@ -23,29 +22,9 @@ local function makeLabel(parent, text)
     return label
 end
 
-local function makeInputBox(parent, anchorFrame)
-    local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
-    box:SetSize(260, 32)
-    box:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -8)
-    box:SetAutoFocus(false)
-    box:SetFontObject("GameFontHighlight")
-    box:SetTextInsets(10, 10, 0, 0)
-    box:SetBackdrop({
-        bgFile   = GT.Config.WHITE8X8,
-        edgeFile = GT.Config.WHITE8X8,
-        edgeSize = 1,
-        insets   = { left = 0, right = 0, top = 0, bottom = 0 },
-    })
-    box:SetBackdropColor(0.06, 0.06, 0.06, 1)
-    box:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
-    box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    return box
-end
-
-local function makeScrollList(parent, anchorFrame, offsetY, width)
+local function makeScrollList(parent, width)
     local bg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     bg:SetSize(width, LIST_H)
-    bg:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, offsetY)
     bg:SetBackdrop({
         bgFile   = GT.Config.WHITE8X8,
         edgeFile = GT.Config.WHITE8X8,
@@ -65,29 +44,6 @@ local function makeScrollList(parent, anchorFrame, offsetY, width)
     return bg, child
 end
 
-local function makeActionBtn(parent, label, color)
-    local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
-    btn:SetSize(160, BTN_H)
-    btn:SetBackdrop({
-        bgFile   = GT.Config.WHITE8X8,
-        edgeFile = GT.Config.WHITE8X8,
-        edgeSize = 1,
-    })
-    local r, g, b = color[1], color[2], color[3]
-    btn:SetBackdropColor(r * 0.5, g * 0.5, b * 0.5, 1)
-    btn:SetBackdropBorderColor(r, g, b, 0.6)
-    btn:SetScript("OnEnter", function(self) self:SetBackdropColor(r * 0.8, g * 0.8, b * 0.8, 1) end)
-    btn:SetScript("OnLeave", function(self) self:SetBackdropColor(r * 0.5, g * 0.5, b * 0.5, 1) end)
-
-    local txt = btn:CreateFontString(nil, "OVERLAY")
-    GT.UI:SetFont(txt, 12, "")
-    txt:SetPoint("CENTER")
-    txt:SetText(label)
-    txt:SetTextColor(1, 1, 1)
-
-    return btn
-end
-
 -- ============================================================
 -- Discord handle & ID inputs
 -- ============================================================
@@ -95,14 +51,14 @@ end
 local discordLabel = makeLabel(infoFrame, "Discord Handle")
 discordLabel:SetPoint("TOPLEFT", infoFrame, "TOPLEFT", PAD, -PAD)
 
-local discordInput = makeInputBox(infoFrame, discordLabel)
+local discordInput = GT.UI:CreateInputBox(infoFrame, 260, 32, 12)
+discordInput:SetPoint("TOPLEFT", discordLabel, "BOTTOMLEFT", 0, -8)
 discordInput:SetMaxLetters(64)
 discordInput:SetScript("OnEditFocusGained", function(self)
     self:SetBackdropBorderColor(0, 0.5, 1, 1)
 end)
 
 local function saveDiscordHandle(handle)
-    GT.DB.discordHandle = handle
     local myID = GT.DB.uniqueID
     if myID then
         GT.DB.players[myID] = GT.DB.players[myID] or {}
@@ -122,7 +78,8 @@ end)
 local idLabel = makeLabel(infoFrame, "Your ID")
 idLabel:SetPoint("TOPLEFT", discordInput, "BOTTOMLEFT", 0, -20)
 
-local idInput = makeInputBox(infoFrame, idLabel)
+local idInput = GT.UI:CreateInputBox(infoFrame, 260, 32, 12)
+idInput:SetPoint("TOPLEFT", idLabel, "BOTTOMLEFT", 0, -8)
 local lockedID = ""
 idInput:SetScript("OnTextChanged", function(self, userInput)
     if userInput then self:SetText(lockedID) end
@@ -150,18 +107,20 @@ playerListLabel:SetPoint("TOPLEFT", infoFrame, "TOPLEFT", BROWSER_X, -PAD)
 local charListLabel = makeLabel(infoFrame, "Characters")
 charListLabel:SetPoint("TOPLEFT", infoFrame, "TOPLEFT", BROWSER_X + PLAYER_LIST_W + PAD, -PAD)
 
-local playerListBg, playerListChild = makeScrollList(infoFrame, playerListLabel, -4, PLAYER_LIST_W)
-local charListBg,   charListChild   = makeScrollList(infoFrame, charListLabel,   -4, CHAR_LIST_W)
+local playerListBg, playerListChild = makeScrollList(infoFrame, PLAYER_LIST_W)
+playerListBg:SetPoint("TOPLEFT", playerListLabel, "BOTTOMLEFT", 0, -4)
+
+local charListBg, charListChild = makeScrollList(infoFrame, CHAR_LIST_W)
 charListBg:SetPoint("TOPLEFT", playerListBg, "TOPRIGHT", PAD, 0)
 
 -- ============================================================
 -- Action buttons
 -- ============================================================
 
-local deletePlayerBtn = makeActionBtn(infoFrame, "Delete Player",    { 0.9, 0.1, 0.1 })
+local deletePlayerBtn = GT.UI:CreateActionButton(infoFrame, "Delete Player",    160, 28, 12, { 0.9, 0.1, 0.1 })
 deletePlayerBtn:SetPoint("TOPLEFT", playerListBg, "BOTTOMLEFT", 0, -8)
 
-local deleteCharBtn = makeActionBtn(infoFrame, "Delete Character", { 0.9, 0.3, 0.1 })
+local deleteCharBtn = GT.UI:CreateActionButton(infoFrame, "Delete Character", 160, 28, 12, { 0.9, 0.3, 0.1 })
 deleteCharBtn:SetPoint("TOPLEFT", charListBg, "BOTTOMLEFT", 0, -8)
 
 -- ============================================================
@@ -280,8 +239,8 @@ local function showCharData(uid, charName)
         table.insert(lines, "Vault Raid:  " .. slotStr(vault.raid))
     end
 
-    if charData.lastSeen then
-        table.insert(lines, "Last Seen:   " .. date("%Y-%m-%d %H:%M", charData.lastSeen))
+    if playerData.lastSeen then
+        table.insert(lines, "Last Seen:   " .. date("%Y-%m-%d %H:%M", playerData.lastSeen))
     end
 
     setDataText(table.concat(lines, "\n"))
@@ -396,8 +355,7 @@ local function buildPlayerRow(uid, playerData, idx)
     row.btn:SetPoint("TOPLEFT", playerListChild, "TOPLEFT", 0, -(idx - 1) * ROW_H)
     row.btn:Show()
 
-    local discord = playerData.discordHandle or ""
-    row.lbl:SetText(discord ~= "" and discord or uid)
+    row.lbl:SetText(uid)
 
     if uid == GT.DB.uniqueID then
         row.lbl:SetTextColor(0.4, 0.8, 1)
@@ -440,13 +398,11 @@ local function RefreshPlayerList()
     local players = GT.DB.players or {}
     local sorted  = {}
     for uid in pairs(players) do table.insert(sorted, uid) end
-    -- Local player first, then alphabetical by discord/uid
+    -- Local player first, then alphabetical by UID
     table.sort(sorted, function(a, b)
         if a == GT.DB.uniqueID then return true end
         if b == GT.DB.uniqueID then return false end
-        local da = players[a].discordHandle or a
-        local db = players[b].discordHandle or b
-        return da < db
+        return a < b
     end)
 
     playerListChild:SetHeight(math.max(#sorted * ROW_H, ROW_H))
@@ -476,10 +432,12 @@ deleteCharBtn:SetScript("OnClick", function()
     local playerData = GT.DB.players[selectedUID]
     if not playerData or not playerData.chars then return end
     playerData.chars[selectedCharName] = nil
-    -- prune from charOrder
-    local order = playerData.charOrder or {}
-    for i = #order, 1, -1 do
-        if order[i] == selectedCharName then table.remove(order, i) end
+    -- prune from charOrder only if it exists (own player, managed by VaultCategory)
+    if playerData.charOrder then
+        local order = playerData.charOrder
+        for i = #order, 1, -1 do
+            if order[i] == selectedCharName then table.remove(order, i) end
+        end
     end
     selectedCharName = nil
     setDataText("")
@@ -518,9 +476,11 @@ end)
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_LOGIN")
 loadFrame:SetScript("OnEvent", function()
-    GT.Core:DebugPrint("Information: PLAYER_LOGIN, discord =", GT.DB.discordHandle or "<not set>")
-    if GT.DB.discordHandle then
-        discordInput:SetText(GT.DB.discordHandle)
+    local myData = GT.DB.uniqueID and GT.DB.players[GT.DB.uniqueID]
+    local handle = myData and myData.discordHandle or ""
+    GT.Core:DebugPrint("Information: PLAYER_LOGIN, discord =", handle ~= "" and handle or "<not set>")
+    if handle ~= "" then
+        discordInput:SetText(handle)
     end
     lockedID = GT.DB.uniqueID or ""
     idInput:SetText(lockedID)

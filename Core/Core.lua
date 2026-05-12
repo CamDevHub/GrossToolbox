@@ -2,6 +2,7 @@ local AddonName, GT = ...
 
 local Core = GT.Core
 local Modules = GT.Modules
+Core.moduleOrder = {}
 
 function Core:DebugPrint(...)
     if not GT.Debug then return end
@@ -20,6 +21,7 @@ function Core:CreateModule(name)
     f.categoryOrder = {}
     f.tabButtons = {}
     Modules[name] = f
+    table.insert(Core.moduleOrder, name)
     return f
 end
 
@@ -52,7 +54,8 @@ function Core:AddCategory(moduleName, catName)
 end
 
 function Core:SetModule(moduleName)
-    for name, module in pairs(Modules) do
+    for _, name in ipairs(Core.moduleOrder) do
+        local module = Modules[name]
         if name == moduleName then
             module:Show()
         else
@@ -72,7 +75,8 @@ function Core:SetCategory(moduleName, catName)
     local module = Modules[moduleName]
     if not module then return end
 
-    for name, frame in pairs(module.Categories) do
+    for _, name in ipairs(module.categoryOrder) do
+        local frame = module.Categories[name]
         if name == catName then
             frame:Show()
         else
@@ -80,7 +84,8 @@ function Core:SetCategory(moduleName, catName)
         end
     end
 
-    for name, btn in pairs(module.tabButtons) do
+    for _, name in ipairs(module.categoryOrder) do
+        local btn = module.tabButtons[name]
         if name == catName then
             btn.isActive = true
             btn.activeLine:Show()

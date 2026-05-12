@@ -1,5 +1,23 @@
 local AddonName, GT = ...
 
+GT.Data.CLASS_TO_ARMOR = {
+    MAGE        = "Cloth",
+    PRIEST      = "Cloth",
+    WARLOCK     = "Cloth",
+    DRUID       = "Leather",
+    DEMONHUNTER = "Leather",
+    MONK        = "Leather",
+    ROGUE       = "Leather",
+    EVOKER      = "Mail",
+    HUNTER      = "Mail",
+    SHAMAN      = "Mail",
+    DEATHKNIGHT = "Plate",
+    PALADIN     = "Plate",
+    WARRIOR     = "Plate",
+}
+
+GT.Data.ARMOR_ORDER = { "Cloth", "Leather", "Mail", "Plate" }
+
 GT.Data.ROLES = {
     TANK    = ":Tank:",
     HEALER  = ":healer:",
@@ -30,16 +48,17 @@ GT.Data.NUMBER_SIGN = {
     [5] = "Penta",
 }
 
+GT.Data.DUNGEON_ORDER = { 239, 556, 161, 557, 558, 559, 560, 402 }
 GT.Data.DUNGEONS = {
     -- Midnight Season 1
-    [239]  = { spellId = 1254551, short = "Seat", name="Seat of the Triumvirat" },
-    [556]  = { spellId = 1254555, short = "PoS", name="Pit of Saron"  },
-    [161]  = { spellId = 159898,  short = "Sky", name="Skyreach"  },
-    [557]  = { spellId = 1254400, short = "WS", name="Windrunner Spire"   },
-    [558]  = { spellId = 1254572, short = "MT", name="Magisters' Terrace"   },
-    [559]  = { spellId = 1254563, short = "NPX", name="Nexus Point Arena"  },
-    [560]  = { spellId = 1254559, short = "MC", name="Maisara Cavern"   },
-    [402]  = { spellId = 393273,  short = "AA", name="Algethar Academy"   },
+    [239]  = { iconId = 1711340, spellId = 1254551, short = "Seat", name = "Seat of the Triumvirat" },
+    [556]  = { iconId = 343641, spellId = 1254555, short = "PoS",  name = "Pit of Saron"           },
+    [161]  = { iconId = 1002596, spellId = 159898,  short = "Sky",  name = "Skyreach"               },
+    [557]  = { iconId = 7266215, spellId = 1254400, short = "WS",   name = "Windrunner Spire"        },
+    [558]  = { iconId = 7439625, spellId = 1254572, short = "MT",   name = "Magisters' Terrace"      },
+    [559]  = { iconId = 7553062, spellId = 1254563, short = "NPX",  name = "Nexus Point Arena"       },
+    [560]  = { iconId = 7322719, spellId = 1254559, short = "MC",   name = "Maisara Cavern"          },
+    [402]  = { iconId = 4578414, spellId = 393273,  short = "AA",   name = "Algethar Academy"        },
 }
 
 -- Reads WoW API values and writes the current character into GT.DB.players.
@@ -133,10 +152,13 @@ local function UpdateVaultData()
         return slots
     end
 
-    entry.chars[charName].vault = {
-        dungeons = extractSlots(Enum.WeeklyRewardChestThresholdType.Activities),
-        raid     = extractSlots(Enum.WeeklyRewardChestThresholdType.Raid),
-    }
+    local dungeons = extractSlots(Enum.WeeklyRewardChestThresholdType.Activities)
+    local raid     = extractSlots(Enum.WeeklyRewardChestThresholdType.Raid)
+
+    -- If both are empty the API data isn't ready yet; preserve existing vault
+    if #dungeons == 0 and #raid == 0 then return end
+
+    entry.chars[charName].vault = { dungeons = dungeons, raid = raid }
 end
 
 local dataFrame = CreateFrame("Frame")

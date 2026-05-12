@@ -11,9 +11,12 @@ GrossToolbox.lua
 # --- Core ---
 Core\Core.lua
 Core\Data.lua
-Core\UI.lua
-Core\GrossFrame.lua
-Core\MinimapButton.lua
+
+# --- UI ---
+UI\Widgets.lua
+UI\Popups.lua
+UI\GrossFrame.lua
+UI\MinimapButton.lua
 
 # --- Modules ---
 Modules\SettingsModule.lua
@@ -21,9 +24,11 @@ Modules\DawnModule.lua
 Modules\WeeklyModule.lua
 
 # --- Dawn Module ---
-Modules\Dawn\TagCategory.lua
 Modules\Dawn\PlayerEditorCategory.lua
-Modules\Dawn\Sync.lua
+Modules\Dawn\Tag\TagPartyCache.lua
+Modules\Dawn\Tag\TagBuilder.lua
+Modules\Dawn\Tag\TagCategory.lua
+Modules\Dawn\Tag\TagSync.lua
 
 # --- Weekly Module ---
 Modules\Weekly\VaultCategory.lua

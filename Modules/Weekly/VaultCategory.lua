@@ -74,7 +74,7 @@ sep:SetColorTexture(0.3, 0.3, 0.3, 1)
 -- Order helpers
 -- ============================================================
 
-local function GetCharOrder(playerData)
+local function EnsureCharOrder(playerData)
     playerData.charOrder = playerData.charOrder or {}
     local order = playerData.charOrder
     local chars  = playerData.chars or {}
@@ -175,7 +175,7 @@ RefreshVault = function()
     local playerData = myID and GT.DB.players[myID]
     if not playerData then return end
 
-    local order = GetCharOrder(playerData)
+    local order = EnsureCharOrder(playerData)
 
     for rowIdx, charName in ipairs(order) do
         local charData = playerData.chars[charName]

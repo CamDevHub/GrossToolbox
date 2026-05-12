@@ -89,6 +89,7 @@ local function RefreshPlayerEditor()
                         local entry = GT.DB.players[GT.DB.uniqueID]
                         if entry and entry.chars and self._charName then
                             setVal(entry.chars[self._charName], col, self:GetChecked())
+                            GT.Modules.Dawn.InvalidateTagCache()
                         end
                     end)
                     newRow.cbs[ci] = cb

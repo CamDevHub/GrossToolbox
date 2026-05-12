@@ -7,8 +7,10 @@ local PROTOCOL_VERSION = "1"
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
 
-local function GetGroupChannel()
-    if IsInGroup() then return "PARTY" end
+-- Returns the sync channel when in a 5-man party, nil otherwise.
+-- Intentionally returns nil for raids — sync is party-only.
+local function GetPartyChannel()
+    if IsInGroup() and not IsInRaid() then return "PARTY" end
 end
 
 local function SendCharacterData(channel)
@@ -17,7 +19,7 @@ local function SendCharacterData(channel)
     if not myData then return end
 
     -- Discord handle sent once per player in its own message type
-    local handle = (myData.discordHandle ~= "" and myData.discordHandle) or GT.DB.discordHandle or ""
+    local handle = myData.discordHandle or ""
     C_ChatInfo.SendAddonMessage(ADDON_PREFIX, table.concat({
         "DAWN_DISCORD",
         PROTOCOL_VERSION,
@@ -55,6 +57,7 @@ end
 
 local function HandleDiscordSync(parts)
     -- DAWN_DISCORD | version | uid | handle
+    if parts[2] ~= PROTOCOL_VERSION then return end
     local uid    = parts[3]
     local handle = parts[4]
     if not uid or uid == GT.DB.uniqueID then return end
@@ -65,7 +68,8 @@ local function HandleDiscordSync(parts)
 end
 
 local function HandleSyncResponse(parts)
-    -- DAWN_RES | version | uid | charName | name | server | ilvl | faction | race | class | spec | mpRating | ks.level | ks.challengeId | tank | heal | dps
+    -- DAWN_RES | version | uid | charName | name | server | ilvl | faction | race | class | spec | mpRating | ks.level | ks.challengeId | tank | heal | dps | hideFromTag | forceNoKey
+    if parts[2] ~= PROTOCOL_VERSION then return end
     local uid      = parts[3]
     local charName = parts[4]
     if not uid or not charName then return end
@@ -98,13 +102,12 @@ local function HandleSyncResponse(parts)
         hideFromTag = parts[18] == "1",
         forceNoKey  = parts[19] == "1",
     }
-
-
 end
 
 local syncListenFrame = CreateFrame("Frame")
 syncListenFrame:RegisterEvent("CHAT_MSG_ADDON")
 syncListenFrame:SetScript("OnEvent", function(_, _, prefix, message, _, sender)
+    if not GT.loaded  then return end
     if prefix ~= ADDON_PREFIX then return end
     GT.Core:DebugPrint("Sync: CHAT_MSG_ADDON from", sender, "->", (message:match("^[^|]+") or message))
     local parts = {}
@@ -112,9 +115,9 @@ syncListenFrame:SetScript("OnEvent", function(_, _, prefix, message, _, sender)
     local msgType = parts[1]
     if msgType == "DAWN_REQ" then
         GT.Core:DebugPrint("Dawn: sync requested by", sender)
-        local handle = GT.DB.discordHandle or ""
-        if handle == "" then return end
-        local channel = GetGroupChannel()
+        local myData = GT.DB.uniqueID and GT.DB.players[GT.DB.uniqueID]
+        if not myData or (myData.discordHandle or "") == "" then return end
+        local channel = GetPartyChannel()
         if channel then SendCharacterData(channel) end
     elseif msgType == "DAWN_RES" then
         HandleSyncResponse(parts)
@@ -128,48 +131,24 @@ local syncCooldown = false
 local syncBtn      = Dawn.syncBtn
 local syncLabel    = Dawn.syncLabel
 
-local noDiscordPopup, noDiscordContent = GT.UI:CreatePopup("Missing Discord Handle", 340, 110)
-
-local noDiscordMsg = noDiscordContent:CreateFontString(nil, "OVERLAY")
-GT.UI:SetFont(noDiscordMsg, 13, "")
-noDiscordMsg:SetPoint("TOPLEFT",  noDiscordContent, "TOPLEFT",  16, -16)
-noDiscordMsg:SetPoint("TOPRIGHT", noDiscordContent, "TOPRIGHT", -16, -16)
-noDiscordMsg:SetJustifyH("LEFT")
-noDiscordMsg:SetText("Your Discord handle is not set.\nPlease fill it in the Settings > Information tab.")
-noDiscordMsg:SetTextColor(0.9, 0.9, 0.9)
-
-local noDiscordOk = CreateFrame("Button", nil, noDiscordContent, "BackdropTemplate")
-noDiscordOk:SetSize(80, 26)
-noDiscordOk:SetPoint("BOTTOMLEFT", noDiscordContent, "BOTTOMLEFT", 16, 10)
-noDiscordOk:SetBackdrop({
-    bgFile   = GT.Config.WHITE8X8,
-    edgeFile = GT.Config.WHITE8X8,
-    edgeSize = 1,
-})
-noDiscordOk:SetBackdropColor(0.25, 0.25, 0.25, 1)
-noDiscordOk:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
-noDiscordOk:SetScript("OnEnter", function(self) self:SetBackdropColor(0.35, 0.35, 0.35, 1) end)
-noDiscordOk:SetScript("OnLeave", function(self) self:SetBackdropColor(0.25, 0.25, 0.25, 1) end)
-noDiscordOk:SetScript("OnClick", function() noDiscordPopup:Hide() end)
-
-local noDiscordOkText = noDiscordOk:CreateFontString(nil, "OVERLAY")
-GT.UI:SetFont(noDiscordOkText, 13, "")
-noDiscordOkText:SetPoint("CENTER")
-noDiscordOkText:SetText("OK")
-noDiscordOkText:SetTextColor(1, 1, 1)
+local noDiscordPopup = GT.UI:CreateAlertPopup(
+    "Missing Discord Handle",
+    "Your Discord handle is not set.\nPlease fill it in the Settings > Information tab."
+)
 
 syncBtn:SetScript("OnClick", function()
     if syncCooldown then return end
 
     Dawn.RefreshPartyCache()
 
-    local handle = GT.DB.discordHandle or ""
+    local myData = GT.DB.uniqueID and GT.DB.players[GT.DB.uniqueID]
+    local handle = myData and myData.discordHandle or ""
     if handle == "" then
         noDiscordPopup:Show()
         return
     end
 
-    local channel = GetGroupChannel()
+    local channel = GetPartyChannel()
     if not channel then return end
 
     syncCooldown = true

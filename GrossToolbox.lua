@@ -48,5 +48,16 @@ initFrame:SetScript("OnEvent", function(_, _, name)
     GT.Debug = GT.DB.debugMode or false
     GT.Config.FONT_PATH = GT.DB.fontPath or "Fonts\\FRIZQT__.TTF"
     MigrateDB()
+
+    -- One-time migration: move root-level discordHandle into the player entry
+    if GT.DB.discordHandle and GT.DB.uniqueID then
+        local entry = GT.DB.players[GT.DB.uniqueID]
+        if entry and not entry.discordHandle then
+            entry.discordHandle = GT.DB.discordHandle
+        end
+        GT.DB.discordHandle = nil
+    end
+
     GT.UI:RefreshFonts()
+    GT.loaded = true
 end)
