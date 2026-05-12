@@ -91,6 +91,10 @@ local function BuildTeamTakeText()
     GT.Core:DebugPrint("TagBuilder: BuildTeamTakeText()")
     local cachedPartyUIDs = Dawn.cachedPartyUIDs
     local cachedByArmor   = Dawn.cachedByArmor
+
+    local partySize = 0
+    for _ in pairs(cachedPartyUIDs) do partySize = partySize + 1 end
+
     local players = GT.DB.players or {}
     local myID    = GT.DB.uniqueID
     local used    = {}
@@ -170,7 +174,19 @@ local function BuildTeamTakeText()
         end
     end
 
-    return #lines > 0 and table.concat(lines, "\n") or "Not enough players to form parties."
+    if partySize < 4 then
+        return "Not enough players to form parties."
+    end
+
+    -- No single armor type covers a full team — fall back to header + mentions only.
+    if #lines == 0 then
+        table.insert(lines, "### Team take")
+        if #mentions > 0 then
+            table.insert(lines, table.concat(mentions, " "))
+        end
+    end
+
+    return table.concat(lines, "\n")
 end
 
 Dawn.BuildTagText      = BuildTagText
