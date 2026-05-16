@@ -1,6 +1,7 @@
-# Gross Toolbox
+# GrossToolbox
 
-## [V3.9.0](https://github.com/CamDevHub/GrossToolbox/tree/V3.9.0) (2025-09-02)
-[Full Changelog](https://github.com/CamDevHub/GrossToolbox/compare/V3.8.8...V3.9.0) [Previous Releases](https://github.com/CamDevHub/GrossToolbox/releases)
+## [V4.2.0](https://github.com/CamDevHub/GrossToolbox/tree/V4.2.0) (2026-05-12)
+[Full Changelog](https://github.com/CamDevHub/GrossToolbox/compare/V4.1.0...V4.2.0) [Previous Releases](https://github.com/CamDevHub/GrossToolbox/releases)
 
-- CBU - Update keys for season 3  
+- GT - Upgrade version and team take text  
+- GT - Refacto for cache and tag text  

@@ -175,7 +175,20 @@ dataFrame:SetScript("OnEvent", function(_, event)
             UpdateVaultData()
         end)
     elseif event == "WEEKLY_REWARDS_UPDATE" then
+        -- Fires when the vault UI loads — also refresh the keystone since the
+        -- player may have just claimed one after the weekly reset.
         UpdateVaultData()
+        UpdateCurrentCharacter()
+    elseif event == "CHALLENGE_MODE_COMPLETED" then
+        -- Delay so the keystone and vault APIs reflect the completed run
+        C_Timer.After(2, function()
+            UpdateCurrentCharacter()
+            UpdateVaultData()
+            local Dawn = GT.Modules.Dawn
+            if Dawn and Dawn.InvalidateTagCache then
+                Dawn.InvalidateTagCache()
+            end
+        end)
     else
         UpdateCurrentCharacter()
     end
