@@ -2,7 +2,7 @@
 ## Title: GrossToolbox
 ## Notes: Toolbox for personal use
 ## Author: Grosstartine
-## Version: 4.2.1
+## Version: 4.3.0
 ## SavedVariables: GrossToolboxDB
 ## OptionalDeps: LibSharedMedia-3.0
 
@@ -22,6 +22,7 @@ UI\MinimapButton.lua
 Modules\SettingsModule.lua
 Modules\DawnModule.lua
 Modules\WeeklyModule.lua
+Modules\DungeonModule.lua
 
 # --- Dawn Module ---
 Modules\Dawn\PlayerEditorCategory.lua
@@ -32,6 +33,10 @@ Modules\Dawn\Tag\TagSync.lua
 
 # --- Weekly Module ---
 Modules\Weekly\VaultCategory.lua
+
+# --- Dungeon Module ---
+Modules\Dungeon\MplusRecap.lua
+Modules\Dungeon\MplusCategory.lua
 
 # --- Settings Module ---
 Modules\Settings\CustomizeCategory.lua

@@ -25,9 +25,18 @@ function UI:CreatePopup(title, width, height)
     popup:SetBackdropBorderColor(0, 0, 0, 1)
     popup:SetMovable(true)
     popup:EnableMouse(true)
+    popup:EnableKeyboard(true)
     popup:RegisterForDrag("LeftButton")
     popup:SetScript("OnDragStart", popup.StartMoving)
     popup:SetScript("OnDragStop",  popup.StopMovingOrSizing)
+    popup:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            self:SetPropagateKeyboardInput(false)
+            self:Hide()
+        else
+            self:SetPropagateKeyboardInput(true)
+        end
+    end)
     popup:Hide()
 
     -- Title bar

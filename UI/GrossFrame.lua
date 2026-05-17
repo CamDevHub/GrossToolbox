@@ -134,6 +134,7 @@ UI.contentArea = ContentArea
 -- Create modules now that contentArea exists (order here defines GT.Core.moduleOrder)
 Core:CreateModule("Dawn")
 Core:CreateModule("Weekly")
+Core:CreateModule("Dungeon")
 Core:CreateModule("Settings")
 
 -- Sidebar buttons
