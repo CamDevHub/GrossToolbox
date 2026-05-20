@@ -95,12 +95,17 @@ end)
 clearSyncBtn:SetScript("OnLeave", function(self)
     self:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
 end)
-clearSyncBtn:SetScript("OnClick", function()
-    local myID = GT.DB.uniqueID
-    for uid in pairs(GT.DB.players or {}) do
-        if uid ~= myID then GT.DB.players[uid] = nil end
+local clearSyncConfirm = GT.UI:CreateConfirmPopup(
+    "This will remove all synced player data.\nAre you sure?",
+    function()
+        local myID = GT.DB.uniqueID
+        for uid in pairs(GT.DB.players or {}) do
+            if uid ~= myID then GT.DB.players[uid] = nil end
+        end
     end
-end)
+)
+
+clearSyncBtn:SetScript("OnClick", function() clearSyncConfirm:Show() end)
 
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_LOGIN")
