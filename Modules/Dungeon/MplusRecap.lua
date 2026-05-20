@@ -1,5 +1,7 @@
 local AddonName, GT = ...
 
+local Screenshot = Screenshot
+
 local Dungeon = GT.Modules.Dungeon
 
 local PAD = 16
@@ -351,13 +353,13 @@ lifecycleFrame:SetScript("OnEvent", function(_, event, ...)
             -- after the popup is visible before capturing.
             C_Timer.After(1, function()
                 ShowRecap(elapsed)
-                if Recap.screenshotEnabled then
+                if Recap.screenshotEnabled and Screenshot then
                     C_Timer.After(0.1, Screenshot)
                 end
             end)
         elseif Recap.screenshotEnabled then
             -- No recap popup; give the native completion UI a moment to appear.
-            C_Timer.After(1, Screenshot)
+            if Screenshot then C_Timer.After(1, Screenshot) end
         end
     end
 end)
