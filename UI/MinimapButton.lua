@@ -36,13 +36,18 @@ btn:EnableMouse(true)
 btn:RegisterForDrag("LeftButton")
 
 btn:SetScript("OnDragStart", function(self)
+    local lastAngle = nil
     self:SetScript("OnUpdate", function()
         local mx, my = Minimap:GetCenter()
         local cx, cy = GetCursorPosition()
         local scale = UIParent:GetEffectiveScale()
         cx, cy = cx / scale, cy / scale
-        angle = math.deg(math.atan2(cy - my, cx - mx))
-        updatePosition()
+        local newAngle = math.deg(math.atan2(cy - my, cx - mx))
+        if not lastAngle or math.abs(newAngle - lastAngle) > 0.5 then
+            angle = newAngle
+            lastAngle = newAngle
+            updatePosition()
+        end
     end)
 end)
 
