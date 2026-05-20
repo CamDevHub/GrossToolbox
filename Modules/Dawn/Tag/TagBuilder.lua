@@ -95,6 +95,10 @@ local function BuildTeamTakeText()
     local partySize = 0
     for _ in pairs(cachedPartyUIDs) do partySize = partySize + 1 end
 
+    if partySize < 4 then
+        return "Not enough players to form parties."
+    end
+
     local players = GT.DB.players or {}
     local myID    = GT.DB.uniqueID
     local used    = {}
@@ -172,10 +176,6 @@ local function BuildTeamTakeText()
             table.insert(lines, formatChar(dps1, ROLES.DAMAGER))
             table.insert(lines, formatChar(dps2, ROLES.DAMAGER))
         end
-    end
-
-    if partySize < 4 then
-        return "Not enough players to form parties."
     end
 
     -- No single armor type covers a full team — fall back to header + mentions only.
