@@ -1,5 +1,10 @@
 # GrossToolbox
 
+## [V4.3.1](https://github.com/CamDevHub/GrossToolbox/tree/V4.3.1) (2026-05-20)
+[Full Changelog](https://github.com/CamDevHub/GrossToolbox/compare/V4.3.0...V4.3.1) [Previous Releases](https://github.com/CamDevHub/GrossToolbox/releases)
+
+- GT - Fix Screenshot nil by caching global reference at load time
+
 ## [V4.3.0](https://github.com/CamDevHub/GrossToolbox/tree/V4.3.0) (2026-05-17)
 [Full Changelog](https://github.com/CamDevHub/GrossToolbox/compare/V4.2.1...V4.3.0) [Previous Releases](https://github.com/CamDevHub/GrossToolbox/releases)
 
