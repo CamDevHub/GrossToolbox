@@ -31,7 +31,6 @@ Recap.screenshotEnabled = false
 -- Run state
 -- ============================================================
 
-local runStart        = nil  -- nil until CHALLENGE_MODE_START fires (or unrecoverable after reload)
 local activeMapID     = 0
 local activeLevel     = 0
 local activeTimeLimit = 0   -- seconds; from C_ChallengeMode.GetMapUIInfo
@@ -40,6 +39,20 @@ local partyData       = {}  -- [guid] = { guid, name, class, role, spec, unitTok
 -- ============================================================
 -- Helpers
 -- ============================================================
+
+-- Returns the elapsed M+ run time in seconds from the WoW world timer API,
+-- or 0 if no challenge-mode timer is active.
+-- Source: GetWorldElapsedTimers / GetWorldElapsedTime (retail WoW API)
+local function GetChallengeElapsed()
+    local timers = { GetWorldElapsedTimers() }
+    for _, timerID in ipairs(timers) do
+        local timerType, elapsed = GetWorldElapsedTime(timerID)
+        if timerType == Enum.WorldElapsedTimerType.ChallengeMode then
+            return elapsed
+        end
+    end
+    return 0
+end
 
 local ROLE_LABEL = { TANK = "Tank", HEALER = "Healer", DAMAGER = "DPS", NONE = "—" }
 local ROLE_ORDER = { TANK = 1, HEALER = 2, DAMAGER = 3, NONE = 4 }
@@ -335,16 +348,12 @@ lifecycleFrame:SetScript("OnEvent", function(_, event, ...)
             activeLevel = C_ChallengeMode.GetActiveKeystoneInfo() or 0
             local _, _, tl = C_ChallengeMode.GetMapUIInfo(activeMapID)
             activeTimeLimit = tl or 0
-            -- runStart cannot be recovered after a reload; mark it so elapsed
-            -- time is not computed from a bogus value (see CHALLENGE_MODE_COMPLETED)
-            runStart = nil
             collectPartyData()
         end
 
     elseif event == "CHALLENGE_MODE_START" then
         activeMapID = C_ChallengeMode.GetActiveChallengeMapID() or 0
         activeLevel = C_ChallengeMode.GetActiveKeystoneInfo() or 0
-        runStart    = GetTime()
         local _, _, tl = C_ChallengeMode.GetMapUIInfo(activeMapID)
         activeTimeLimit = tl or 0
         collectPartyData()
@@ -361,7 +370,7 @@ lifecycleFrame:SetScript("OnEvent", function(_, event, ...)
         end
 
     elseif event == "CHALLENGE_MODE_COMPLETED" then
-        local elapsed = runStart and (GetTime() - runStart) or 0
+        local elapsed = GetChallengeElapsed()
         if Recap.recapEnabled then
             -- Small delay so the damage meter session data settles, then show
             -- the recap. If screenshot is also enabled, wait one extra tick
