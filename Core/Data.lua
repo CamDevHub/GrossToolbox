@@ -100,28 +100,34 @@ local function UpdateCurrentCharacter()
     GT.DB.players[uniqueID].chars    = GT.DB.players[uniqueID].chars    or {}
     GT.DB.players[uniqueID].lastSeen = time()
 
-    -- Preserve user-edited fields; only build defaults on first write
-    local existing = GT.DB.players[uniqueID].chars[charName]
-    local roles = (existing and existing.roles) or {
-        tank = (specRole == "TANK"),
-        heal = (specRole == "HEALER"),
-        dps  = (specRole == "DAMAGER"),
-    }
+    -- Merge API-sourced fields into the existing entry so user-edited fields
+    -- (roles, hideFromTag, forceNoKey, and any future additions) are never wiped.
+    local entry = GT.DB.players[uniqueID].chars[charName] or {}
 
-    GT.DB.players[uniqueID].chars[charName] = {
-        name           = charNameDisplay,
-        server         = server,
-        ilvl           = math.floor(ilvlEquipped or 0),
-        faction        = faction and faction:lower() or "",
-        race           = race    and race:lower()    or "",
-        class          = class   and class:lower()   or "",
-        specialisation = specName,
-        mpRating       = mpRating,
-        keystone       = { level = keystoneLevel, challengeId = mapID },
-        roles          = roles,
-        hideFromTag    = existing and existing.hideFromTag or false,
-        forceNoKey     = existing and existing.forceNoKey  or false,
-    }
+    entry.name           = charNameDisplay
+    entry.server         = server
+    entry.ilvl           = math.floor(ilvlEquipped or 0)
+    entry.faction        = faction and faction:lower() or ""
+    entry.race           = race    and race:lower()    or ""
+    entry.class          = class   and class:lower()   or ""
+    entry.specialisation = specName
+    entry.mpRating       = mpRating
+    entry.keystone       = { level = keystoneLevel, challengeId = mapID }
+
+    -- Seed role defaults only on first write; preserve user edits afterwards
+    if not entry.roles then
+        entry.roles = {
+            tank = (specRole == "TANK"),
+            heal = (specRole == "HEALER"),
+            dps  = (specRole == "DAMAGER"),
+        }
+    end
+
+    -- Seed boolean flags only on first write
+    if entry.hideFromTag == nil then entry.hideFromTag = false end
+    if entry.forceNoKey  == nil then entry.forceNoKey  = false end
+
+    GT.DB.players[uniqueID].chars[charName] = entry
 end
 
 local PRUNE_DAYS = 30
