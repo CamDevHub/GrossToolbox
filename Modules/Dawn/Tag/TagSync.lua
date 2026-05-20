@@ -127,6 +127,7 @@ syncListenFrame:SetScript("OnEvent", function(_, _, prefix, message, _, sender)
 end)
 
 -- Wire up the sync button (Dawn.syncBtn is set by TagCategory.lua which loads first)
+assert(Dawn.syncBtn and Dawn.syncLabel, "TagSync: Dawn not fully initialized — check .toc load order")
 local syncCooldown = false
 local syncBtn      = Dawn.syncBtn
 local syncLabel    = Dawn.syncLabel
