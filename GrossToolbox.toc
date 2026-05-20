@@ -2,7 +2,7 @@
 ## Title: GrossToolbox
 ## Notes: Toolbox for personal use
 ## Author: Grosstartine
-## Version: 4.3.1
+## Version: 4.4.0
 ## SavedVariables: GrossToolboxDB
 ## OptionalDeps: LibSharedMedia-3.0
 
