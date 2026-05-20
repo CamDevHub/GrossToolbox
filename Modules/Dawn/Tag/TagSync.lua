@@ -67,6 +67,8 @@ local function HandleDiscordSync(parts)
     end
 end
 
+local VALID_FACTIONS = { horde = true, alliance = true }
+
 local function HandleSyncResponse(parts)
     -- DAWN_RES | version | uid | charName | name | server | ilvl | faction | race | class | spec | mpRating | ks.level | ks.challengeId | tank | heal | dps | hideFromTag | forceNoKey
     if parts[2] ~= PROTOCOL_VERSION then return end
@@ -75,6 +77,32 @@ local function HandleSyncResponse(parts)
     if not uid or not charName then return end
     if uid == GT.DB.uniqueID   then return end
 
+    -- Validate class against known values
+    local class = parts[10]
+    if not GT.Data.CLASS_NAMES[class] then
+        GT.Core:DebugPrint("Dawn: rejected sync for", charName, "— unknown class:", tostring(class))
+        return
+    end
+
+    -- Validate faction against known values
+    local faction = parts[8]
+    if faction ~= "" and not VALID_FACTIONS[faction] then
+        GT.Core:DebugPrint("Dawn: rejected sync for", charName, "— unknown faction:", tostring(faction))
+        return
+    end
+
+    -- Validate keystone challengeId (0 = no key, otherwise must be a known dungeon)
+    local challengeId = tonumber(parts[14]) or 0
+    if challengeId ~= 0 and not GT.Data.DUNGEONS[challengeId] then
+        GT.Core:DebugPrint("Dawn: rejected sync for", charName, "— unknown challengeId:", tostring(challengeId))
+        return
+    end
+
+    -- Length-cap free-form strings to prevent DB bloat
+    local name           = (parts[5]  or ""):sub(1, 64)
+    local server         = (parts[6]  or ""):sub(1, 64)
+    local specialisation = (parts[11] or ""):sub(1, 64)
+
     GT.Core:DebugPrint("Dawn: processing uid", uid, "char", charName)
 
     GT.DB.players[uid]          = GT.DB.players[uid]          or {}
@@ -82,17 +110,17 @@ local function HandleSyncResponse(parts)
     GT.DB.players[uid].lastSeen = time()
 
     GT.DB.players[uid].chars[charName] = {
-        name           = parts[5],
-        server         = parts[6],
+        name           = name,
+        server         = server,
         ilvl           = tonumber(parts[7])  or 0,
-        faction        = parts[8],
+        faction        = faction,
         race           = parts[9],
-        class          = parts[10],
-        specialisation = parts[11],
+        class          = class,
+        specialisation = specialisation,
         mpRating       = tonumber(parts[12]) or 0,
         keystone = {
             level       = tonumber(parts[13]) or 0,
-            challengeId = tonumber(parts[14]) or 0,
+            challengeId = challengeId,
         },
         roles = {
             tank = parts[15] == "1",
