@@ -31,7 +31,7 @@ Recap.screenshotEnabled = false
 -- Run state
 -- ============================================================
 
-local runStart        = 0
+local runStart        = nil  -- nil until CHALLENGE_MODE_START fires (or unrecoverable after reload)
 local activeMapID     = 0
 local activeLevel     = 0
 local activeTimeLimit = 0   -- seconds; from C_ChallengeMode.GetMapUIInfo
@@ -324,9 +324,24 @@ local lifecycleFrame = CreateFrame("Frame")
 lifecycleFrame:RegisterEvent("CHALLENGE_MODE_START")
 lifecycleFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
 lifecycleFrame:RegisterEvent("INSPECT_READY")
+lifecycleFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 lifecycleFrame:SetScript("OnEvent", function(_, event, ...)
-    if event == "CHALLENGE_MODE_START" then
+    if event == "PLAYER_ENTERING_WORLD" then
+        -- Recover party data if a key was already active before a reload
+        local mapID = C_ChallengeMode.GetActiveChallengeMapID()
+        if mapID and mapID ~= 0 then
+            activeMapID = mapID
+            activeLevel = C_ChallengeMode.GetActiveKeystoneInfo() or 0
+            local _, _, tl = C_ChallengeMode.GetMapUIInfo(activeMapID)
+            activeTimeLimit = tl or 0
+            -- runStart cannot be recovered after a reload; mark it so elapsed
+            -- time is not computed from a bogus value (see CHALLENGE_MODE_COMPLETED)
+            runStart = nil
+            collectPartyData()
+        end
+
+    elseif event == "CHALLENGE_MODE_START" then
         activeMapID = C_ChallengeMode.GetActiveChallengeMapID() or 0
         activeLevel = C_ChallengeMode.GetActiveKeystoneInfo() or 0
         runStart    = GetTime()
@@ -346,7 +361,7 @@ lifecycleFrame:SetScript("OnEvent", function(_, event, ...)
         end
 
     elseif event == "CHALLENGE_MODE_COMPLETED" then
-        local elapsed = GetTime() - runStart
+        local elapsed = runStart and (GetTime() - runStart) or 0
         if Recap.recapEnabled then
             -- Small delay so the damage meter session data settles, then show
             -- the recap. If screenshot is also enabled, wait one extra tick
