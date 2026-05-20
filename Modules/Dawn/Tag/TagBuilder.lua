@@ -35,7 +35,7 @@ local function BuildTagText()
 
         if uid ~= myID then
             local discord = data.discordHandle or ""
-            table.insert(lines, "<@" .. (discord ~= "" and discord .. ">" or "unknown"))
+            table.insert(lines, discord ~= "" and ("<@" .. discord .. ">") or "<@unknown>")
         end
 
         local sortedChars = {}
